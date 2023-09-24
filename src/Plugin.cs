@@ -1,5 +1,4 @@
 ﻿using System;
-using AuthorTimeHunting.Commands;
 using BepInEx;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
@@ -10,7 +9,7 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-    public Challenge challenge;
+    public static Challenge challenge;
     private Harmony harmony;
 
     private void Awake()
@@ -19,10 +18,6 @@ public class Plugin : BaseUnityPlugin
         harmony.PatchAll();
 
         challenge = new Challenge();
-        
-        ChatCommandApi.RegisterLocalChatCommand<StopChallengeCommand>();
-        ChatCommandApi.RegisterLocalChatCommand<ChallengeStart>();
-        StopChallengeCommand.OnHandle += test;
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
@@ -33,10 +28,6 @@ public class Plugin : BaseUnityPlugin
         harmony = null;
     }
 
-    private void test()
-    {
-        challenge = challenge.Reset();
-    }
     // private void Awake()
     // {
     //     harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
@@ -425,6 +416,10 @@ public class Plugin : BaseUnityPlugin
     //         SkipBrokenLevel();
     //     }
     // }
+    private void Update()
+    {
+        
+    }
 
     private class StopChallengeCommand : ILocalChatCommand
     {

@@ -2,25 +2,30 @@
 using System.Collections.Generic;
 using System.Linq;
 using AuthorTimeHunting.Commands;
-using ZeepkistClient;
+using UnityEngine;
 using ZeepSDK.Chat;
-using ZeepSDK.ChatCommands;
-using ZeepSDK.Leaderboard;
-using ZeepSDK.Messaging;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting;
 
-public class Challenge
+public class Challenge : MonoBehaviour
 {
     public List<double> Authortimes = new();
     public int ChallengeDurationInMinutes = 60;
+
+    public ChallengeState ChallengeState;
+    public ChallengeStatePending ChallengeStatePending = new();
+    public ChallengeStateRunning ChallengeStateRunning = new();
+    public ChallengeStateStandby ChallengeStateStandby = new();
+    public double CurrentAt;
+    public double CurrentGold;
+    public double CurrentPlayerFinish;
     public DateTime CurrentTime = new();
 
     public DateTime EndTime = new();
     public int FreeSkips = 1;
 
-    public bool GoldSkip = false;
+    public bool GoldSkip;
     public int LevelsBeaten = 0;
     public int LevelsBroken = 0;
     public int LevelsSkipped = 0;
@@ -29,27 +34,32 @@ public class Challenge
     public DateTime LoadingTimeEnd = new();
     public DateTime LoadingTimeStart = new();
     public double Penalty = 5;
-    public double CurrentAt = 0;
-    public double CurrentGold = 0;
-    public double CurrentPlayerFinish = 0;
     public DateTime StartTime = new();
-    public State State = State.Ready;
+
 
     public Challenge()
     {
-        ChallengeStart.OnHandle += StartChallenge;
-        RacingApi.LevelLoaded += OnLevelLoaded;
+        ChallengeState = new ChallengeStateRunning();
+        ChallengeState.Enter(this);
+        // RacingApi.LevelLoaded += test;
     }
 
-    private void OnLevelLoaded()
+    public void test()
+    {
+        ChatApi.SendMessage("o/");
+    }
+
+    public void SwitchState(ChallengeState challengeState)
+    {
+        ChallengeState = challengeState;
+        challengeState.Enter(this);
+    }
+
+    public void OnLevelLoaded()
     {
         CurrentAt = PlayerManager.Instance.currentMaster.authorTime;
         CurrentGold = PlayerManager.Instance.currentMaster.goldTime;
-        if (State == State.Pending)
-        {
-            State = State.Running;
-            RunningMessage();
-        }
+        RunningMessage();
     }
 
     public void RunningMessage()
@@ -69,18 +79,14 @@ public class Challenge
         return new Challenge();
     }
 
-    private void SkipLevel()
+    public void SkipLevel()
     {
-
-
-            RacingApi.PlayerSpawned -= SkipLevel;
         ChatApi.SendMessage("/fs");
         GoldSkip = false;
     }
 
     public void StartMessage()
     {
-        
         ClearChat();
         new MessageBuilder()
             .AddLine("Author Time Hunt started")
@@ -91,32 +97,27 @@ public class Challenge
             .BuildAndSend();
     }
 
-    private void CheckFinish(double time)
+    public void CheckFinish(float time)
     {
         CurrentPlayerFinish = time;
-        if (State == State.Running)
+        if (IsRunValid())
         {
-            if (IsRunValid())
+            if (time <= CurrentAt)
             {
-                if (time <= CurrentAt)
-                {
-                    State = State.Pending;
-                    RacingApi.PlayerSpawned += SkipLevel;
-                    PendingBeatenMessage();
-                    return;
-                }
+                PendingBeatenMessage();
+                
+                return;
+            }
 
-                if (time <= CurrentGold)
-                {
-                    GoldSkip = true;
-                    ServerMessage();
-                    return;
-                }
+            if (time <= CurrentGold)
+            {
+                GoldSkip = true;
+                ServerMessage();
             }
         }
     }
 
-    private void PendingBeatenMessage()
+    public void PendingBeatenMessage()
     {
         ClearChat();
         new MessageBuilder()
@@ -128,7 +129,7 @@ public class Challenge
             .BuildAndSend();
     }
 
-    private bool IsRunValid()
+    public bool IsRunValid()
     {
         var checkpointsPassed = PlayerManager.Instance.currentMaster.playerResults.First().racepoints;
         var checkpointsTotal = PlayerManager.Instance.currentMaster.racePoints;
@@ -136,29 +137,17 @@ public class Challenge
     }
 
 
-    private void ServerMessage()
+    public void ServerMessage()
     {
         new MessageBuilder(autoBreak: false, startWithBreak: false)
             .AddKeyValue("Free Skips", $"{FreeSkips}")
             .AddLine("<br>")
             .AddKeyValue("Gold Skip ", $"{(GoldSkip ? "unlocked" : "locked")}")
-            .BuildAndServermessage((GoldSkip ? "green" : "yellow"));
+            .BuildAndServermessage(GoldSkip ? "green" : "yellow");
     }
 
-    private void StartChallenge()
+    public void StartChallenge()
     {
-        if (State == State.Ready)
-        {
-            State = State.Pending;
-            RacingApi.LevelLoaded += ServerMessage;
-            RacingApi.CrossedFinishLine += time => CheckFinish(time);
-            StartMessage();
-            MessengerApi.LogSuccess("ATH started");
-            SkipLevel();
-            return;
-        }
-
-        MessengerApi.LogWarning("ATH already running");
     }
 
     public void StopChallenge()
@@ -167,19 +156,9 @@ public class Challenge
 
     public void ClearChat()
     {
-        string msg = "";
-        for (int i = 0; i < 40; i++)
-        {
-            msg += "<br>";
-        }
+        var msg = "";
+        for (var i = 0; i < 40; i++) msg += "<br>";
 
         ChatApi.SendMessage(msg);
     }
-}
-
-public enum State
-{
-    Running,
-    Ready,
-    Pending
 }
