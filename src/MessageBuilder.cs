@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting;
@@ -19,6 +20,14 @@ public class MessageBuilder
         this.startWithBreak = startWithBreak;
         this.autoBreak = autoBreak;
     }
+
+    public MessageBuilder ClearChat()
+    {
+        var msg = string.Join("", Enumerable.Repeat("<br>", 40));
+        parts.Add(msg);
+        return this;
+    }
+
 
     public MessageBuilder AddLine(string line)
     {

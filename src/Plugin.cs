@@ -1,4 +1,4 @@
-﻿using System;
+﻿using AuthorTimeHunting.Commands;
 using BepInEx;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
@@ -9,24 +9,33 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-    public static Challenge challenge;
     private Harmony harmony;
+    public StateManager StateManager;
 
     private void Awake()
     {
         harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         harmony.PatchAll();
+        ChatCommandApi.RegisterLocalChatCommand<StartChallengeCommand>();
+        ChatCommandApi.RegisterLocalChatCommand<StopChallengeCommand>();
+        ChatCommandApi.RegisterLocalChatCommand<SkipLevelCommand>();
+        ChatCommandApi.RegisterLocalChatCommand<SkipBrokenLevelCommand>();
+        StateManager = new StateManager();
 
-        challenge = new Challenge();
+        StartChallengeCommand.OnHandle += StateManager.StartChallenge;
+        StopChallengeCommand.OnHandle += StateManager.StopChallenge;
+
         // Plugin startup logic
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
+
 
     private void OnDestroy()
     {
         harmony?.UnpatchSelf();
         harmony = null;
     }
+
 
     // private void Awake()
     // {
@@ -416,22 +425,4 @@ public class Plugin : BaseUnityPlugin
     //         SkipBrokenLevel();
     //     }
     // }
-    private void Update()
-    {
-        
-    }
-
-    private class StopChallengeCommand : ILocalChatCommand
-    {
-        public string Prefix => "/";
-        public string Command => "stop";
-        public string Description => "Use this to stop the AT Hunt";
-
-        public void Handle(string arguments)
-        {
-            OnHandle?.Invoke();
-        }
-
-        public static event Action OnHandle;
-    }
 }
