@@ -1,5 +1,7 @@
 ﻿using System;
 using ZeepSDK.Chat;
+using ZeepSDK.Multiplayer;
+using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting;
 
@@ -13,7 +15,9 @@ public class StateStarting : ChallengeState
     }
 
     public override void Enter()
-    {ChatApi.SendMessage("/settime 3600");
+    {
+
+        ChatApi.SendMessage("/settime 3600");
         new MessageBuilder()
             .ClearChat()
             .AddLine("Author Time Hunting started")
@@ -35,6 +39,5 @@ public class StateStarting : ChallengeState
 
     public void TransferTo()
     {
-        
     }
 }

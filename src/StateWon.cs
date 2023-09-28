@@ -14,6 +14,7 @@ public class StateWon : ChallengeState
 
     public override void Enter()
     {
+        _challenge.Authortimes.Add(PlayerManager.Instance.currentMaster.authorTime);
         RacingApi.PlayerSpawned += TransferTo;
     }
 

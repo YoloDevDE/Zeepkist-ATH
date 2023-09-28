@@ -6,10 +6,10 @@ namespace AuthorTimeHunting.Commands;
 public class RestartChallengeCommand : ILocalChatCommand
 {
     public string Prefix => "/";
-    public string Command => "ath restart";
+    public string Command => "hunt restart";
 
     public string Description =>
-        "Restarts the AT Hunt. You can adjust the challenge-duration by adding the time in minutes for example: '/ath restart 5' for 5 minutes";
+        "Restarts the AT Hunt. You can adjust the challenge-duration by adding the time in minutes for example: '/hunt restart 5' for 5 minutes";
 
     public void Handle(string arguments)
     {

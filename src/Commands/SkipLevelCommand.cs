@@ -6,7 +6,7 @@ namespace AuthorTimeHunting.Commands;
 public class SkipLevelCommand : ILocalChatCommand
 {
     public string Prefix => "/";
-    public string Command => "ath skip";
+    public string Command => "hunt skip";
 
     public string Description =>
         "Skips the current level during the challenge. Uses a FreeSkip or GoldSkip. If no skips are available, a penalty is applied.";

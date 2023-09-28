@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting;
 
 public class Challenge
 {
-    public List<double> Authortimes = new();
+    public List<float> Authortimes = new();
     public int ChallengeDurationInMinutes = 60;
-
     public double CurrentAt;
     public double CurrentGold;
     public double CurrentPlayerFinish;
@@ -18,6 +18,7 @@ public class Challenge
     public int FreeSkips = 1;
 
     public bool GoldSkip;
+    public bool IsChallengeRunning = false;
     public int LevelsBeaten = 0;
     public int LevelsBroken = 0;
     public int LevelsSkipped = 0;
@@ -27,14 +28,16 @@ public class Challenge
     public DateTime LoadingTimeStart = new();
     public double Penalty = 5;
     public DateTime StartTime;
+    public ChallengeStateManager ChallengeStateManager;
 
-    public Challenge()
+    public Challenge(ChallengeStateManager challengeStateManager)
     {
         ChallengeState = new StateStandby(this);
+        ChallengeStateManager = challengeStateManager;
         ChallengeState.Enter();
     }
 
-    public ChallengeState ChallengeState { get; private set; }
+    public ChallengeState ChallengeState { get; set; }
 
     public void SkipLevel(string message = "Stats")
     {
@@ -55,10 +58,36 @@ public class Challenge
             .AddKeyValue("Broken", $"{LevelsBroken}")
             .AddSeparator()
             .AddKeyValue("Free Skips", $"{FreeSkips}")
-            .AddKeyValue("Time left", $"~{(EndTime - DateTime.Now).TotalMinutes:0}min")
+            .AddKeyValue("Time left",
+                $"{(EndTime - DateTime.Now).Minutes:0}min {(EndTime - DateTime.Now).Seconds:0}s ")
             .Build();
     }
 
+    public void endStats()
+    {
+        new MessageBuilder()
+            .ClearChat()
+            .AddSeparator()
+            .AddLine("Final Results")
+            .AddSeparator()
+            .AddKeyValue("ATs gained", $"{LevelsBeaten}")
+            .AddKeyValue("Skipped", $"{LevelsSkipped}")
+            .AddKeyValue("Broken", $"{LevelsBroken}")
+            .AddSeparator()
+            .AddKeyValue("Minutes per AT",
+                $"{(LevelsBeaten <= 0 ? 0 : (DateTime.Now.AddMinutes(-LoadingTime.TotalMinutes) - StartTime).TotalMinutes / (LevelsBeaten <= 0 ? 1 : LevelsBeaten)).ToString("F2", CultureInfo.InvariantCulture).TrimEnd('0').TrimEnd('.')}")
+            .AddKeyValue("Avg AT length",
+                $"{AvgAt().GetFormattedTimeNoMilliSeconds()}")
+            .BuildAndSend();
+    }
+
+    public double AvgAt()
+    {
+        float tmp = 0;
+        foreach (var authortime in Authortimes) tmp += authortime;
+
+        return Authortimes.Count <= 0 ? 0 : tmp / Authortimes.Count;
+    }
 
     public void SwitchState(ChallengeState newState)
     {

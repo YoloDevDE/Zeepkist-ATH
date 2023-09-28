@@ -2,10 +2,7 @@
 using System.Linq;
 using System.Timers;
 using AuthorTimeHunting.Commands;
-using ZeepkistClient;
 using ZeepSDK.Chat;
-using ZeepSDK.Messaging;
-using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting;
@@ -14,6 +11,8 @@ public class StateRunning : ChallengeState
 {
     private readonly Challenge _challenge;
     private Timer _timer;
+
+    private int i;
 
     public StateRunning(Challenge challenge) : base(challenge)
     {
@@ -27,11 +26,16 @@ public class StateRunning : ChallengeState
         SkipLevelCommand.OnHandle += SkipLevelCommandOnOnHandle;
         SkipBrokenLevelCommand.OnHandle += SkipBrokenLevelCommandOnOnHandle;
 
-        
+
         _timer = new Timer(500);
         _timer.Elapsed += SendChatMessage;
         _timer.AutoReset = true;
         _timer.Start();
+
+        var levelName = PlayerManager.Instance.currentMaster.GlobalLevel.Name;
+        var authorName = PlayerManager.Instance.currentMaster.GlobalLevel.Author;
+
+        if (levelName == "Level 05" && authorName == "Yannic") SkipBrokenLevelCommandOnOnHandle();
     }
 
     private void SkipBrokenLevelCommandOnOnHandle()
@@ -55,9 +59,9 @@ public class StateRunning : ChallengeState
 
     private void SkipLevelCommandOnOnHandle()
     {
-        string message = "";
-        TimeSpan remainingTime = _challenge.EndTime - DateTime.Now;
-        bool canSkip = true;
+        var message = "";
+        var remainingTime = _challenge.EndTime - DateTime.Now;
+        var canSkip = true;
 
         if (_challenge.GoldSkip)
         {
@@ -75,12 +79,14 @@ public class StateRunning : ChallengeState
         }
         else
         {
-            message = "Cannot skip level as the remaining time is less than the penalty time and no gold or free skips are available.";
+            message =
+                "Cannot skip level as the remaining time is less than the penalty time and no gold or free skips are available.";
             canSkip = false;
         }
 
         if (canSkip)
         {
+            _challenge.Authortimes.Add(PlayerManager.Instance.currentMaster.authorTime);
             _challenge.LevelsSkipped++;
             _challenge.SkipLevel(message);
             _challenge.SwitchState(new StateLoading(_challenge));
@@ -91,7 +97,6 @@ public class StateRunning : ChallengeState
             Console.WriteLine(message); // Example
         }
     }
-
 
 
     public void OnRespawn()
@@ -108,11 +113,10 @@ public class StateRunning : ChallengeState
             .AddKeyValue("AT", $"{Challenge.CurrentAt.GetFormattedTime()}")
             .AddKeyValue("Gold", $"{Challenge.CurrentGold.GetFormattedTime()}")
             .AddSeparator()
+            .AddKeyValue("Free Skips", $"{Challenge.FreeSkips}")
             .AddKeyValue("Goldskip", Challenge.GoldSkipLockedOrUnlocked())
             .BuildAndSend();
     }
-
-    private int i = 0;
 
     private void SendChatMessage(object sender, ElapsedEventArgs e)
     {
@@ -126,7 +130,7 @@ public class StateRunning : ChallengeState
         else if (elapsedTime.TotalSeconds <= 10 && i % 2 == 0)
             ChatApi.SendMessage($"/servermessage red 0 {formattedTime}");
         else if (elapsedTime.TotalSeconds <= 10 && i % 2 == 1)
-            ChatApi.SendMessage($"/servermessage remove");
+            ChatApi.SendMessage("/servermessage remove");
         // ChatApi.SendMessage($"/servermessage yellow 0 {formattedTime}");
         else if (elapsedTime.TotalMinutes < 5)
             ChatApi.SendMessage($"/servermessage red 0 {formattedTime}");
@@ -157,6 +161,7 @@ public class StateRunning : ChallengeState
                     .AddLine("You can now Respawn to skip to the next Level")
                     .BuildAndSend();
                 _challenge.LevelsBeaten++;
+                _challenge.Authortimes.Add(PlayerManager.Instance.currentMaster.authorTime);
                 _challenge.SwitchState(new StateWon(_challenge));
                 return;
             }

@@ -7,8 +7,11 @@ public abstract class ChallengeState
         Challenge = challenge;
     }
 
-    public Challenge Challenge { get; }
+    protected Challenge Challenge { get; }
 
     public abstract void Enter();
     public abstract void Exit();
+    
+    
+    
 }
