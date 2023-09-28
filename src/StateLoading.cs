@@ -25,6 +25,7 @@ public class StateLoading : ChallengeState
         _challenge.LoadingTimeEnd = DateTime.Now;
         _challenge.LoadingTime += _challenge.LoadingTimeEnd - _challenge.LoadingTimeStart;
         _challenge.EndTime = _challenge.EndTime.Add(_challenge.LoadingTimeEnd - _challenge.LoadingTimeStart);
+        _challenge.GoldSkip = false;
     }
 
 

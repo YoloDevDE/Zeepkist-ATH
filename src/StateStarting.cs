@@ -26,6 +26,13 @@ public class StateStarting : ChallengeState
             .AddKeyValue("Free Skips", $"{_challenge.FreeSkips}")
             .AddKeyValue("Duration", $"{_challenge.ChallengeDurationInMinutes} Minutes")
             .AddSeparator()
+            .AddLine("Commands:")
+            .AddLine("/hunt skip")
+            .AddLine("/hunt broken")
+            .AddLine("/hunt stop")
+            .AddLine("/hunt restart or /hunt restart [minutes]")
+            .AddSeparator()
+            .AddLine("DO NOT USE /skip /fs /forceskip DURING THE CHALLENGE!!")
             .BuildAndSend();
         ChatApi.SendMessage("/fs");
         _challenge.StartTime = DateTime.Now;
