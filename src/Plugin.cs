@@ -35,10 +35,6 @@ public class Plugin : BaseUnityPlugin
         ChallengeStateManager.Challenge.SwitchState(new StateEnding(ChallengeStateManager.Challenge));
     }
 
-    private void Update()
-    {
-    }
-
     private void OnDestroy()
     {
         harmony?.UnpatchSelf();
