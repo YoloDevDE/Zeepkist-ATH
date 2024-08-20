@@ -1,4 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.PluginContext;
 using BepInEx;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
@@ -9,35 +11,29 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-    private Harmony harmony;
-    public ChallengeStateManager ChallengeStateManager;
+    private Harmony _harmony;
+    private IStateMachine _pluginStateMachine;
 
     private void Awake()
     {
-        harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
-        harmony.PatchAll();
-        ChatCommandApi.RegisterLocalChatCommand<StartChallengeCommand>();
-        ChatCommandApi.RegisterLocalChatCommand<RestartChallengeCommand>();
-        ChatCommandApi.RegisterLocalChatCommand<StopChallengeCommand>();
-        ChatCommandApi.RegisterLocalChatCommand<SkipLevelCommand>();
-        ChatCommandApi.RegisterLocalChatCommand<SkipBrokenLevelCommand>();
-        ChallengeStateManager = new ChallengeStateManager();
+        _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
+        _harmony.PatchAll();
 
-        StartChallengeCommand.OnHandle += ChallengeStateManager.StartChallenge;
-        RestartChallengeCommand.OnHandle += ChallengeStateManager.RestartChallenge;
-        StopChallengeCommand.OnHandle += StopChallenge;
-        // Plugin startup logic
+        ChatCommandApi.RegisterLocalChatCommand<CommandRestart>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
+
+        _pluginStateMachine = new PluginStateMachine();
+        _pluginStateMachine.TransitionTo(_pluginStateMachine.InitialState);
+
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
 
-    private void StopChallenge()
-    {
-        ChallengeStateManager.Challenge.SwitchState(new StateEnding(ChallengeStateManager.Challenge));
-    }
 
     private void OnDestroy()
     {
-        harmony?.UnpatchSelf();
-        harmony = null;
+        _harmony?.UnpatchSelf();
+        _harmony = null;
     }
 }
