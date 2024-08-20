@@ -1,5 +1,4 @@
 ﻿using System;
-using ZeepSDK.Chat;
 using ZeepSDK.ChatCommands;
 
 namespace AuthorTimeHunting.Commands;
@@ -14,8 +13,7 @@ public class CommandSkipBroken : ILocalChatCommand
 
     public void Handle(string arguments)
     {
- 
-        CommandTrigger?.Invoke();
+        // CommandTrigger?.Invoke();
     }
 
     // Event-Definition

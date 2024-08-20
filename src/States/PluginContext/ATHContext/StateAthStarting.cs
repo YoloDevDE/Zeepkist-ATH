@@ -21,13 +21,6 @@ public class StateAthStarting : IState
     // Public Methods
     public void Enter()
     {
-        AthStateMachine.Timer.Tick += TimerOnTick;
-        RacingApi.PlayerSpawned += OnPlayerSpawned;
-    }
-
-    private void OnPlayerSpawned()
-    {
-        StateMachine.TransitionTo(new StateAthSpawning(StateMachine));
     }
 
     public void Execute()
@@ -35,9 +28,10 @@ public class StateAthStarting : IState
         // Starting Text
         ChatApi.SendMessage("/settime 86400");
         ChatApi.SendMessage("/fs");
+        ChatApi.ClearChat();
         Messenger.SendChat(
             new Message.Builder()
-                .AddLine("ATH started. gl hf!")
+                .AddLine("ATH Ranked started. gl hf!")
                 .AddBreakSpace()
                 .AddSeperator()
                 .AddBreakSpace()
@@ -45,23 +39,20 @@ public class StateAthStarting : IState
                 .AddBreakSpace()
                 .AddKeyValue("Free-Skips", $"{AthStateMachine.Ctx.FreeSkips}")
                 .AddBreakSpace()
+                .AddKeyValue("Reward/AT", "off")
+                .AddBreakSpace()
                 .AddKeyValue("Punishment", $"{AthStateMachine.Ctx.PunishTime / 60} min")
                 .Build()
                 .ToString()
         );
 
         AthStateMachine.StartTimer();
+        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
     }
 
     public void Exit()
     {
-        AthStateMachine.Timer.Tick -= TimerOnTick;
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
     }
-
-    // Private Methods
-    private void TimerOnTick()
-    {
-        AthStateMachine.Ctx.LoadingTime += 1;
-    }
+    
+    
 }

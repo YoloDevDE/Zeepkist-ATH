@@ -23,5 +23,6 @@ public class StateAthStopping : IState
     public void Exit()
     {
         ChatApi.SendMessage("/servermessage remove");
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
     }
 }

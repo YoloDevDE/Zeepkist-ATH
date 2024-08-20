@@ -12,7 +12,6 @@ public static class Messenger
 
     public static void SendChat(string text)
     {
-        ChatApi.ClearChat();
         ChatApi.SendMessage(text);
     }
 }

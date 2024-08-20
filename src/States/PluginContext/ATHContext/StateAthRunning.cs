@@ -1,9 +1,8 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Util;
+using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.Chat;
-using ZeepSDK.Level;
-using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.PluginContext.ATHContext;
@@ -11,7 +10,6 @@ namespace AuthorTimeHunting.States.PluginContext.ATHContext;
 public class StateAthRunning : IState
 {
     // Private Fields
-    private LevelScriptableObject _currentLevel;
 
     // Constructor
     public StateAthRunning(IStateMachine stateMachine)
@@ -28,65 +26,92 @@ public class StateAthRunning : IState
     public void Enter()
     {
         AthStateMachine.Timer.Tick += TimerOnTick;
-        RacingApi.QuickReset += OnReset;
-        RacingApi.PlayerSpawned += OnReset;
-        PhotoModeApi.PhotoModeExited += OnPhotomodeExited;
-        RacingApi.CrossedFinishLine += OnPlayerResultsChanged;
-        RacingApi.RoundEnded += OnRoundEnded;
-    }
-
-    private void OnRoundEnded()
-    {
-        ChatApi.SendMessage("HOW DARE YOU SKIPPING YOU MADMAN >:(");
-        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
+        RacingApi.RoundStarted += OnRoundNztStarted;
+        RacingApi.CrossedFinishLine += OnCrossedFinishLine;
+        RacingApi.RoundEnded += OnRoundNztEnded;
     }
 
 
     public void Execute()
     {
-        _currentLevel = LevelApi.CurrentLevel;
         SetServerMessage();
+        RunningMessage();
     }
 
     public void Exit()
     {
         AthStateMachine.Timer.Tick -= TimerOnTick;
-        RacingApi.QuickReset -= OnReset;
-        RacingApi.PlayerSpawned -= OnReset;
-        PhotoModeApi.PhotoModeExited -= OnPhotomodeExited;
-        RacingApi.CrossedFinishLine -= OnPlayerResultsChanged;
-        RacingApi.RoundEnded -= OnRoundEnded;
+        RacingApi.RoundStarted -= OnRoundNztStarted;
+        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
+        RacingApi.RoundEnded -= OnRoundNztEnded;
     }
 
-    private void OnPlayerResultsChanged(float time)
+    private void RunningMessage()
+    {
+        ChatApi.ClearChat();
+        Messenger.SendChat(
+            new Message.Builder()
+                .AddLine($"{AthStateMachine.Ctx.CurrentLevel.Name} by {AthStateMachine.Ctx.CurrentLevel.Author}")
+                .AddBreakSpace()
+                .AddSeperator("Goals")
+                .AddBreakSpace()
+                .AddKeyValue("AT", $"{AthStateMachine.Ctx.CurrentLevel.AuthorTime.GetFormattedTime()}")
+                .AddBreakSpace()
+                .AddKeyValue("Gold", $"{AthStateMachine.Ctx.CurrentLevel.GoldTime.GetFormattedTime()}")
+                .AddBreakSpace()
+                .AddSeperator("Stats")
+                .AddBreakSpace()
+                .AddKeyValue("AT Medals", $"{AthStateMachine.Ctx.AuthorMedals}")
+                .AddBreakSpace()
+                .AddKeyValue("Attempts", $"{AthStateMachine.Ctx.CurrentLevel.Attempts}")
+                .AddBreakSpace()
+                .AddSeperator("Misc")
+                .AddBreakSpace()
+                .AddKeyValue("Gold Skip", $"{(AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked ? "  unlocked :zaagbladpad:" : "  locked :zaagbladpadrood:")}")                
+                .AddBreakSpace()
+                .AddKeyValue("Free Skips", $"{AthStateMachine.Ctx.FreeSkips}")
+                .Build()
+                .ToString()
+        );
+    }
+
+    private void OnRoundNztEnded()
+    {
+        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
+    }
+
+    private void OnCrossedFinishLine(float time)
     {
         ZeepkistNetworkPlayer networkPlayer = ZeepkistNetwork.LocalPlayer;
 
         // Check if the local player beat the author time
-        if (networkPlayer.IsLocal && networkPlayer.CurrentResult.Time <= _currentLevel.TimeAuthor)
+        if (networkPlayer.CurrentResult.Time <= AthStateMachine.Ctx.CurrentLevel.AuthorTime)
         {
+            // Purple color for "Authortime achieved"
+            Messenger.Notify().LogCustomColors($"You've got the Author Medal", Color.white, new Color(0.5f, 0f, 0.5f), 7.5f);
             StateMachine.TransitionTo(new StateAthPostRunning(StateMachine));
+            return;
         }
-        else
+
+        if (networkPlayer.CurrentResult.Time <= AthStateMachine.Ctx.CurrentLevel.GoldTime)
         {
-            ChatApi.SendMessage("Looooser.. slooooow...looooooooooooser");
+            AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked = true;
+            // Gold color for "You unlocked the 'Gold Skip'"
+            Messenger.Notify().LogCustomColors($"You've got the Gold Medal !<br>Gold Skip: Unlocked", Color.black, new Color(1f, 0.84f, 0f), 7.5f);
         }
-    }
 
-    private void OnPhotomodeExited()
-    {
         Pause();
     }
 
-
-    private void OnReset()
+    private void OnRoundNztStarted()
     {
-        Pause();
+        AthStateMachine.Ctx.CurrentLevel.Attempts++;
+        RunningMessage();
     }
 
     private void Pause()
     {
-        StateMachine.TransitionTo(new StateAthSpawning(StateMachine));
+        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 
 

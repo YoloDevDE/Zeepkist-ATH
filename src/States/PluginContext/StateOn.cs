@@ -2,7 +2,6 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.PluginContext.ATHContext;
 using AuthorTimeHunting.Util;
-using ZeepSDK.ChatCommands;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
@@ -32,7 +31,7 @@ public class StateOn : IState
         CommandRestart.CommandTrigger += ReStartChallenge;
         MultiplayerApi.DisconnectedFromGame += StopChallenge;
         RacingApi.RoundStarted += OnRoundStarted;
-        
+
         SubStateMachine.TransitionTo(new StateAthStarting(SubStateMachine));
     }
 

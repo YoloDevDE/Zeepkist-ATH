@@ -1,4 +1,6 @@
-﻿using AuthorTimeHunting.Interfaces;
+﻿using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Interfaces;
+using ZeepSDK.Level;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.PluginContext.ATHContext;
@@ -10,11 +12,15 @@ public class StateAthLoading : IState
         StateMachine = stateMachine;
     }
 
+    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+
+    // Properties
     public IStateMachine StateMachine { get; }
 
     public void Enter()
     {
-        RacingApi.PlayerSpawned += OnPlayerSpawned;
+        RacingApi.LevelLoaded += OnLevelLoaded;
+        AthStateMachine.Timer.Tick += TimerOnTick;
     }
 
     public void Execute()
@@ -23,11 +29,18 @@ public class StateAthLoading : IState
 
     public void Exit()
     {
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.LevelLoaded -= OnLevelLoaded;
+        AthStateMachine.Timer.Tick -= TimerOnTick;
     }
 
-    private void OnPlayerSpawned()
+    private void TimerOnTick()
     {
-        StateMachine.TransitionTo(new StateAthSpawning(StateMachine));
+        AthStateMachine.Ctx.LoadingTime += 1;
+    }
+
+    private void OnLevelLoaded()
+    {
+        AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
+        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 }

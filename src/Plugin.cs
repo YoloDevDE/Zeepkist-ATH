@@ -26,7 +26,6 @@ public class Plugin : BaseUnityPlugin
 
         _pluginStateMachine = new PluginStateMachine();
         _pluginStateMachine.TransitionTo(_pluginStateMachine.InitialState);
-
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
 

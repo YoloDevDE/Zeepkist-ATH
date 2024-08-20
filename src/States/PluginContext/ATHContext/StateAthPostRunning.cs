@@ -26,11 +26,9 @@ public class StateAthPostRunning : IState
 
     public void Execute()
     {
-        ChatApi.SendMessage("Ath Post Running");
-        ChatApi.SendMessage("You got the AT. you got that many ATs so far. (imagine cool AT collects here)");
         SetServerMessage();
+        AthStateMachine.Ctx.AuthorMedals++;
     }
-
     public void Exit()
     {
         RacingApi.PlayerSpawned -= OnRoundStarted;

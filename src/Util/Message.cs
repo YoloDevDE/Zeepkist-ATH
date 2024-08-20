@@ -4,7 +4,7 @@ namespace AuthorTimeHunting.Util;
 
 public class Message
 {
-    private List<string> Lines { get; } = [];
+    private List<string> Lines { get; } = new List<string>();
 
     public override string ToString()
     {
@@ -27,6 +27,24 @@ public class Message
             return this;
         }
 
+        public Builder AddSeperator(string headline)
+        {
+            int totalWidth = 32;
+            int headlineLength = headline.Length + 2; // 2 spaces padding
+            int dashCount = (totalWidth - headlineLength) / 2;
+
+            string separator = new string('-', dashCount) + " " + headline + " " + new string('-', dashCount);
+
+            // Handle cases where the total width isn't perfectly divisible
+            if (separator.Length < totalWidth)
+            {
+                separator += "-";
+            }
+
+            _message.Lines.Add(separator);
+            return this;
+        }
+
         public Builder AddBreakSpace()
         {
             _message.Lines.Add("<br>");
@@ -42,20 +60,83 @@ public class Message
 
         private static string FormatKeyValue(string key, string value, int middleIndex, int totalWidth)
         {
-            int keySpace = middleIndex - 1; // Platz für den Schlüssel
-            int valueSpace = totalWidth - middleIndex - 1; // Platz für den Wert
+            int keySpace = middleIndex - 1;
+            int valueSpace = totalWidth - middleIndex - 1;
 
-            // Kürze Schlüssel und Wert, falls sie zu lang sind
-            string formattedKey = key.Length > keySpace ? key.Substring(0, keySpace) : key;
-            string formattedValue = value.Length > valueSpace ? value.Substring(0, valueSpace) : value;
+            // Adjust the key and value based on their emote-corrected lengths
+            string adjustedKey = AdjustStringForEmotes(key, keySpace);
+            string adjustedValue = AdjustStringForEmotes(value, valueSpace);
 
-            // Berechne das Padding für Schlüssel und Wert, berücksichtige den Doppelpunkt
-            int keyPadding = keySpace - formattedKey.Length;
-            int valuePadding = valueSpace - formattedValue.Length;
+            int keyPadding = keySpace - AdjustLengthForEmotes(adjustedKey);
+            int valuePadding = valueSpace - AdjustLengthForEmotes(adjustedValue);
 
-            // Füge den Doppelpunkt in der Mitte hinzu
             return
-                $"{formattedKey.PadRight(keyPadding + formattedKey.Length)}:{formattedValue.PadLeft(valuePadding + formattedValue.Length)}";
+                $"{adjustedKey.PadRight(keyPadding + AdjustLengthForEmotes(adjustedKey))}:{adjustedValue.PadLeft(valuePadding + AdjustLengthForEmotes(adjustedValue))}";
+        }
+
+// Helper method to adjust length based on emotes and truncate if necessary
+        private static string AdjustStringForEmotes(string input, int maxLength)
+        {
+            int length = 0;
+            bool insideEmote = false;
+            int i;
+
+            for (i = 0; i < input.Length; i++)
+            {
+                if (input[i] == ':')
+                {
+                    insideEmote = !insideEmote;
+
+                    // Count the colon itself as a single character, so add 1
+                    if (!insideEmote)
+                    {
+                        length += 1;
+                    }
+                }
+
+                // Only add to length if we are outside of an emote
+                if (!insideEmote || input[i] == ':')
+                {
+                    length++;
+                }
+
+                // Stop if we've reached the max length
+                if (length > maxLength)
+                {
+                    break;
+                }
+            }
+
+            return input.Substring(0, i);
+        }
+
+// Helper method to calculate the length accounting for emotes
+        private static int AdjustLengthForEmotes(string input)
+        {
+            int length = 0;
+            bool insideEmote = false;
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] == ':')
+                {
+                    insideEmote = !insideEmote;
+
+                    // Count the colon itself as a single character, so add 1
+                    if (!insideEmote)
+                    {
+                        length += 1;
+                    }
+                }
+
+                // Only add to length if we are outside of an emote
+                if (!insideEmote || input[i] == ':')
+                {
+                    length++;
+                }
+            }
+
+            return length;
         }
 
 

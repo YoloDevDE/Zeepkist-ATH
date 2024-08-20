@@ -6,10 +6,10 @@ using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.PluginContext.ATHContext;
 
-public class StateAthSpawning : IState
+public class StateAthPausing : IState
 {
     // Constructor
-    public StateAthSpawning(IStateMachine stateMachine)
+    public StateAthPausing(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -24,13 +24,8 @@ public class StateAthSpawning : IState
     {
         RacingApi.RoundStarted += OnRoundStarted;
         PhotoModeApi.PhotoModeEntered += OnRoundStarted;
-        AthStateMachine.Timer.Tick += TimerOnTick;
         RacingApi.RoundEnded += OnRoundEnded;
-    }
-
-    private void OnRoundEnded()
-    {
-        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
+        AthStateMachine.Timer.Tick += TimerOnTick;
     }
 
     public void Execute()
@@ -42,8 +37,13 @@ public class StateAthSpawning : IState
     {
         RacingApi.RoundStarted -= OnRoundStarted;
         PhotoModeApi.PhotoModeEntered -= OnRoundStarted;
-        AthStateMachine.Timer.Tick -= TimerOnTick;
         RacingApi.RoundEnded -= OnRoundEnded;
+        AthStateMachine.Timer.Tick -= TimerOnTick;
+    }
+
+    private void OnRoundEnded()
+    {
+        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
     }
 
     // Private Methods
