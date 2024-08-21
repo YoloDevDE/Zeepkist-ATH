@@ -1,5 +1,7 @@
-﻿using AuthorTimeHunting.Entities;
+﻿using System;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
+using ZeepSDK.Chat;
 using ZeepSDK.Level;
 using ZeepSDK.Racing;
 
@@ -25,6 +27,14 @@ public class StateAthLoading : IState
 
     public void Execute()
     {
+        if (AthStateMachine.Ctx.CurrentLevel != null)
+        {
+            AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
+            ChatApi.SendMessage(AthStateMachine.Ctx.MessageLoadingCodex());
+        }
+        else
+        {
+        }
     }
 
     public void Exit()
@@ -35,7 +45,7 @@ public class StateAthLoading : IState
 
     private void TimerOnTick()
     {
-        AthStateMachine.Ctx.LoadingTime += 1;
+        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
     private void OnLevelLoaded()

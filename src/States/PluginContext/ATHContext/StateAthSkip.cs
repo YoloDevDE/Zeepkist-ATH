@@ -1,14 +1,16 @@
-﻿using AuthorTimeHunting.Interfaces;
-using ZeepSDK.Chat;
+﻿using System;
+using AuthorTimeHunting.Interfaces;
 
 namespace AuthorTimeHunting.States.PluginContext.ATHContext;
 
 public class StateAthSkip : IState
-{    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+{
     public StateAthSkip(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
+
+    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     public IStateMachine StateMachine { get; }
 
@@ -18,9 +20,27 @@ public class StateAthSkip : IState
 
     public void Execute()
     {
-        ChatApi.SendMessage("...Checking if:<br> - time ran out<br> - forceskip was used<br> - other");
-        AthStateMachine.Ctx.Punishments++;
-        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
+        AthStateMachine.Ctx.CurrentLevel.LevelSkipped = true;
+        if (AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked)
+        {
+            StateMachine.TransitionTo(new StateAthGoldSkip(StateMachine));
+            return;
+        }
+
+        if (AthStateMachine.Ctx.FreeSkips > 0)
+        {
+            StateMachine.TransitionTo(new StateAthFreeskip(StateMachine));
+            return;
+        }
+
+        if (AthStateMachine.Ctx.EndTime <= DateTime.Now.AddSeconds(AthStateMachine.Ctx.PunishTimeInSeconds))
+        {
+            StateMachine.TransitionTo(new StateAthPunishExceeded(StateMachine));
+            return;
+        }
+
+
+        StateMachine.TransitionTo(new StateAthPunishSkip(StateMachine));
     }
 
     public void Exit()

@@ -3,12 +3,14 @@ using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.PluginContext.ATHContext;
 
-public class StateAthStopping : IState
+public class StateAthPunishSkip : IState
 {
-    public StateAthStopping(IStateMachine stateMachine)
+    public StateAthPunishSkip(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
+
+    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     public IStateMachine StateMachine { get; }
 
@@ -18,13 +20,12 @@ public class StateAthStopping : IState
 
     public void Execute()
     {
-        ChatApi.SendMessage("Finished you worm");
-        StateMachine.TransitionTo(null);
+        ChatApi.SendMessage("PunishSkip");
+        AthStateMachine.Ctx.Punishments++;
+        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
     }
 
     public void Exit()
     {
-        ChatApi.SendMessage("/servermessage remove");
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
     }
 }

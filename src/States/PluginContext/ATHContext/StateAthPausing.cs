@@ -49,7 +49,8 @@ public class StateAthPausing : IState
     // Private Methods
     private void TimerOnTick()
     {
-        AthStateMachine.Ctx.LoadingTime += 1;
+        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
+        AthStateMachine.Ctx.CurrentLevel.PauseDurationInSeconds += 1;
         SetServerMessage();
     }
 
@@ -61,6 +62,6 @@ public class StateAthPausing : IState
 
     private void OnRoundStarted()
     {
-        StateMachine.TransitionTo(new StateAthRunning(StateMachine));
+        StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
     }
 }

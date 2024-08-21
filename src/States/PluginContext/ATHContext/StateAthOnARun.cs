@@ -1,0 +1,80 @@
+﻿using System;
+using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Util;
+using ZeepSDK.Chat;
+using ZeepSDK.Racing;
+
+namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+
+public class StateAthOnARun : IState
+{
+    // Private Fields
+
+    // Constructor
+    public StateAthOnARun(IStateMachine stateMachine)
+    {
+        StateMachine = stateMachine;
+    }
+
+    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+
+    // Properties
+    public IStateMachine StateMachine { get; }
+
+    // Public Methods
+    public void Enter()
+    {
+        AthStateMachine.Timer.Tick += TimerOnTick;
+        RacingApi.RoundStarted += OnRoundNztStarted;
+        RacingApi.CrossedFinishLine += OnCrossedFinishLine;
+        RacingApi.RoundEnded += OnRoundNztEnded;
+    }
+
+
+    public void Execute()
+    {
+        if (AthStateMachine.Ctx.CurrentLevel.FirstTimePlayed)
+        {
+            AthStateMachine.Ctx.CurrentLevel.FirstTimePlayed = false;
+            AthStateMachine.Ctx.CurrentLevel.StartTime = DateTime.Now;
+        }
+
+        SetServerMessage();
+        AthStateMachine.Ctx.CurrentLevel.Attempt++;
+        ChatApi.SendMessage(AthStateMachine.Ctx.MessageRunning());
+    }
+
+    public void Exit()
+    {
+        AthStateMachine.Timer.Tick -= TimerOnTick;
+        RacingApi.RoundStarted -= OnRoundNztStarted;
+        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
+        RacingApi.RoundEnded -= OnRoundNztEnded;
+    }
+
+    private void OnRoundNztEnded()
+    {
+        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
+    }
+
+    private void OnCrossedFinishLine(float time)
+    {
+        StateMachine.TransitionTo(new StateAthEvaluateRun(StateMachine));
+    }
+
+    private void OnRoundNztStarted()
+    {
+        StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
+    }
+
+    private void TimerOnTick()
+    {
+        SetServerMessage();
+    }
+
+    private void SetServerMessage()
+    {
+        ChatApi.SendMessage(
+            $"/servermessage green 0 ATH running | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)}");
+    }
+}

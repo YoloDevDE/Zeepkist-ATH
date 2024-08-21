@@ -1,18 +1,24 @@
-﻿namespace AuthorTimeHunting.Entities;
+﻿using System;
+
+namespace AuthorTimeHunting.Entities;
 
 public class Level
 {
     public Level(LevelScriptableObject level)
     {
+        FirstTimePlayed = false;
         LevelUid = level.UID;
         Name = level.Name;
         Author = level.Author;
         AuthorTime = level.TimeAuthor;
         GoldTime = level.TimeGold;
-        Attempts = 0;
+        Attempt = 0;
         Crashes = 0;
         GoldSkipUnlocked = false;
         Levelbeaten = false;
+        LevelBroken = false;
+        LevelSkipped = false;
+        StartTime = DateTime.Now;
     }
 
     public string LevelUid { get; set; }
@@ -21,10 +27,17 @@ public class Level
     public double AuthorTime { get; set; }
     public double GoldTime { get; set; }
 
-    public int Attempts { get; set; }
+    public int Attempt { get; set; }
     public int Crashes { get; set; }
 
     public bool GoldSkipUnlocked { get; set; }
     public bool Levelbeaten { get; set; }
-    public bool FirstTimePlayed { get; set; } = true;
+    public bool LevelBroken { get; set; }
+    public bool LevelSkipped { get; set; }
+    public bool FirstTimePlayed { get; set; }
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; }
+    public TimeSpan Duration => (EndTime - StartTime.AddSeconds(PauseDurationInSeconds)).Duration();
+    public int PauseDurationInSeconds { get; set; }
+    public bool FreeSkipped { get; set; }
 }

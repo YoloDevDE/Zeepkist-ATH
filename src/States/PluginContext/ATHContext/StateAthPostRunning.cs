@@ -7,7 +7,6 @@ namespace AuthorTimeHunting.States.PluginContext.ATHContext;
 
 public class StateAthPostRunning : IState
 {
-    // Constructor
     public StateAthPostRunning(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
@@ -15,10 +14,8 @@ public class StateAthPostRunning : IState
 
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
-    // Properties
     public IStateMachine StateMachine { get; }
 
-    // Public Methods
     public void Enter()
     {
         RacingApi.PlayerSpawned += OnRoundStarted;
@@ -27,8 +24,8 @@ public class StateAthPostRunning : IState
     public void Execute()
     {
         SetServerMessage();
-        AthStateMachine.Ctx.AuthorMedals++;
     }
+
     public void Exit()
     {
         RacingApi.PlayerSpawned -= OnRoundStarted;

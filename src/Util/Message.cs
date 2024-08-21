@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace AuthorTimeHunting.Util;
 
@@ -18,6 +19,12 @@ public class Message
         public Builder AddLine(string line)
         {
             _message.Lines.Add(line);
+            return this;
+        }
+
+        public Builder ClearLines()
+        {
+            _message.Lines.AddRange(Enumerable.Repeat("<br>", 30));
             return this;
         }
 
@@ -53,92 +60,45 @@ public class Message
 
         public Builder AddKeyValue(string key, string value)
         {
-            string formattedLine = FormatKeyValue(key, value, 12, 24);
+            string formattedLine = FormatKeyValue(key, value, 16, 32);
             _message.Lines.Add(formattedLine);
             return this;
         }
 
         private static string FormatKeyValue(string key, string value, int middleIndex, int totalWidth)
         {
+            // Initialize temporary variables to store the removed parts
+            string removedKeyPart = string.Empty;
+            string removedValuePart = string.Empty;
+
+            // Remove everything between two colons in the key and store it in removedKeyPart
+            int keyColonStart = key.IndexOf(':');
+            int keyColonEnd = key.LastIndexOf(':');
+            if (keyColonStart != keyColonEnd && keyColonStart >= 0 && keyColonEnd > keyColonStart)
+            {
+                removedKeyPart = key.Substring(keyColonStart, keyColonEnd - keyColonStart + 1);
+                key = key.Remove(keyColonStart + 1, keyColonEnd - keyColonStart - 1);
+            }
+
+            // Remove everything between two colons in the value and store it in removedValuePart
+            int valueColonStart = value.IndexOf(':');
+            int valueColonEnd = value.LastIndexOf(':');
+            if (valueColonStart != valueColonEnd && valueColonStart >= 0 && valueColonEnd > valueColonStart)
+            {
+                removedValuePart = value.Substring(valueColonStart, valueColonEnd - valueColonStart + 1);
+                value = value.Remove(valueColonStart + 1, valueColonEnd - valueColonStart - 1);
+            }
+
+            // Calculate spaces for key and value
             int keySpace = middleIndex - 1;
             int valueSpace = totalWidth - middleIndex - 1;
 
-            // Adjust the key and value based on their emote-corrected lengths
-            string adjustedKey = AdjustStringForEmotes(key, keySpace);
-            string adjustedValue = AdjustStringForEmotes(value, valueSpace);
+            // Trim key and value if they exceed their spaces
+            string formattedKey = key.Length > keySpace ? key.Substring(0, keySpace) : key;
+            string formattedValue = value.Length > valueSpace ? value.Substring(0, valueSpace) : value;
 
-            int keyPadding = keySpace - AdjustLengthForEmotes(adjustedKey);
-            int valuePadding = valueSpace - AdjustLengthForEmotes(adjustedValue);
-
-            return
-                $"{adjustedKey.PadRight(keyPadding + AdjustLengthForEmotes(adjustedKey))}:{adjustedValue.PadLeft(valuePadding + AdjustLengthForEmotes(adjustedValue))}";
+            return formattedKey.PadRight(middleIndex - 1).Replace("::", $"{removedKeyPart}") + ":" + formattedValue.PadLeft(totalWidth - middleIndex).Replace("::", $"{removedValuePart}");
         }
-
-// Helper method to adjust length based on emotes and truncate if necessary
-        private static string AdjustStringForEmotes(string input, int maxLength)
-        {
-            int length = 0;
-            bool insideEmote = false;
-            int i;
-
-            for (i = 0; i < input.Length; i++)
-            {
-                if (input[i] == ':')
-                {
-                    insideEmote = !insideEmote;
-
-                    // Count the colon itself as a single character, so add 1
-                    if (!insideEmote)
-                    {
-                        length += 1;
-                    }
-                }
-
-                // Only add to length if we are outside of an emote
-                if (!insideEmote || input[i] == ':')
-                {
-                    length++;
-                }
-
-                // Stop if we've reached the max length
-                if (length > maxLength)
-                {
-                    break;
-                }
-            }
-
-            return input.Substring(0, i);
-        }
-
-// Helper method to calculate the length accounting for emotes
-        private static int AdjustLengthForEmotes(string input)
-        {
-            int length = 0;
-            bool insideEmote = false;
-
-            for (int i = 0; i < input.Length; i++)
-            {
-                if (input[i] == ':')
-                {
-                    insideEmote = !insideEmote;
-
-                    // Count the colon itself as a single character, so add 1
-                    if (!insideEmote)
-                    {
-                        length += 1;
-                    }
-                }
-
-                // Only add to length if we are outside of an emote
-                if (!insideEmote || input[i] == ':')
-                {
-                    length++;
-                }
-            }
-
-            return length;
-        }
-
 
         public Message Build()
         {

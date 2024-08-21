@@ -1,37 +1,28 @@
 ﻿using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.PluginContext.ATHContext;
 
-public class StateAthStarting : IState
+public class StateAthFreeskip : IState
 {
-    // Constructor
-    public StateAthStarting(IStateMachine stateMachine)
+    public StateAthFreeskip(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
-    // Properties
     public IStateMachine StateMachine { get; }
 
-    // Public Methods
     public void Enter()
     {
+        AthStateMachine.Ctx.FreeSkips--;
+        AthStateMachine.Ctx.CurrentLevel.FreeSkipped = true;
     }
 
     public void Execute()
     {
-        // Starting Text
-        ChatApi.SendMessage("/settime 86400");
-        ChatApi.SendMessage("/fs");
-        Messenger.SendChat(
-            AthStateMachine.Ctx.MessageStarting()
-        );
-
-        AthStateMachine.StartTimer();
+        ChatApi.SendMessage("Freeskip");
         StateMachine.TransitionTo(new StateAthLoading(StateMachine));
     }
 

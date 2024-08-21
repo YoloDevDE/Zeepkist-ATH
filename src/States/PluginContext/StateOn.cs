@@ -18,7 +18,6 @@ public class StateOn : IState
 
 
     public IStateMachine SubStateMachine { get; }
-    public IState CurrentState { get; set; }
 
     // Properties
     public IStateMachine StateMachine { get; }
@@ -37,12 +36,11 @@ public class StateOn : IState
 
     public void Execute()
     {
-        // No additional implementation needed in Execute for this state
     }
+
 
     public void Exit()
     {
-        SubStateMachine.Stop();
         CommandStop.CommandTrigger -= StopChallenge;
         CommandStart.CommandTrigger -= StartChallenge;
         CommandRestart.CommandTrigger -= ReStartChallenge;
@@ -55,8 +53,6 @@ public class StateOn : IState
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
     }
 
-    // Events
-    public event IStateMachine.StateMachineFinishedDelegate OnStateMachineFinished;
 
     // Private Methods
     private void StartChallenge()

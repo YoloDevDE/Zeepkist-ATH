@@ -1,14 +1,14 @@
-﻿namespace AuthorTimeHunting.Interfaces;
+﻿using System;
+
+namespace AuthorTimeHunting.Interfaces;
 
 public interface IStateMachine
 {
-    delegate void StateMachineFinishedDelegate();
-
     IState CurrentState { get; set; }
     IState InitialState { get; }
     IState LastState { get; }
 
-    event StateMachineFinishedDelegate OnStateMachineFinished;
+    event Action StateMachineFinished;
 
     void TransitionTo(IState nextState)
     {

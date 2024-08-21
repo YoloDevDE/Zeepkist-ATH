@@ -1,4 +1,5 @@
-﻿using AuthorTimeHunting.Interfaces;
+﻿using System;
+using AuthorTimeHunting.Interfaces;
 
 namespace AuthorTimeHunting.States.PluginContext;
 
@@ -11,7 +12,8 @@ public class PluginStateMachine : IStateMachine
     }
 
     public IState LastState { get; set; }
-    public event IStateMachine.StateMachineFinishedDelegate OnStateMachineFinished;
+    public event Action StateMachineFinished;
+
     public IState CurrentState { get; set; }
     public IState InitialState { get; set; }
 }
