@@ -17,6 +17,7 @@ public class StateAthFreeskip : IState
     public void Enter()
     {
         AthStateMachine.Ctx.FreeSkips--;
+
         AthStateMachine.Ctx.CurrentLevel.FreeSkipped = true;
     }
 
