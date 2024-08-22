@@ -16,7 +16,7 @@ public class AthCtx
     public int Duration { get; } = 60 * 60;
     public int LoadingTimeInSeconds { get; set; } = 0;
     public int PauseTimeInSeconds { get; } = 0;
-    public int PunishTimeInSeconds { get; } = 300;
+    public int PunishTime { get; } = 60 * 5;
 
     public int RewardTime { get; } = 0;
 
@@ -32,7 +32,7 @@ public class AthCtx
             .AddSeconds(Duration + 1)
             .AddSeconds(PauseTimeInSeconds)
             .AddSeconds(LoadingTimeInSeconds)
-            .AddSeconds(-(PunishTimeInSeconds * Punishments));
+            .AddSeconds(-(PunishTime * Punishments));
 
     public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).Duration();
     public int AuthorMedals { get; set; } = 0;
@@ -51,7 +51,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("Reward/AT", "off")
             .AddBreakSpace()
-            .AddKeyValue("Punishment", $"{PunishTimeInSeconds / 60} min")
+            .AddKeyValue("Punishment", $"{PunishTime / 60} min")
             .Build()
             .ToString();
     }
@@ -88,7 +88,12 @@ public class AthCtx
     {
         double result = ZeepkistNetwork.LocalPlayer.CurrentResult.Time - CurrentLevel.AuthorTime;
         double positiveResult = Math.Abs(result);
-
+        string diffDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
+            ? $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}"
+            : "--:--.---";
+        string resultDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
+            ? $"{ZeepkistNetwork.LocalPlayer.CurrentResult.Time.GetFormattedTime()}"
+            : "--:--.---";
         return
             new Message.Builder()
                 .ClearLines()
@@ -98,7 +103,9 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
                 .AddBreakSpace()
-                .AddKeyValue("Diff", $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}")
+                .AddKeyValue("Your Time", resultDisplay)
+                .AddBreakSpace()
+                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
                 .AddBreakSpace()
                 .AddSeperator("Stats")
                 .AddBreakSpace()
@@ -119,9 +126,11 @@ public class AthCtx
     {
         double result = ZeepkistNetwork.LocalPlayer.CurrentResult?.Time - CurrentLevel.AuthorTime ?? 0;
         double positiveResult = Math.Abs(result);
-
         string diffDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
             ? $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}"
+            : "--:--.---";
+        string resultDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
+            ? $"{ZeepkistNetwork.LocalPlayer.CurrentResult.Time.GetFormattedTime()}"
             : "--:--.---";
 
         return
@@ -131,11 +140,15 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddSeperator("Result")
                 .AddBreakSpace()
-                .AddKeyValue("Status", $"{(CurrentLevel.Levelbeaten ? "Completed" : CurrentLevel.LevelBroken ? "Lvl broken" : CurrentLevel.GoldSkipUnlocked ? "Gold Skipped" :  CurrentLevel.FreeSkipped ? "Free Skipped" : "Failed")}")
+                .AddKeyValue("Status", $"{(CurrentLevel.Levelbeaten ? "Completed" : CurrentLevel.LevelBroken ? "Lvl Broken" : CurrentLevel.GoldSkipUnlocked ? "Gold Skipped" : CurrentLevel.FreeSkipped ? "Free Skipped" : "Failed")}")
+                .AddBreakSpace()
+                .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}")
                 .AddBreakSpace()
                 .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
                 .AddBreakSpace()
-                .AddKeyValue("Diff", diffDisplay)
+                .AddKeyValue("Your Time", resultDisplay)
+                .AddBreakSpace()
+                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
                 .AddBreakSpace()
                 .AddKeyValue("Attempts", $"{CurrentLevel.Attempt}")
                 .AddBreakSpace()

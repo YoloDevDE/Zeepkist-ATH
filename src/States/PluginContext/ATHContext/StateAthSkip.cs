@@ -33,7 +33,7 @@ public class StateAthSkip : IState
             return;
         }
 
-        if (AthStateMachine.Ctx.EndTime <= DateTime.Now.AddSeconds(AthStateMachine.Ctx.PunishTimeInSeconds))
+        if (AthStateMachine.Ctx.EndTime <= DateTime.Now.AddSeconds(AthStateMachine.Ctx.PunishTime))
         {
             StateMachine.TransitionTo(new StateAthPunishExceeded(StateMachine));
             return;

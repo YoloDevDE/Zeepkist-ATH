@@ -60,7 +60,7 @@ public class Message
 
         public Builder AddKeyValue(string key, string value)
         {
-            string formattedLine = FormatKeyValue(key, value, 16, 32);
+            string formattedLine = FormatKeyValue(key, value, 15, 30);
             _message.Lines.Add(formattedLine);
             return this;
         }

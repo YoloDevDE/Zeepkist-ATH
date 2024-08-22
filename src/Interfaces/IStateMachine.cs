@@ -8,23 +8,29 @@ public interface IStateMachine
     IState InitialState { get; }
     IState LastState { get; }
 
-    event Action StateMachineFinished;
+    event Action StateChanged;
 
     void TransitionTo(IState nextState)
     {
-        CurrentState?.SubStateMachine?.Stop();
-        CurrentState?.Exit();
+        if (CurrentState != null)
+        {
+            CurrentState.SubStateMachine?.Stop();
+            CurrentState.Exit();
+        }
+
         if (nextState != null)
         {
             CurrentState = nextState;
             CurrentState.Enter();
             CurrentState.Execute();
+            CurrentState.SubStateMachine?.TransitionTo(CurrentState.SubStateMachine.InitialState);
         }
         else
         {
             Stop();
         }
     }
+
 
     void Stop()
     {
@@ -34,7 +40,25 @@ public interface IStateMachine
         }
 
         CurrentState.SubStateMachine?.Stop();
-        CurrentState.StateMachine.TransitionTo(CurrentState.StateMachine.LastState);
         CurrentState.Exit();
+
+        if (LastState == null)
+        {
+            return;
+        }
+
+        if (CurrentState != LastState)
+        {
+            CurrentState = LastState;
+            CurrentState.Enter();
+            CurrentState.Execute();
+        }
+
+        CurrentState.Exit();
+    }
+
+    void Reset()
+    {
+        TransitionTo(InitialState);
     }
 }

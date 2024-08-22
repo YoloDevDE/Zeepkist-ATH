@@ -10,6 +10,9 @@ public class StateAthStopping : IState
         StateMachine = stateMachine;
     }
 
+    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+
+    // Properties
     public IStateMachine StateMachine { get; }
 
     public void Enter()
@@ -19,7 +22,7 @@ public class StateAthStopping : IState
     public void Execute()
     {
         ChatApi.SendMessage("Finished you worm");
-        StateMachine.TransitionTo(null);
+        AthStateMachine.StopTimer();
     }
 
     public void Exit()

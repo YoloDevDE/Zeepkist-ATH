@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.PluginContext.ATHContext;
 using AuthorTimeHunting.Util;
+using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
@@ -30,8 +31,7 @@ public class StateOn : IState
         CommandRestart.CommandTrigger += ReStartChallenge;
         MultiplayerApi.DisconnectedFromGame += StopChallenge;
         RacingApi.RoundStarted += OnRoundStarted;
-
-        SubStateMachine.TransitionTo(new StateAthStarting(SubStateMachine));
+        SubStateMachine.StateChanged += Update;
     }
 
     public void Execute()
@@ -46,6 +46,18 @@ public class StateOn : IState
         CommandRestart.CommandTrigger -= ReStartChallenge;
         MultiplayerApi.DisconnectedFromGame -= StopChallenge;
         RacingApi.RoundStarted -= OnRoundStarted;
+        SubStateMachine.StateChanged -= Update;
+    }
+
+    private void Update()
+    {
+        if (SubStateMachine.CurrentState != SubStateMachine.LastState)
+        {
+            return;
+        }
+
+        StateMachine.Reset();
+        ChatApi.SendMessage("Stopped");
     }
 
     private void OnRoundStarted()
@@ -68,7 +80,6 @@ public class StateOn : IState
 
     private void ReStartChallenge()
     {
-        Messenger.Notify().LogWarning("restarted");
-        StateMachine.TransitionTo(new StateOn(StateMachine));
+        SubStateMachine.TransitionTo(SubStateMachine.LastState);
     }
 }

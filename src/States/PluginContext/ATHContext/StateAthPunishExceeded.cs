@@ -21,6 +21,7 @@ public class StateAthPunishExceeded : IState
     public void Execute()
     {
         ChatApi.SendMessage("PunishExceeded");
+        StateMachine.TransitionTo(StateMachine.LastState);
     }
 
     public void Exit()

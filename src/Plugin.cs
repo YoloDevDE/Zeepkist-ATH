@@ -12,7 +12,7 @@ namespace AuthorTimeHunting;
 public class Plugin : BaseUnityPlugin
 {
     private Harmony _harmony;
-    private IStateMachine _pluginStateMachine;
+    private IStateMachine _masterStateMachine;
 
     private void Awake()
     {
@@ -24,8 +24,8 @@ public class Plugin : BaseUnityPlugin
         ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
 
-        _pluginStateMachine = new PluginStateMachine();
-        _pluginStateMachine.TransitionTo(_pluginStateMachine.InitialState);
+        _masterStateMachine = new MasterStateMachine();
+        _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
 

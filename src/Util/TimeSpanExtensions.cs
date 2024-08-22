@@ -8,17 +8,20 @@ public static class TimeSpanExtensions
     {
         if (timeSpan.TotalHours >= 1)
         {
-            // Format with hours, minutes, and seconds (without milliseconds)
-            return string.Format("{0:D2}:{1:D2}:{2:D2}",
+            return string.Format("{0:D1}h {1:D1}m {2:D1}s",
                 (int)timeSpan.TotalHours,
                 timeSpan.Minutes,
                 timeSpan.Seconds);
         }
 
-        // Format with minutes, seconds, and milliseconds
-        return string.Format("{0:D2}:{1:D2}.{2:D3}",
-            timeSpan.Minutes,
-            timeSpan.Seconds,
-            timeSpan.Milliseconds);
+        if (timeSpan.TotalMinutes >= 1)
+        {
+            return string.Format("{0:D1}m {1:D1}s",
+                timeSpan.Minutes,
+                timeSpan.Seconds);
+        }
+
+        return string.Format("{0:D1}s",
+            timeSpan.Seconds);
     }
 }

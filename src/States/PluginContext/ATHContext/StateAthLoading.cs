@@ -32,9 +32,6 @@ public class StateAthLoading : IState
             AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
             ChatApi.SendMessage(AthStateMachine.Ctx.MessageLoadingCodex());
         }
-        else
-        {
-        }
     }
 
     public void Exit()
