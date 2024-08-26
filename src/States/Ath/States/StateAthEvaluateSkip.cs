@@ -1,11 +1,12 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthSkip : IState
+public class StateAthEvaluateSkip : IState
 {
-    public StateAthSkip(IStateMachine stateMachine)
+    public StateAthEvaluateSkip(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -40,7 +41,7 @@ public class StateAthSkip : IState
         }
 
 
-        StateMachine.TransitionTo(new StateAthPunishSkip(StateMachine));
+        StateMachine.TransitionTo(new StateAthPenaltySkip(StateMachine));
     }
 
     public void Exit()

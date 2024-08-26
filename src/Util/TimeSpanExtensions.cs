@@ -6,22 +6,32 @@ public static class TimeSpanExtensions
 {
     public static string ToFormattedString(this TimeSpan timeSpan)
     {
-        if (timeSpan.TotalHours >= 1)
+        string tmp = "";
+        if (timeSpan.Days >= 1)
         {
-            return string.Format("{0:D1}h {1:D1}m {2:D1}s",
-                (int)timeSpan.TotalHours,
-                timeSpan.Minutes,
-                timeSpan.Seconds);
+            tmp += $"{timeSpan.Days}d ";
         }
 
-        if (timeSpan.TotalMinutes >= 1)
+        if (timeSpan.Hours >= 1)
         {
-            return string.Format("{0:D1}m {1:D1}s",
-                timeSpan.Minutes,
-                timeSpan.Seconds);
+            tmp += $"{timeSpan.Hours}h ";
         }
 
-        return string.Format("{0:D1}s",
-            timeSpan.Seconds);
+        if (timeSpan.Minutes >= 1)
+        {
+            tmp += $"{timeSpan.Minutes}m ";
+        }
+
+        if (timeSpan.Seconds >= 1)
+        {
+            tmp += $"{timeSpan.Seconds}s ";
+        }
+
+        if (timeSpan.Milliseconds >= 1)
+        {
+            tmp += $"{timeSpan.Milliseconds}ms ";
+        }
+
+        return tmp.Trim();
     }
 }

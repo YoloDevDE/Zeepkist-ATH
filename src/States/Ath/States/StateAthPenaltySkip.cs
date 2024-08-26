@@ -1,11 +1,12 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepSDK.Chat;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthPunishSkip : IState
+public class StateAthPenaltySkip : IState
 {
-    public StateAthPunishSkip(IStateMachine stateMachine)
+    public StateAthPenaltySkip(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -22,7 +23,7 @@ public class StateAthPunishSkip : IState
     {
         ChatApi.SendMessage("PunishSkip");
         AthStateMachine.Ctx.Punishments++;
-        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
+        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 
     public void Exit()

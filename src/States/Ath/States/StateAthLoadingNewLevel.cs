@@ -1,15 +1,16 @@
 ﻿using System;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
 using ZeepSDK.Racing;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthLoading : IState
+public class StateAthLoadingNewLevel : IState
 {
-    public StateAthLoading(IStateMachine stateMachine)
+    public StateAthLoadingNewLevel(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -27,11 +28,13 @@ public class StateAthLoading : IState
 
     public void Execute()
     {
-        if (AthStateMachine.Ctx.CurrentLevel != null)
+        if (AthStateMachine.Ctx.CurrentLevel == null)
         {
-            AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
-            ChatApi.SendMessage(AthStateMachine.Ctx.MessageLoadingCodex());
+            return;
         }
+
+        AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
+        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLoadingCodex());
     }
 
     public void Exit()
@@ -48,6 +51,7 @@ public class StateAthLoading : IState
     private void OnLevelLoaded()
     {
         AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
+        AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 }

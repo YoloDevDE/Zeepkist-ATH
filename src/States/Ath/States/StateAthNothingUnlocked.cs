@@ -1,16 +1,18 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepSDK.Chat;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthGoldSkip : IState
+public class StateAthNothingUnlocked : IState
 {
-    public StateAthGoldSkip(IStateMachine stateMachine)
+    public StateAthNothingUnlocked(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+
 
     public IStateMachine StateMachine { get; }
 
@@ -20,8 +22,8 @@ public class StateAthGoldSkip : IState
 
     public void Execute()
     {
-        ChatApi.SendMessage("Goldskip");
-        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
+        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLevelResult());
+        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 
     public void Exit()

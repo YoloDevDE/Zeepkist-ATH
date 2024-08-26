@@ -1,7 +1,8 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.PluginContext;
+using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
+using BepInEx.Logging;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
 
@@ -13,6 +14,8 @@ public class Plugin : BaseUnityPlugin
 {
     private Harmony _harmony;
     private IStateMachine _masterStateMachine;
+    public ManualLogSource Log;
+
 
     private void Awake()
     {
@@ -23,6 +26,7 @@ public class Plugin : BaseUnityPlugin
         ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
+
 
         _masterStateMachine = new MasterStateMachine();
         _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);

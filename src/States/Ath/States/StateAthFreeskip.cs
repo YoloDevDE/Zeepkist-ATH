@@ -1,7 +1,8 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepSDK.Chat;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthFreeskip : IState
 {
@@ -24,7 +25,7 @@ public class StateAthFreeskip : IState
     public void Execute()
     {
         ChatApi.SendMessage("Freeskip");
-        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
+        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 
     public void Exit()

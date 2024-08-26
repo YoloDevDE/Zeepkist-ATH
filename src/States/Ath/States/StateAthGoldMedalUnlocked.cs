@@ -1,9 +1,10 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepSDK.Chat;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthGoldMedalUnlocked : IState
 {
@@ -24,8 +25,8 @@ public class StateAthGoldMedalUnlocked : IState
 
     public void Execute()
     {
-        Messenger.Notify().LogCustomColors("You've got the Gold Medal !<br>Gold Skip: Unlocked", Color.black, new Color(1f, 0.84f, 0f), 7.5f);
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageFinish());
+        Messenger.Notify().LogCustomColors("Gold Medal acquired!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 10f);
+        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLevelResult());
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 

@@ -1,10 +1,12 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
+using UnityEngine;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthOnARun : IState
 {
@@ -54,7 +56,7 @@ public class StateAthOnARun : IState
 
     private void OnRoundNztEnded()
     {
-        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
+        StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
     }
 
     private void OnCrossedFinishLine(float time)
@@ -70,11 +72,16 @@ public class StateAthOnARun : IState
     private void TimerOnTick()
     {
         SetServerMessage();
+        if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime)
+        {
+            AthStateMachine.Ctx.TimeIsRunningLow = true;
+            Messenger.Notify().LogCustomColors("Time is running low!<br>A penalty skip will end the run!", Color.white, Color.red, 10f);
+        }
     }
 
     private void SetServerMessage()
     {
         ChatApi.SendMessage(
-            $"/servermessage green 0 ATH running | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)}");
+            $"/servermessage {(AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime ? "red" : "green")} 0 ATH running | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)}");
     }
 }

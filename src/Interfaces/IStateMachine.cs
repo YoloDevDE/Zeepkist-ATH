@@ -1,64 +1,52 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace AuthorTimeHunting.Interfaces;
 
 public interface IStateMachine
 {
     IState CurrentState { get; set; }
-    IState InitialState { get; }
-    IState LastState { get; }
+    [NotNull] IState InitialState { get; }
+    [NotNull] IState FinalState { get; }
+    event Action StateMachineFinished;
 
-    event Action StateChanged;
-
-    void TransitionTo(IState nextState)
+    void TransitionTo([NotNull] IState nextState)
     {
         if (CurrentState != null)
         {
-            CurrentState.SubStateMachine?.Stop();
+            Console.WriteLine($"[{GetType().Name}] Exiting state: {CurrentState.GetType().Name}");
+
+            CurrentState.SubStateMachine?.Shutdown();
+
             CurrentState.Exit();
         }
 
-        if (nextState != null)
+        CurrentState = nextState;
+        Console.WriteLine($"[{GetType().Name}] Entering state: {CurrentState.GetType().Name}");
+        CurrentState.Enter();
+        Console.WriteLine($"[{GetType().Name}] Executing state: {CurrentState.GetType().Name}");
+        CurrentState.Execute();
+
+        CurrentState.SubStateMachine?.Startup();
+        if (CurrentState == FinalState)
         {
-            CurrentState = nextState;
-            CurrentState.Enter();
-            CurrentState.Execute();
-            CurrentState.SubStateMachine?.TransitionTo(CurrentState.SubStateMachine.InitialState);
-        }
-        else
-        {
-            Stop();
+            InvokeShutdown();
         }
     }
 
-
-    void Stop()
+    void Shutdown()
     {
-        if (CurrentState == null)
-        {
-            return;
-        }
-
-        CurrentState.SubStateMachine?.Stop();
-        CurrentState.Exit();
-
-        if (LastState == null)
-        {
-            return;
-        }
-
-        if (CurrentState != LastState)
-        {
-            CurrentState = LastState;
-            CurrentState.Enter();
-            CurrentState.Execute();
-        }
-
+        Console.WriteLine($"[{GetType().Name}] Transitioning from '{CurrentState.GetType().Name}' to final state: '{FinalState.GetType().Name}'");
+        TransitionTo(FinalState);
+        InvokeShutdown();
+        Console.WriteLine($"[{GetType().Name}] Exiting state: {CurrentState.GetType().Name}");
         CurrentState.Exit();
     }
 
-    void Reset()
+    void Startup()
     {
         TransitionTo(InitialState);
     }
+
+    void InvokeShutdown();
 }

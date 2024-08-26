@@ -1,9 +1,11 @@
 ﻿using System;
-using AuthorTimeHunting.Entities;
+using System.Collections.Generic;
+using System.Linq;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
+using ZeepkistNetworking;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.Entities;
 
 public class AthCtx
 {
@@ -13,9 +15,11 @@ public class AthCtx
 
     // Properties
     public DateTime StartTime { get; } = DateTime.Now;
-    public int Duration { get; } = 60 * 60;
+    public int Duration { get; } = 60 * 15;
     public int LoadingTimeInSeconds { get; set; } = 0;
-    public int PauseTimeInSeconds { get; } = 0;
+
+    public int PauseTimeInSeconds { get; set; } = 0;
+
     public int PunishTime { get; } = 60 * 5;
 
     public int RewardTime { get; } = 0;
@@ -23,10 +27,14 @@ public class AthCtx
     public int Punishments { set; get; } = 0;
     public int FreeSkips { get; set; } = 1;
 
+    public bool TimeIsRunningLow { get; set; } = false;
     public Level CurrentLevel { get; set; }
+    public List<Level> Levels { get; set; } = new List<Level>();
 
 
-    // Computed Properties
+    public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).Duration();
+    public int AuthorMedals { get; set; } = 0;
+
     public DateTime EndTime =>
         StartTime
             .AddSeconds(Duration + 1)
@@ -34,8 +42,8 @@ public class AthCtx
             .AddSeconds(LoadingTimeInSeconds)
             .AddSeconds(-(PunishTime * Punishments));
 
-    public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).Duration();
-    public int AuthorMedals { get; set; } = 0;
+    public bool Stopped { get; set; } = false;
+
 
     public string MessageStarting()
     {
@@ -45,16 +53,57 @@ public class AthCtx
             .AddBreakSpace()
             .AddSeperator()
             .AddBreakSpace()
-            .AddKeyValue("Duration", $"{Duration / 60} min")
+            .AddKeyValue("Duration", $"{TimeSpan.FromSeconds(Duration).ToFormattedString()}")
             .AddBreakSpace()
             .AddKeyValue("Free-Skips", $"{FreeSkips}")
             .AddBreakSpace()
             .AddKeyValue("Reward/AT", "off")
             .AddBreakSpace()
-            .AddKeyValue("Punishment", $"{PunishTime / 60} min")
+            .AddKeyValue("Punishment", $"{TimeSpan.FromSeconds(PunishTime).ToFormattedString()}")
             .Build()
             .ToString();
     }
+
+    public int CountTotalAttempts()
+    {
+        return Levels.Sum(level => level.Attempt);
+    }
+
+    public Level LevelWithLongestDuration()
+    {
+        return Levels
+            .Where(level => level.Levelbeaten)
+            .OrderByDescending(level => level.Duration)
+            .FirstOrDefault();
+    }
+
+    public Level LevelWithShortestDuration()
+    {
+        return Levels
+            .Where(level => level.Levelbeaten)
+            .OrderBy(level => level.Duration)
+            .FirstOrDefault();
+    }
+
+    public Level LevelThatWasVeryEasy()
+    {
+        return Levels
+            .Where(level => level.Levelbeaten)
+            .OrderBy(level => level.Attempt)
+            .ThenBy(level => level.Duration)
+            .FirstOrDefault();
+    }
+
+    public int CountLevelSkips()
+    {
+        return Levels.Count(level => level.LevelSkipped);
+    }
+
+    public int CountOneShotATs()
+    {
+        return Levels.Count(level => level.Levelbeaten && level.Attempt == 1);
+    }
+
 
     public string MessageRunning()
     {
@@ -84,54 +133,127 @@ public class AthCtx
                 .ToString();
     }
 
-    public string MessageFinish()
+    public string MessageLevelResult()
     {
-        double result = ZeepkistNetwork.LocalPlayer.CurrentResult.Time - CurrentLevel.AuthorTime;
-        double positiveResult = Math.Abs(result);
-        string diffDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
-            ? $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}"
-            : "--:--.---";
-        string resultDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
-            ? $"{ZeepkistNetwork.LocalPlayer.CurrentResult.Time.GetFormattedTime()}"
-            : "--:--.---";
-        return
-            new Message.Builder()
-                .ClearLines()
-                .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
+        PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
+
+        // Initialize default values
+        double result = 0;
+        double positiveResult = 0;
+        string diffDisplay = "--:--.---";
+        string resultDisplay = "--:--.---";
+
+        if (currentResult != null)
+        {
+            result = currentResult.Time - CurrentLevel.AuthorTime;
+            positiveResult = Math.Abs(result);
+            diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
+            resultDisplay = currentResult.Time.GetFormattedTime();
+        }
+
+        return new Message.Builder()
+            .ClearLines()
+            .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
+            .AddBreakSpace()
+            .AddSeperator("Result")
+            .AddBreakSpace()
+            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
+            .AddBreakSpace()
+            .AddKeyValue("Your Time", resultDisplay)
+            .AddBreakSpace()
+            .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+            .AddBreakSpace()
+            .AddSeperator("Stats")
+            .AddBreakSpace()
+            .AddKeyValue("Total ATs", $"{(CurrentLevel.Levelbeaten ? AuthorMedals - 1 : AuthorMedals)}{(CurrentLevel.Levelbeaten ? "+1" : "")}")
+            .AddBreakSpace()
+            .AddKeyValue("Attempt", $"{CurrentLevel.Attempt}{(!CurrentLevel.Levelbeaten ? "+1" : "")}")
+            .AddBreakSpace()
+            .AddSeperator("Misc")
+            .AddBreakSpace()
+            .AddKeyValue("Gold Skip", $"{(CurrentLevel.GoldSkipUnlocked ? "unlocked :zaagbladpad:" : "locked :zaagbladpadrood:")}")
+            .AddBreakSpace()
+            .AddKeyValue("Free Skips", $"{FreeSkips}")
+            .Build()
+            .ToString();
+    }
+
+    public string MessageFinalResult()
+    {
+        Level longestDurationLevel = LevelWithLongestDuration();
+        Level shortestDurationLevel = LevelWithShortestDuration();
+        Level easiestLevel = LevelThatWasVeryEasy();
+
+        Message.Builder builder = new Message.Builder()
+            .ClearLines()
+            .AddLine("Authortime Hunt finished! :party:")
+            .AddBreakSpace()
+            .AddSeperator("Result")
+            .AddBreakSpace()
+            .AddKeyValue("Total ATs", $"{AuthorMedals}")
+            .AddBreakSpace()
+            .AddKeyValue("Total Resets", $"{CountTotalAttempts()}")
+            .AddBreakSpace()
+            .AddKeyValue("Total Skips", $"{CountLevelSkips()}")
+            .AddBreakSpace()
+            .AddKeyValue("ATs Oneshotted!", $"{CountOneShotATs()}")
+            .AddBreakSpace();
+
+        // Conditionally add the section for the longest duration level
+        if (longestDurationLevel != null)
+        {
+            builder.AddSeperator("This was Time Consuming :yannics:")
                 .AddBreakSpace()
-                .AddSeperator("Result")
+                .AddLine($"{longestDurationLevel.Name} by {longestDurationLevel.Author}")
                 .AddBreakSpace()
-                .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
+                .AddKeyValue("Duration", $"{longestDurationLevel.Duration.ToFormattedString()}")
+                .AddBreakSpace();
+        }
+
+        // Conditionally add the section for the shortest duration level
+        if (shortestDurationLevel != null)
+        {
+            builder.AddSeperator("This was short! :smile:")
                 .AddBreakSpace()
-                .AddKeyValue("Your Time", resultDisplay)
+                .AddLine($"{shortestDurationLevel.Name} by {shortestDurationLevel.Author}")
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+                .AddKeyValue("Duration", $"{shortestDurationLevel.Duration.ToFormattedString()}")
+                .AddBreakSpace();
+        }
+
+        // Conditionally add the section for the easiest level
+        if (easiestLevel != null)
+        {
+            builder.AddSeperator("This was easy! :coolorange:")
                 .AddBreakSpace()
-                .AddSeperator("Stats")
+                .AddLine($"{easiestLevel.Name} by {easiestLevel.Author}")
                 .AddBreakSpace()
-                .AddKeyValue("Total ATs", $"{AuthorMedals}{(CurrentLevel.Levelbeaten ? "+1" : "")}")
+                .AddKeyValue("Duration", $"{easiestLevel.Duration.ToFormattedString()}")
                 .AddBreakSpace()
-                .AddKeyValue("Attempt", $"{CurrentLevel.Attempt}{(!CurrentLevel.Levelbeaten ? "+1" : "")}")
-                .AddBreakSpace()
-                .AddSeperator("Misc")
-                .AddBreakSpace()
-                .AddKeyValue("Gold Skip", $"{(CurrentLevel.GoldSkipUnlocked ? "unlocked :zaagbladpad:" : "locked :zaagbladpadrood:")}")
-                .AddBreakSpace()
-                .AddKeyValue("Free Skips", $"{FreeSkips}")
-                .Build()
-                .ToString();
+                .AddKeyValue("Attempts", $"{easiestLevel.Attempt}")
+                .AddBreakSpace();
+        }
+
+        return builder.Build().ToString();
     }
 
     public string MessageLoadingCodex()
     {
-        double result = ZeepkistNetwork.LocalPlayer.CurrentResult?.Time - CurrentLevel.AuthorTime ?? 0;
-        double positiveResult = Math.Abs(result);
-        string diffDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
-            ? $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}"
-            : "--:--.---";
-        string resultDisplay = ZeepkistNetwork.LocalPlayer.CurrentResult != null
-            ? $"{ZeepkistNetwork.LocalPlayer.CurrentResult.Time.GetFormattedTime()}"
-            : "--:--.---";
+        PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
+
+        // Initialize default values
+        double result = 0;
+        double positiveResult = 0;
+        string diffDisplay = "--:--.---";
+        string resultDisplay = "--:--.---";
+
+        if (currentResult != null)
+        {
+            result = currentResult.Time - CurrentLevel.AuthorTime;
+            positiveResult = Math.Abs(result);
+            diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
+            resultDisplay = currentResult.Time.GetFormattedTime();
+        }
 
         return
             new Message.Builder()
@@ -163,5 +285,10 @@ public class AthCtx
                 .AddKeyValue("Free Skips", $"{FreeSkips}")
                 .Build()
                 .ToString();
+    }
+
+    public bool IsTimeOver()
+    {
+        return DateTime.Now >= EndTime;
     }
 }

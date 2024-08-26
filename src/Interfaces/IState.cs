@@ -4,12 +4,7 @@ public interface IState
 {
     public IStateMachine StateMachine { get; }
 
-    public IStateMachine SubStateMachine
-    {
-        get => null;
-        set => SubStateMachine = value;
-    }
-
+    public IStateMachine SubStateMachine => null;
     void Enter();
     void Execute();
     void Exit();

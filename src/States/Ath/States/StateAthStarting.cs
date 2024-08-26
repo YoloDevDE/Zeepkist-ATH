@@ -1,8 +1,9 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthStarting : IState
 {
@@ -32,7 +33,7 @@ public class StateAthStarting : IState
         );
 
         AthStateMachine.StartTimer();
-        StateMachine.TransitionTo(new StateAthLoading(StateMachine));
+        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 
     public void Exit()

@@ -2,12 +2,12 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Util;
 
-namespace AuthorTimeHunting.States.PluginContext;
+namespace AuthorTimeHunting.States.Master.States;
 
-public class StateOff : IState
+public class StateMasterOff : IState, IRootState
 {
     // Constructor
-    public StateOff(IStateMachine stateMachine)
+    public StateMasterOff(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -38,8 +38,7 @@ public class StateOff : IState
     // Private Methods
     private void StartChallenge()
     {
-        Messenger.Notify().LogSuccess("started");
-        StateMachine.TransitionTo(new StateOn(StateMachine));
+        StateMachine.TransitionTo(new StateMasterOn(StateMachine));
     }
 
     private void StopChallenge()

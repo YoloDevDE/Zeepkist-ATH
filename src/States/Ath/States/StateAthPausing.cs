@@ -1,10 +1,11 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
 
-namespace AuthorTimeHunting.States.PluginContext.ATHContext;
+namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthPausing : IState
 {
@@ -43,13 +44,13 @@ public class StateAthPausing : IState
 
     private void OnRoundEnded()
     {
-        StateMachine.TransitionTo(new StateAthSkip(StateMachine));
+        StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
     }
 
     // Private Methods
     private void TimerOnTick()
     {
-        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
+        AthStateMachine.Ctx.PauseTimeInSeconds += 1;
         AthStateMachine.Ctx.CurrentLevel.PauseDurationInSeconds += 1;
         SetServerMessage();
     }

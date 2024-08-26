@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AuthorTimeHunting.Util;
@@ -38,17 +39,30 @@ public class Message
         {
             int totalWidth = 32;
             int headlineLength = headline.Length + 2; // 2 spaces padding
-            int dashCount = (totalWidth - headlineLength) / 2;
+            int dashCount = Math.Max((totalWidth - headlineLength) / 2, 0);
 
-            string separator = new string('-', dashCount) + " " + headline + " " + new string('-', dashCount);
-
-            // Handle cases where the total width isn't perfectly divisible
-            if (separator.Length < totalWidth)
+            // If the headline is too long, add lines above and below the headline
+            if (headlineLength > totalWidth)
             {
-                separator += "-";
+                string fullLine = new string('-', totalWidth);
+                _message.Lines.Add("<br>" + fullLine);
+                _message.Lines.Add(" " + headline + " ");
+                _message.Lines.Add("<br>" + fullLine);
+            }
+            else
+            {
+                // Create a separator with dashes on both sides
+                string separator = new string('-', dashCount) + " " + headline + " " + new string('-', dashCount);
+
+                // Handle cases where the total width isn't perfectly divisible
+                if (separator.Length < totalWidth)
+                {
+                    separator += "-";
+                }
+
+                _message.Lines.Add(separator);
             }
 
-            _message.Lines.Add(separator);
             return this;
         }
 
