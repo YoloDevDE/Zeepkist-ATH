@@ -75,7 +75,7 @@ public class StateAthOnARun : IState
         if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime)
         {
             AthStateMachine.Ctx.TimeIsRunningLow = true;
-            Messenger.Notify().LogCustomColors("Time is running low!<br>A penalty skip will end the run!", Color.white, Color.red, 10f);
+            Messenger.Notify().LogCustomColors("Time is running low!<br>A 'Penalty-Skip' will end the run!", Color.white, Color.red, 10f);
         }
     }
 

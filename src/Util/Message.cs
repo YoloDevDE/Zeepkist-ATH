@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace AuthorTimeHunting.Util;
@@ -37,34 +36,31 @@ public class Message
 
         public Builder AddSeperator(string headline)
         {
-            int totalWidth = 32;
-            int headlineLength = headline.Length + 2; // 2 spaces padding
-            int dashCount = Math.Max((totalWidth - headlineLength) / 2, 0);
+            const int totalWidth = 32; // Total width of the separator line
+            const char separatorChar = '-';
 
-            // If the headline is too long, add lines above and below the headline
-            if (headlineLength > totalWidth)
+            if (headline.Length >= totalWidth)
             {
-                string fullLine = new string('-', totalWidth);
-                _message.Lines.Add("<br>" + fullLine);
-                _message.Lines.Add(" " + headline + " ");
-                _message.Lines.Add("<br>" + fullLine);
+                _message.Lines.Add(new string(separatorChar, totalWidth));
+                _message.Lines.Add("<br>" + headline + "<br>");
+                _message.Lines.Add(new string(separatorChar, totalWidth));
             }
             else
             {
-                // Create a separator with dashes on both sides
-                string separator = new string('-', dashCount) + " " + headline + " " + new string('-', dashCount);
+                int padding = (totalWidth - headline.Length) / 2;
+                string centeredHeadline = new string(separatorChar, padding) + headline + new string(separatorChar, padding);
 
-                // Handle cases where the total width isn't perfectly divisible
-                if (separator.Length < totalWidth)
+                if (centeredHeadline.Length < totalWidth)
                 {
-                    separator += "-";
+                    centeredHeadline += separatorChar;
                 }
 
-                _message.Lines.Add(separator);
+                _message.Lines.Add(centeredHeadline);
             }
 
             return this;
         }
+
 
         public Builder AddBreakSpace()
         {

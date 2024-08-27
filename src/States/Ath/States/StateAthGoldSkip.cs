@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using ZeepSDK.Chat;
+using AuthorTimeHunting.Util;
+using UnityEngine;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -21,7 +22,7 @@ public class StateAthGoldSkip : IState
 
     public void Execute()
     {
-        ChatApi.SendMessage("Goldskip");
+        Messenger.Notify().LogCustomColors("'Gold-Skip' used", Color.black, new Color(1f, 0.84f, 0f), 5f);
         StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 

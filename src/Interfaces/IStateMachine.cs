@@ -15,9 +15,7 @@ public interface IStateMachine
         if (CurrentState != null)
         {
             Console.WriteLine($"[{GetType().Name}] Exiting state: {CurrentState.GetType().Name}");
-
-            CurrentState.SubStateMachine?.Shutdown();
-
+            CurrentState.SubStateMachine?.Dispose();
             CurrentState.Exit();
         }
 
@@ -26,27 +24,27 @@ public interface IStateMachine
         CurrentState.Enter();
         Console.WriteLine($"[{GetType().Name}] Executing state: {CurrentState.GetType().Name}");
         CurrentState.Execute();
-
-        CurrentState.SubStateMachine?.Startup();
-        if (CurrentState == FinalState)
-        {
-            InvokeShutdown();
-        }
+        CurrentState.SubStateMachine?.Init();
     }
 
-    void Shutdown()
+    void Dispose()
     {
         Console.WriteLine($"[{GetType().Name}] Transitioning from '{CurrentState.GetType().Name}' to final state: '{FinalState.GetType().Name}'");
         TransitionTo(FinalState);
-        InvokeShutdown();
         Console.WriteLine($"[{GetType().Name}] Exiting state: {CurrentState.GetType().Name}");
         CurrentState.Exit();
     }
 
-    void Startup()
+    void StateMachineFinishedNotify()
+    {
+        Console.WriteLine($"[{GetType().Name}] Transitioning from '{CurrentState.GetType().Name}' to final state: '{FinalState.GetType().Name}'");
+        InvokeFinish();
+    }
+
+    void Init()
     {
         TransitionTo(InitialState);
     }
 
-    void InvokeShutdown();
+    void InvokeFinish();
 }

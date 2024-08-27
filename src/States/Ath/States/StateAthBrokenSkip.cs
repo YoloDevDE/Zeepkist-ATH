@@ -4,9 +4,9 @@ using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthPenaltySkip : IState
+public class StateAthBrokenSkip : IState
 {
-    public StateAthPenaltySkip(IStateMachine stateMachine)
+    public StateAthBrokenSkip(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
@@ -21,8 +21,9 @@ public class StateAthPenaltySkip : IState
 
     public void Execute()
     {
-        Messenger.Notify().LogError("'Penalty-Skip' used", 5f);
-        AthStateMachine.Ctx.Punishments++;
+        Messenger.Notify().LogWarning("'broken-Skip' used<br>Spent time refunded", 5f);
+        AthStateMachine.Ctx.BrokenTimeInSeconds += (int)AthStateMachine.Ctx.CurrentLevel.Duration.TotalSeconds;
+
         StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 

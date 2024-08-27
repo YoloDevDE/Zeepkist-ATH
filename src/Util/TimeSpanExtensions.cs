@@ -27,7 +27,7 @@ public static class TimeSpanExtensions
             tmp += $"{timeSpan.Seconds}s ";
         }
 
-        if (timeSpan.Milliseconds >= 1)
+        if (timeSpan.Milliseconds >= 1 && timeSpan.TotalSeconds < 10)
         {
             tmp += $"{timeSpan.Milliseconds}ms ";
         }

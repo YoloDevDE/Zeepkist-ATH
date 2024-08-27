@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
+using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
@@ -29,6 +30,7 @@ public class StateMasterOn : IState
         CommandRestart.CommandTrigger += Restart;
         RacingApi.RoundStarted += OnRoundStarted;
         AthStateMachine.Timer.Tick += OnTimerTick;
+        CommandSkipBroken.CommandTrigger += SkipBrokenLevel;
         SubStateMachine.StateMachineFinished += Stop;
         Messenger.Notify().Log("started");
     }
@@ -46,7 +48,17 @@ public class StateMasterOn : IState
         CommandRestart.CommandTrigger -= Restart;
         RacingApi.RoundStarted -= OnRoundStarted;
         AthStateMachine.Timer.Tick -= OnTimerTick;
+        CommandSkipBroken.CommandTrigger -= SkipBrokenLevel;
         SubStateMachine.StateMachineFinished -= Stop;
+    }
+
+    private void SkipBrokenLevel()
+    {
+        if (AthStateMachine.Ctx.CurrentLevel != null)
+        {
+            AthStateMachine.Ctx.CurrentLevel.LevelBroken = true;
+            ChatApi.SendMessage("/fs");
+        }
     }
 
     private void Restart()
@@ -56,7 +68,6 @@ public class StateMasterOn : IState
 
     private void Stop()
     {
-        SubStateMachine.StateMachineFinished -= Stop;
         StateMachine.TransitionTo(new StateMasterOff(StateMachine));
     }
 

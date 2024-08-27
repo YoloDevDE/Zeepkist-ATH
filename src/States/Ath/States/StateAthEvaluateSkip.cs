@@ -22,6 +22,12 @@ public class StateAthEvaluateSkip : IState
     public void Execute()
     {
         AthStateMachine.Ctx.CurrentLevel.LevelSkipped = true;
+        if (AthStateMachine.Ctx.CurrentLevel.LevelBroken)
+        {
+            StateMachine.TransitionTo(new StateAthBrokenSkip(StateMachine));
+            return;
+        }
+
         if (AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked)
         {
             StateMachine.TransitionTo(new StateAthGoldSkip(StateMachine));

@@ -19,15 +19,14 @@ public class AthStateMachine : IStateMachine
     public AthTimer Timer { get; set; }
     public AthCtx Ctx { get; set; }
 
-    public bool Stopped { get; set; }
+
     public IState CurrentState { get; set; }
     public IState InitialState { get; }
     public IState FinalState { get; }
     public event Action StateMachineFinished;
 
-    public void InvokeShutdown()
+    public void InvokeFinish()
     {
-        Stopped = true;
         StateMachineFinished?.Invoke();
     }
 

@@ -15,7 +15,7 @@ public class AthCtx
 
     // Properties
     public DateTime StartTime { get; } = DateTime.Now;
-    public int Duration { get; } = 60 * 15;
+    public int Duration { get; } = 60 * 60;
     public int LoadingTimeInSeconds { get; set; } = 0;
 
     public int PauseTimeInSeconds { get; set; } = 0;
@@ -40,9 +40,10 @@ public class AthCtx
             .AddSeconds(Duration + 1)
             .AddSeconds(PauseTimeInSeconds)
             .AddSeconds(LoadingTimeInSeconds)
+            .AddSeconds(BrokenTimeInSeconds)
             .AddSeconds(-(PunishTime * Punishments));
 
-    public bool Stopped { get; set; } = false;
+    public int BrokenTimeInSeconds { get; set; } = 0;
 
 
     public string MessageStarting()

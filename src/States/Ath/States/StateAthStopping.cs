@@ -23,10 +23,11 @@ public class StateAthStopping : IState
 
     public void Execute()
     {
+        AthStateMachine.StopTimer();
         try
         {
             ChatApi.SendMessage(AthStateMachine.Ctx.MessageFinalResult());
-            ChatApi.SendMessage("/servermessage blue 0 ATH finished! Press <Hotkey> to see the next results");
+            ChatApi.SendMessage("/servermessage blue 0 ATH finished! | <Press any key to skip results>");
         }
         catch (Exception e)
         {
@@ -38,6 +39,5 @@ public class StateAthStopping : IState
 
     public void Exit()
     {
-        AthStateMachine.StopTimer();
     }
 }

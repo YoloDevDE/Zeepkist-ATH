@@ -17,7 +17,7 @@ public class MasterStateMachine : IStateMachine
     public bool Stopped { get; set; }
     public event Action StateMachineFinished;
 
-    public void InvokeShutdown()
+    public void InvokeFinish()
     {
         StateMachineFinished?.Invoke();
     }

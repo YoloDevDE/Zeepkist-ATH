@@ -36,8 +36,17 @@ public class Level
     public bool LevelSkipped { get; set; }
     public bool FirstTimePlayed { get; set; }
     public DateTime StartTime { get; set; }
-    public DateTime EndTime { get; set; }
-    public TimeSpan Duration => (EndTime - StartTime.AddSeconds(PauseDurationInSeconds)).Duration();
+    public DateTime EndTime { get; set; } = DateTime.MinValue; // Initialize to MinValue
+
+    public TimeSpan Duration
+    {
+        get
+        {
+            DateTime endTime = EndTime == DateTime.MinValue ? DateTime.Now : EndTime;
+            return endTime - StartTime - TimeSpan.FromSeconds(PauseDurationInSeconds);
+        }
+    }
+
     public int PauseDurationInSeconds { get; set; }
     public bool FreeSkipped { get; set; }
 }

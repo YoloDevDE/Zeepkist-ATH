@@ -4,7 +4,7 @@ using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Master.States;
 
-public class StateMasterOff : IState, IRootState
+public class StateMasterOff : IState
 {
     // Constructor
     public StateMasterOff(IStateMachine stateMachine)

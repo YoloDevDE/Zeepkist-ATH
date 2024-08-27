@@ -13,7 +13,7 @@ public class CommandSkipBroken : ILocalChatCommand
 
     public void Handle(string arguments)
     {
-        // CommandTrigger?.Invoke();
+        CommandTrigger?.Invoke();
     }
 
     // Event-Definition
