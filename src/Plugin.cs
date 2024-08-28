@@ -1,5 +1,6 @@
 ﻿using System;
 using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;

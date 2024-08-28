@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AuthorTimeHunting.Service;
+namespace AuthorTimeHunting.Entities;
 
 public class LevelItemsByIdLevel
 {

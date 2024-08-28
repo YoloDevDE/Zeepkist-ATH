@@ -1,9 +1,11 @@
 ﻿using System;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
+using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -26,8 +28,17 @@ public class StateAthLoadingNewLevel : IState
         AthStateMachine.Timer.Tick += TimerOnTick;
     }
 
-    public void Execute()
+    public async void Execute()
     {
+        LevelItem levelItem = await GraphQLService.Instance.GetRandomLevelAsync();
+        PlaylistItem playlistItem = new PlaylistItem(
+            levelItem.FileUid,
+            levelItem.WorkshopId,
+            levelItem.Name,
+            levelItem.FileAuthor
+        );
+        MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
+        MultiplayerApi.UpdateServerPlaylist();
         // Continue with the synchronous part
         if (AthStateMachine.Ctx.CurrentLevel == null)
         {

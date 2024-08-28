@@ -1,4 +1,4 @@
-﻿namespace AuthorTimeHunting.Service;
+﻿namespace AuthorTimeHunting.Entities;
 
 public class AllLevelsNode
 {

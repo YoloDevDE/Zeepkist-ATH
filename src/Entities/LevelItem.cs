@@ -1,9 +1,9 @@
-﻿namespace AuthorTimeHunting.Service;
+﻿namespace AuthorTimeHunting.Entities;
 
 public class LevelItem
 {
     public string Name { get; set; }
-    public string WorkshopId { get; set; }
+    public ulong WorkshopId { get; set; }
     public string FileUid { get; set; }
     public string FileAuthor { get; set; }
 
