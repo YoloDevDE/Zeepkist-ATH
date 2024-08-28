@@ -38,6 +38,8 @@ public class Level
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; } = DateTime.MinValue; // Initialize to MinValue
 
+    public string Status => $"{(Levelbeaten ? "Completed" : LevelBroken ? "Lvl Broken" : GoldSkipUnlocked ? "Gold Skipped" : FreeSkipped ? "Free Skipped" : "Failed")}";
+
     public TimeSpan Duration
     {
         get

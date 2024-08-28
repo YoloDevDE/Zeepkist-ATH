@@ -58,7 +58,7 @@ public class StateAthPausing : IState
     private void SetServerMessage()
     {
         ChatApi.SendMessage(
-            $"/servermessage yellow 0 ATH paused  | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)}");
+            $"/servermessage yellow 0 ATH paused  | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)} ({TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentLevel.Duration.TotalSeconds)})");
     }
 
     private void OnRoundStarted()

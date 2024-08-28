@@ -28,6 +28,7 @@ public class StateAthLoadingNewLevel : IState
 
     public void Execute()
     {
+        // Continue with the synchronous part
         if (AthStateMachine.Ctx.CurrentLevel == null)
         {
             return;

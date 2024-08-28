@@ -10,20 +10,16 @@ public class MasterStateMachine : IStateMachine
     {
         InitialState = new StateMasterOff(this);
         FinalState = new StateMasterOff(this);
-        Stopped = false;
     }
 
-    public bool ShuttingDown { get; set; }
-    public bool Stopped { get; set; }
     public event Action StateMachineFinished;
+
+    public IState FinalState { get; set; }
+    public IState CurrentState { get; set; }
+    public IState InitialState { get; set; }
 
     public void InvokeFinish()
     {
         StateMachineFinished?.Invoke();
     }
-
-    public IState FinalState { get; set; }
-
-    public IState CurrentState { get; set; }
-    public IState InitialState { get; set; }
 }

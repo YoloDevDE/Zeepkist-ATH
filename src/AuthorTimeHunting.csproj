@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <!-- Allgemeine Projekteigenschaften -->
+    <!-- General Project Properties -->
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
@@ -17,12 +17,17 @@
         <Title>Author Time Hunting</Title>
     </PropertyGroup>
 
+    <!-- Package References -->
     <ItemGroup>
         <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
         <PackageReference Include="BepInEx.Core" Version="5.*"/>
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
+        <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
+        <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="16.999.333-alpha"/>
-        <PackageReference Include="ZeepSDK" Version="1.35.0"/>
+        <PackageReference Include="ZeepSDK" Version="1.35.1"/>
+        <PackageReference Include="Fody" Version="6.8.1" PrivateAssets="all"/> <!-- Fody package -->
+        <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="all"/> <!-- Costura package -->
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
@@ -30,7 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Service\"/>
+        <Reference Include="Microsoft.CSharp"/>
     </ItemGroup>
 
     <!-- Post-Build Scripts -->
@@ -43,6 +48,10 @@
 
         <!-- Copy DLL to the plugin directory -->
         <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\$(ProjectName)-$(Version).dll&quot;"/>
-
     </Target>
+
+    <!-- Enable debug logging -->
+    <PropertyGroup>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+    </PropertyGroup>
 </Project>

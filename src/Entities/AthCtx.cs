@@ -70,21 +70,29 @@ public class AthCtx
         return Levels.Sum(level => level.Attempt);
     }
 
-    public Level LevelWithLongestDuration()
+    public Level LevelYouShouldHaveSkippedThis()
     {
         return Levels
-            .Where(level => level.Levelbeaten)
+            .Where(level => level.Duration.TotalMinutes >= 5 && !level.LevelBroken)
             .OrderByDescending(level => level.Duration)
             .FirstOrDefault();
     }
 
-    public Level LevelWithShortestDuration()
+    public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
     {
-        return Levels
-            .Where(level => level.Levelbeaten)
-            .OrderBy(level => level.Duration)
-            .FirstOrDefault();
+        (string Author, List<Level> Levels) likedAuthor = Levels
+            .Where(level => level.Levelbeaten) // Only consider beaten levels
+            .GroupBy(level => level.Author) // Group by author
+            .Where(group => group.Count() >= 2) // Find authors with 2 or more beaten levels
+            .Select(group => (
+                Author: group.Key,
+                Levels: group.ToList() // Get the list of levels beaten by this author
+            ))
+            .FirstOrDefault(); // Take the first author that meets the condition
+
+        return likedAuthor; // Will return null if no author meets the criteria
     }
+
 
     public Level LevelThatWasVeryEasy()
     {
@@ -105,6 +113,33 @@ public class AthCtx
         return Levels.Count(level => level.Levelbeaten && level.Attempt == 1);
     }
 
+    public double AverageAttemptsPerAt()
+    {
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
+
+        if (!beatenLevels.Any())
+        {
+            return 0; // Return 0 or another appropriate default value if no levels have been beaten
+        }
+
+        return beatenLevels.Average(level => level.Attempt);
+    }
+
+    public TimeSpan AverageTimePerAt()
+    {
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
+
+        if (!beatenLevels.Any())
+        {
+            return TimeSpan.Zero; // Return zero if no levels have been beaten
+        }
+
+        // Calculate the average TimeSpan by converting to ticks
+        long averageTicks = (long)beatenLevels.Average(level => level.Duration.Ticks);
+
+        // Convert the average ticks back to TimeSpan
+        return TimeSpan.FromTicks(averageTicks);
+    }
 
     public string MessageRunning()
     {
@@ -181,8 +216,7 @@ public class AthCtx
 
     public string MessageFinalResult()
     {
-        Level longestDurationLevel = LevelWithLongestDuration();
-        Level shortestDurationLevel = LevelWithShortestDuration();
+        Level youShouldHaveSkippedThis = LevelYouShouldHaveSkippedThis();
         Level easiestLevel = LevelThatWasVeryEasy();
 
         Message.Builder builder = new Message.Builder()
@@ -198,28 +232,51 @@ public class AthCtx
             .AddKeyValue("Total Skips", $"{CountLevelSkips()}")
             .AddBreakSpace()
             .AddKeyValue("ATs Oneshotted!", $"{CountOneShotATs()}")
+            .AddBreakSpace()
+            .AddKeyValue("Attempts per AT", $"{AverageAttemptsPerAt():F2}")
+            .AddBreakSpace()
+            .AddKeyValue("Time per AT", $"{AverageTimePerAt().ToFormattedString()}")
             .AddBreakSpace();
 
-        // Conditionally add the section for the longest duration level
-        if (longestDurationLevel != null)
+        try
         {
-            builder.AddSeperator("This was Time Consuming :yannics:")
-                .AddBreakSpace()
-                .AddLine($"{longestDurationLevel.Name} by {longestDurationLevel.Author}")
-                .AddBreakSpace()
-                .AddKeyValue("Duration", $"{longestDurationLevel.Duration.ToFormattedString()}")
-                .AddBreakSpace();
+            // Conditionally add the section for the longest duration level
+            if (youShouldHaveSkippedThis != null)
+            {
+                builder.AddSeperator("You should have skipped this :yannics:")
+                    .AddBreakSpace()
+                    .AddLine($"{youShouldHaveSkippedThis.Name} by {youShouldHaveSkippedThis.Author}")
+                    .AddBreakSpace()
+                    .AddKeyValue("Status", $"{youShouldHaveSkippedThis.Status}")
+                    .AddBreakSpace()
+                    .AddKeyValue("Duration", $"{youShouldHaveSkippedThis.Duration.ToFormattedString()}")
+                    .AddBreakSpace()
+                    .AddKeyValue("Attempts", $"{youShouldHaveSkippedThis.Attempt}")
+                    .AddBreakSpace();
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            // Handle the exception or continue execution
         }
 
-        // Conditionally add the section for the shortest duration level
-        if (shortestDurationLevel != null)
+        // Conditionally add the section for the author with beaten levels
+        (string Author, List<Level> Levels) likedAuthor = YouLikedThisAuthorALot();
+        if (likedAuthor.Levels != null && likedAuthor.Levels.Count > 0)
         {
-            builder.AddSeperator("This was short! :smile:")
+            builder.AddSeperator("This Author haunted you :skull:")
                 .AddBreakSpace()
-                .AddLine($"{shortestDurationLevel.Name} by {shortestDurationLevel.Author}")
+                .AddLine($"And their name is...<br>'{likedAuthor.Author}' !")
                 .AddBreakSpace()
-                .AddKeyValue("Duration", $"{shortestDurationLevel.Duration.ToFormattedString()}")
+                .AddLine($"You've beaten {likedAuthor.Levels.Count} of their levels:")
                 .AddBreakSpace();
+
+            foreach (Level level in likedAuthor.Levels)
+            {
+                builder.AddLine($"- {level.Name}")
+                    .AddBreakSpace();
+            }
         }
 
         // Conditionally add the section for the easiest level
@@ -263,7 +320,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddSeperator("Result")
                 .AddBreakSpace()
-                .AddKeyValue("Status", $"{(CurrentLevel.Levelbeaten ? "Completed" : CurrentLevel.LevelBroken ? "Lvl Broken" : CurrentLevel.GoldSkipUnlocked ? "Gold Skipped" : CurrentLevel.FreeSkipped ? "Free Skipped" : "Failed")}")
+                .AddKeyValue("Status", CurrentLevel.Status)
                 .AddBreakSpace()
                 .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}")
                 .AddBreakSpace()

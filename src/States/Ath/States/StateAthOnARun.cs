@@ -82,6 +82,6 @@ public class StateAthOnARun : IState
     private void SetServerMessage()
     {
         ChatApi.SendMessage(
-            $"/servermessage {(AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime ? "red" : "green")} 0 ATH running | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)}");
+            $"/servermessage {(AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime ? "red" : "green")} 0 ATH running | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)} ({TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentLevel.Duration.TotalSeconds)})");
     }
 }
