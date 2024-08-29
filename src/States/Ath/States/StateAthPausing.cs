@@ -1,7 +1,5 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.Util;
-using ZeepSDK.Chat;
 using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
 
@@ -31,7 +29,7 @@ public class StateAthPausing : IState
 
     public void Execute()
     {
-        SetServerMessage();
+        AthStateMachine.SetServerMessage(true);
     }
 
     public void Exit()
@@ -52,14 +50,9 @@ public class StateAthPausing : IState
     {
         AthStateMachine.Ctx.PauseTimeInSeconds += 1;
         AthStateMachine.Ctx.CurrentLevel.PauseDurationInSeconds += 1;
-        SetServerMessage();
+        AthStateMachine.SetServerMessage(true);
     }
 
-    private void SetServerMessage()
-    {
-        ChatApi.SendMessage(
-            $"/servermessage yellow 0 ATH paused  | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)} ({TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentLevel.Duration.TotalSeconds)})");
-    }
 
     private void OnRoundStarted()
     {

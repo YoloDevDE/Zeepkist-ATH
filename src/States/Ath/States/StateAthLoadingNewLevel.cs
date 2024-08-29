@@ -3,6 +3,8 @@ using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
+using ZeepkistClient;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
 using ZeepSDK.Multiplayer;
@@ -62,7 +64,17 @@ public class StateAthLoadingNewLevel : IState
 
     private void OnLevelLoaded()
     {
+        MultiplayerApi.SetNextLevelIndex(ZeepkistNetwork.CurrentLobby.Playlist.Count - 1);
         AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
+        if (AthStateMachine.Ctx.Levels.Contains(AthStateMachine.Ctx.CurrentLevel))
+        {
+            ChatApi.SendMessage("/fs");
+            Messenger.Notify().LogError("Something went wrong.. this level should not have been loaded... skipping (dont worry no penalty is applied)");
+
+            StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+            return;
+        }
+
         AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }

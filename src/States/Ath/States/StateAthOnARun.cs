@@ -41,7 +41,7 @@ public class StateAthOnARun : IState
             AthStateMachine.Ctx.CurrentLevel.StartTime = DateTime.Now;
         }
 
-        SetServerMessage();
+        AthStateMachine.SetServerMessage(false);
         AthStateMachine.Ctx.CurrentLevel.Attempt++;
         ChatApi.SendMessage(AthStateMachine.Ctx.MessageRunning());
     }
@@ -71,17 +71,11 @@ public class StateAthOnARun : IState
 
     private void TimerOnTick()
     {
-        SetServerMessage();
+        AthStateMachine.SetServerMessage(false);
         if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime)
         {
             AthStateMachine.Ctx.TimeIsRunningLow = true;
             Messenger.Notify().LogCustomColors("Time is running low!<br>A 'Penalty-Skip' will end the run!", Color.white, Color.red, 10f);
         }
-    }
-
-    private void SetServerMessage()
-    {
-        ChatApi.SendMessage(
-            $"/servermessage {(AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime ? "red" : "green")} 0 ATH running | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)} ({TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentLevel.Duration.TotalSeconds)})");
     }
 }

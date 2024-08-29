@@ -84,6 +84,7 @@ public class GraphQLService
                                   workshopId
                                   fileAuthor
                                   fileUid
+                                  validationTimeAuthor
                                 }
                               }
                             }
@@ -96,11 +97,6 @@ public class GraphQLService
             GraphQLResponse<AllLevelsResponse> response = await _graphQLClient.SendQueryAsync<AllLevelsResponse>(query);
 
             // Check if response or response.Data is null
-            if (response == null)
-            {
-                Console.WriteLine("Response is null.");
-                return null;
-            }
 
             if (response.Data == null)
             {

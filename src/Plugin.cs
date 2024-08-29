@@ -33,9 +33,6 @@ public class Plugin : BaseUnityPlugin
         _masterStateMachine = new MasterStateMachine();
         _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-
-        // Initialize GraphQL client lazily
-        // InitializeGraphQLClient();
     }
 
     private async void Update()

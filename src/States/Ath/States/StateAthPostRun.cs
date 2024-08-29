@@ -1,6 +1,5 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
@@ -26,7 +25,7 @@ public class StateAthPostRun : IState
 
     public void Execute()
     {
-        SetServerMessage();
+        AthStateMachine.SetServerMessage(true);
     }
 
     public void Exit()
@@ -45,7 +44,7 @@ public class StateAthPostRun : IState
     {
         AthStateMachine.Ctx.PauseTimeInSeconds += 1;
         AthStateMachine.Ctx.CurrentLevel.PauseDurationInSeconds += 1;
-        SetServerMessage();
+        AthStateMachine.SetServerMessage(true);
     }
 
     // Private Methods
@@ -53,11 +52,5 @@ public class StateAthPostRun : IState
     {
         ChatApi.SendMessage("/fs");
         StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
-    }
-
-    private void SetServerMessage()
-    {
-        ChatApi.SendMessage(
-            $"/servermessage yellow 0 ATH paused | {TimeFormatter.FormatDuration((int)AthStateMachine.Ctx.CurrentDuration.TotalSeconds)}");
     }
 }

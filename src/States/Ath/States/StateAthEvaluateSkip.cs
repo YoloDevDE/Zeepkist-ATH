@@ -28,6 +28,7 @@ public class StateAthEvaluateSkip : IState
             return;
         }
 
+        AthStateMachine.Ctx.Skips += 1;
         if (AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked)
         {
             StateMachine.TransitionTo(new StateAthGoldSkip(StateMachine));

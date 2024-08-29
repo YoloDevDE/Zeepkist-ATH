@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepSDK.Chat;
+using ZeepSDK.Playlist;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -27,7 +28,8 @@ public class StateAthStopping : IState
         try
         {
             ChatApi.SendMessage(AthStateMachine.Ctx.MessageFinalResult());
-            ChatApi.SendMessage("/servermessage blue 0 ATH finished! | <Press any key to skip results>");
+            ChatApi.SendMessage("/servermessage blue 0 ATH finished!");
+            PlaylistApi.CreatePlaylist($"ATH-RUN-{DateTime.Now.ToShortDateString()}T{DateTime.Now.ToShortTimeString()}");
         }
         catch (Exception e)
         {

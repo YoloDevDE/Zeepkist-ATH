@@ -22,7 +22,6 @@ public class AthCtx
 
     public int PunishTime { get; } = 60 * 5;
 
-    public int RewardTime { get; } = 0;
 
     public int Punishments { set; get; } = 0;
     public int FreeSkips { get; set; } = 1;
@@ -52,15 +51,23 @@ public class AthCtx
             .ClearLines()
             .AddLine("ATH Ranked started. gl hf!")
             .AddBreakSpace()
-            .AddSeperator()
+            .AddSeperator("Settings")
             .AddBreakSpace()
             .AddKeyValue("Duration", $"{TimeSpan.FromSeconds(Duration).ToFormattedString()}")
             .AddBreakSpace()
             .AddKeyValue("Free-Skips", $"{FreeSkips}")
             .AddBreakSpace()
-            .AddKeyValue("Reward/AT", "off")
-            .AddBreakSpace()
             .AddKeyValue("Punishment", $"{TimeSpan.FromSeconds(PunishTime).ToFormattedString()}")
+            .AddBreakSpace()
+            .AddSeperator("Basics")
+            .AddBreakSpace()
+            .AddLine("If a map is not finishable use '/ath broken'<br>else use the normal way to skip '/fs'.")
+            .AddBreakSpace()
+            .AddLine("If you get a Gold Medal you can Skip without a time penalty.")
+            .AddBreakSpace()
+            .AddLine("If you get the Author Medal you the Mod skips for you on Respawn.")
+            .AddBreakSpace()
+            .AddLine("Any finish will pause the time")
             .Build()
             .ToString();
     }
@@ -158,13 +165,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("Total ATs", $"{AuthorMedals}")
                 .AddBreakSpace()
-                .AddKeyValue("Attempt", $"{CurrentLevel.Attempt}")
-                .AddBreakSpace()
-                .AddSeperator("Misc")
-                .AddBreakSpace()
-                .AddKeyValue("Gold Skip", $"{(CurrentLevel.GoldSkipUnlocked ? "unlocked :zaagbladpad:" : "locked :zaagbladpadrood:")}")
-                .AddBreakSpace()
-                .AddKeyValue("Free Skips", $"{FreeSkips}")
+                .AddKeyValue("Total Skips", $"{Skips}")
                 .Build()
                 .ToString();
     }
@@ -204,12 +205,6 @@ public class AthCtx
             .AddKeyValue("Total ATs", $"{(CurrentLevel.Levelbeaten ? AuthorMedals - 1 : AuthorMedals)}{(CurrentLevel.Levelbeaten ? "+1" : "")}")
             .AddBreakSpace()
             .AddKeyValue("Attempt", $"{CurrentLevel.Attempt}{(!CurrentLevel.Levelbeaten ? "+1" : "")}")
-            .AddBreakSpace()
-            .AddSeperator("Misc")
-            .AddBreakSpace()
-            .AddKeyValue("Gold Skip", $"{(CurrentLevel.GoldSkipUnlocked ? "unlocked :zaagbladpad:" : "locked :zaagbladpadrood:")}")
-            .AddBreakSpace()
-            .AddKeyValue("Free Skips", $"{FreeSkips}")
             .Build()
             .ToString();
     }
@@ -279,19 +274,6 @@ public class AthCtx
             }
         }
 
-        // Conditionally add the section for the easiest level
-        if (easiestLevel != null)
-        {
-            builder.AddSeperator("This was easy! :coolorange:")
-                .AddBreakSpace()
-                .AddLine($"{easiestLevel.Name} by {easiestLevel.Author}")
-                .AddBreakSpace()
-                .AddKeyValue("Duration", $"{easiestLevel.Duration.ToFormattedString()}")
-                .AddBreakSpace()
-                .AddKeyValue("Attempts", $"{easiestLevel.Attempt}")
-                .AddBreakSpace();
-        }
-
         return builder.Build().ToString();
     }
 
@@ -337,10 +319,6 @@ public class AthCtx
                 .AddSeperator("Current Run")
                 .AddBreakSpace()
                 .AddKeyValue("Total ATs", $"{AuthorMedals}")
-                .AddBreakSpace()
-                .AddSeperator("Misc")
-                .AddBreakSpace()
-                .AddKeyValue("Free Skips", $"{FreeSkips}")
                 .Build()
                 .ToString();
     }

@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
+using ZeepkistClient;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -28,6 +29,7 @@ public class StateAthStarting : IState
         // Starting Text
         ChatApi.SendMessage("/settime 86400");
         ChatApi.SendMessage("/fs");
+        ZeepkistNetwork.CurrentLobby.Playlist.Clear();
         Messenger.SendChat(
             AthStateMachine.Ctx.MessageStarting()
         );
