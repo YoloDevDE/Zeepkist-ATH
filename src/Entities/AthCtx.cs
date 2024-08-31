@@ -33,6 +33,7 @@ public class AthCtx
 
     public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).Duration();
     public int AuthorMedals { get; set; } = 0;
+    public int GoldMedals { get; set; } = 0;
 
     public DateTime EndTime =>
         StartTime
@@ -49,25 +50,25 @@ public class AthCtx
     {
         return new Message.Builder()
             .ClearLines()
-            .AddLine("ATH Ranked started. gl hf!")
-            .AddBreakSpace()
-            .AddSeperator("Settings")
-            .AddBreakSpace()
-            .AddKeyValue("Duration", $"{TimeSpan.FromSeconds(Duration).ToFormattedString()}")
-            .AddBreakSpace()
-            .AddKeyValue("Free-Skips", $"{FreeSkips}")
-            .AddBreakSpace()
-            .AddKeyValue("Punishment", $"{TimeSpan.FromSeconds(PunishTime).ToFormattedString()}")
+            .AddLine("Author-Time-Hunting started. gl hf!")
             .AddBreakSpace()
             .AddSeperator("Basics")
             .AddBreakSpace()
-            .AddLine("If a map is not finishable use '/ath broken'<br>else use the normal way to skip '/fs'.")
+            .AddLine($"You have {TimeSpan.FromSeconds(Duration).ToFormattedString()} on random maps to get as many Author Medals as possible.")
             .AddBreakSpace()
-            .AddLine("If you get a Gold Medal you can Skip without a time penalty.")
             .AddBreakSpace()
-            .AddLine("If you get the Author Medal you the Mod skips for you on Respawn.")
+            .AddLine("If an AT is not obtainable you use this command:")
             .AddBreakSpace()
-            .AddLine("Any finish will pause the time")
+            .AddLine("- /ath broken")
+            .AddBreakSpace()
+            .AddLine("DO NOT ABUSE THIS >:(")
+            .AddBreakSpace()
+            .AddBreakSpace()
+            .AddLine($"If you '/skip' a map you get a {TimeSpan.FromSeconds(PunishTime).ToFormattedString()} penalty except you:")
+            .AddBreakSpace()
+            .AddLine("- You obtained AT or Gold")
+            .AddBreakSpace()
+            .AddLine("- You use a 'Free-Skip'")
             .Build()
             .ToString();
     }
@@ -150,22 +151,38 @@ public class AthCtx
 
     public string MessageRunning()
     {
+        PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
+
+        // Initialize default values
+        double result = 0;
+        double positiveResult = 0;
+        string diffDisplay = "--:--.---";
+        string resultDisplay = "--:--.---";
+
+
+        Message.Builder builder = new Message.Builder()
+            .ClearLines()
+            .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
+            .AddBreakSpace()
+            .AddSeperator("Goals")
+            .AddBreakSpace()
+            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
+            .AddBreakSpace()
+            .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
+
+        if (currentResult != null)
+        {
+            result = currentResult.Time - CurrentLevel.AuthorTime;
+            positiveResult = Math.Abs(result);
+            diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
+
+            builder
+                .AddBreakSpace()
+                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay);
+        }
+
         return
-            new Message.Builder()
-                .ClearLines()
-                .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
-                .AddBreakSpace()
-                .AddSeperator("Goals")
-                .AddBreakSpace()
-                .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
-                .AddBreakSpace()
-                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
-                .AddBreakSpace()
-                .AddSeperator("Stats")
-                .AddBreakSpace()
-                .AddKeyValue("Total ATs", $"{AuthorMedals}")
-                .AddBreakSpace()
-                .AddKeyValue("Total Skips", $"{Skips}")
+            builder
                 .Build()
                 .ToString();
     }
@@ -199,12 +216,6 @@ public class AthCtx
             .AddKeyValue("Your Time", resultDisplay)
             .AddBreakSpace()
             .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
-            .AddBreakSpace()
-            .AddSeperator("Stats")
-            .AddBreakSpace()
-            .AddKeyValue("Total ATs", $"{(CurrentLevel.Levelbeaten ? AuthorMedals - 1 : AuthorMedals)}{(CurrentLevel.Levelbeaten ? "+1" : "")}")
-            .AddBreakSpace()
-            .AddKeyValue("Attempt", $"{CurrentLevel.Attempt}{(!CurrentLevel.Levelbeaten ? "+1" : "")}")
             .Build()
             .ToString();
     }
@@ -228,9 +239,9 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("ATs Oneshotted!", $"{CountOneShotATs()}")
             .AddBreakSpace()
-            .AddKeyValue("Attempts per AT", $"{AverageAttemptsPerAt():F2}")
+            .AddKeyValue("Attempts/AT", $"{AverageAttemptsPerAt():F2}")
             .AddBreakSpace()
-            .AddKeyValue("Time per AT", $"{AverageTimePerAt().ToFormattedString()}")
+            .AddKeyValue("Time/AT", $"{AverageTimePerAt().ToFormattedString()}")
             .AddBreakSpace();
 
         try
@@ -306,6 +317,8 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}")
                 .AddBreakSpace()
+                .AddSeperator("Stats")
+                .AddBreakSpace()
                 .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
                 .AddBreakSpace()
                 .AddKeyValue("Your Time", resultDisplay)
@@ -319,6 +332,8 @@ public class AthCtx
                 .AddSeperator("Current Run")
                 .AddBreakSpace()
                 .AddKeyValue("Total ATs", $"{AuthorMedals}")
+                .AddBreakSpace()
+                .AddKeyValue("Time left", TimeFormatter.FormatDuration((int)CurrentDuration.TotalSeconds))
                 .Build()
                 .ToString();
     }

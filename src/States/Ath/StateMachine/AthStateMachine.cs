@@ -34,16 +34,18 @@ public class AthStateMachine : IStateMachine
     public void SetServerMessage(bool paused)
     {
         string stateColor = paused ? "#ffff00" : "#0088ff";
-        string stateText = paused ? "paused II" : "running >>";
+        string stateText = paused ? "paused" : "running";
         string timeLeftColor = paused || Ctx.CurrentDuration.TotalSeconds > Ctx.PunishTime ? stateColor : "#ff0000";
         string currentLevelColor = paused ? "#ffff00" : "#0088ff";
 
-        string message = $"/servermessage white 0 <size=\"25%\"><align=\"left\"><br><br><b>Author-Time-Hunting</b><br>" +
+        string message = $"/servermessage white 0 <size=\"25%\"><align=\"left\"><br><br><voffset=-2em><b>Author-Time-Hunting</b></voffset><br>" +
                          $"<#ffffff>State         : <{stateColor}>{stateText}<br>" +
                          $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}<br>" +
                          $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.Duration.TotalSeconds)}<br>" +
-                         $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.Levelbeaten ? "<#7F007F>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
-                         $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}"
+                         $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.Levelbeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
+                         $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
+                         $"<#ffffff>-----------Results-----------<br>" +
+                         $"<#ffffff>AT/Gold/Fail  : <#AF00AF>{Ctx.AuthorMedals}<#ffffff>/<#FFD600>{Ctx.GoldMedals}<#ffffff>/<#FF0000>{Ctx.Skips}<br>"
             ;
 
         ChatApi.SendMessage(message);

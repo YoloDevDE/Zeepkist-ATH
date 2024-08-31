@@ -7,7 +7,7 @@ public class CommandStop : ILocalChatCommand
 {
     public string Prefix => "/";
     public string Command => "ath stop";
-    public string Description => "Use this to stop the AT Hunt";
+    public string Description => "Stop the Author-Time-Hunting.";
 
     public void Handle(string arguments)
     {

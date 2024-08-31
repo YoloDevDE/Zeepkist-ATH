@@ -28,8 +28,9 @@ public class StateAthStarting : IState
     {
         // Starting Text
         ChatApi.SendMessage("/settime 86400");
-        ChatApi.SendMessage("/fs");
         ZeepkistNetwork.CurrentLobby.Playlist.Clear();
+        ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
+        ChatApi.SendMessage("/fs");
         Messenger.SendChat(
             AthStateMachine.Ctx.MessageStarting()
         );

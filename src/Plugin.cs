@@ -1,12 +1,9 @@
-﻿using System;
-using AuthorTimeHunting.Commands;
-using AuthorTimeHunting.Entities;
+﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
-using UnityEngine;
 using ZeepSDK.ChatCommands;
 
 namespace AuthorTimeHunting;
@@ -15,15 +12,25 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-    private GraphQLService _graphQLService;
     private Harmony _harmony;
     private IStateMachine _masterStateMachine;
 
+
+    // Declare the ConfigEntry for the "Save Playlist on Run End" option
+    public static ConfigEntry<bool> SavePlaylistOnRunEnd { get; set; }
+
     private void Awake()
     {
+        // Initialize the ConfigEntry with a default value of false
+        SavePlaylistOnRunEnd = Config.Bind(
+            "General", // Category
+            "Save Playlist on Run End", // Key
+            false, // Default value
+            "Literally what it says. what did you expect" // Description
+        );
+
         _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         _harmony.PatchAll();
-        _graphQLService = GraphQLService.Instance;
 
         ChatCommandApi.RegisterLocalChatCommand<CommandRestart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
@@ -33,18 +40,9 @@ public class Plugin : BaseUnityPlugin
         _masterStateMachine = new MasterStateMachine();
         _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-    }
 
-    private async void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Q))
-        {
-            Logger.LogInfo("Button pressed");
-            LevelItem result = await _graphQLService.GetRandomLevelAsync();
-            Console.WriteLine("Level: " + result);
-        }
+        // You can now access _savePlaylistOnRunEnd.Value to check if the option is enabled
     }
-
 
     private void OnDestroy()
     {

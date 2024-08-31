@@ -68,7 +68,7 @@ public class StateAthLoadingNewLevel : IState
         AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
         if (AthStateMachine.Ctx.Levels.Contains(AthStateMachine.Ctx.CurrentLevel))
         {
-            ChatApi.SendMessage("/fs");
+            ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
             Messenger.Notify().LogError("Something went wrong.. this level should not have been loaded... skipping (dont worry no penalty is applied)");
 
             StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));

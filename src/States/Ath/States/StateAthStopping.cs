@@ -1,8 +1,8 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using ZeepkistClient;
 using ZeepSDK.Chat;
-using ZeepSDK.Playlist;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -29,7 +29,16 @@ public class StateAthStopping : IState
         {
             ChatApi.SendMessage(AthStateMachine.Ctx.MessageFinalResult());
             ChatApi.SendMessage("/servermessage blue 0 ATH finished!");
-            PlaylistApi.CreatePlaylist($"ATH-RUN-{DateTime.Now.ToShortDateString()}T{DateTime.Now.ToShortTimeString()}");
+            if (Plugin.SavePlaylistOnRunEnd.Value)
+            {
+                string playlistName = $"ATH-RUN-{DateTime.Now.ToString($"yyyy-MM-dd_HH-mm-ss_{AthStateMachine.Ctx.AuthorMedals}_{AthStateMachine.Ctx.GoldMedals}_{AthStateMachine.Ctx.Skips}")}";
+                PlaylistSaveJSON playlistSaveFile = new PlaylistSaveJSON();
+                playlistSaveFile.name = playlistName;
+                playlistSaveFile.levels = ZeepkistNetwork.CurrentLobby.Playlist;
+                playlistSaveFile.roundLength = 420;
+                playlistSaveFile.amountOfLevels = ZeepkistNetwork.CurrentLobby.Playlist.Count;
+                playlistSaveFile.CreateEditor().Save();
+            }
         }
         catch (Exception e)
         {

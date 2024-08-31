@@ -22,6 +22,7 @@ public class StateAthGoldSkip : IState
 
     public void Execute()
     {
+        AthStateMachine.Ctx.GoldMedals++;
         Messenger.Notify().LogCustomColors("'Gold-Skip' used", Color.black, new Color(1f, 0.84f, 0f), 5f);
         StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }

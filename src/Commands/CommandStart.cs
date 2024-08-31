@@ -9,7 +9,7 @@ public class CommandStart : ILocalChatCommand
     public string Command => "ath start";
 
     public string Description =>
-        "Starts the AT Hunt. You can adjust the challenge-duration by adding the time in minutes for example: /hunt start 60";
+        "Starts the Author-Time-Hunting.";
 
     public void Handle(string arguments)
     {
