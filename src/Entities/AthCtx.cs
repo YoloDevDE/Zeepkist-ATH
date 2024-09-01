@@ -48,29 +48,46 @@ public class AthCtx
 
     public string MessageStarting()
     {
-        return new Message.Builder()
+        Message.Builder message = new Message.Builder();
+        message
             .ClearLines()
-            .AddLine("Author-Time-Hunting started. gl hf!")
-            .AddBreakSpace()
-            .AddSeperator("Basics")
-            .AddBreakSpace()
-            .AddLine($"You have {TimeSpan.FromSeconds(Duration).ToFormattedString()} on random maps to get as many Author Medals as possible.")
-            .AddBreakSpace()
-            .AddBreakSpace()
-            .AddLine("If an AT is not obtainable you use this command:")
-            .AddBreakSpace()
-            .AddLine("- /ath broken")
-            .AddBreakSpace()
-            .AddLine("DO NOT ABUSE THIS >:(")
-            .AddBreakSpace()
-            .AddBreakSpace()
-            .AddLine($"If you '/skip' a map you get a {TimeSpan.FromSeconds(PunishTime).ToFormattedString()} penalty except you:")
-            .AddBreakSpace()
-            .AddLine("- You obtained AT or Gold")
-            .AddBreakSpace()
-            .AddLine("- You use a 'Free-Skip'")
-            .Build()
-            .ToString();
+            .AddLine("Author-Time-Hunting started.<br>gl hf!");
+        if (!Plugin.Minimalist.Value)
+        {
+            message
+                .AddBreakSpace()
+                .AddSeperator("Basics")
+                .AddBreakSpace()
+                .AddLine($"You have {TimeSpan.FromSeconds(Duration).ToFormattedString()} on random maps to get as many Author Medals as possible.")
+                .AddBreakSpace()
+                .AddBreakSpace()
+                .AddLine("If an AT is not obtainable you use this command:")
+                .AddBreakSpace()
+                .AddLine("- /ath broken")
+                .AddBreakSpace()
+                .AddLine("DO NOT ABUSE THIS >:(")
+                .AddBreakSpace()
+                .AddBreakSpace()
+                .AddLine($"If you '/skip' a map you get a {TimeSpan.FromSeconds(PunishTime).ToFormattedString()} penalty except you:")
+                .AddBreakSpace()
+                .AddLine("- You obtained AT or Gold")
+                .AddBreakSpace()
+                .AddLine("- You use a 'Free-Skip'");
+        }
+        else
+        {
+            message
+                .AddBreakSpace()
+                .AddSeperator("Commands")
+                .AddLine("- /fs -> Skips a Level")
+                .AddBreakSpace()
+                .AddLine("- /ath broken -> Skips without punishment")
+                .AddBreakSpace()
+                .AddSeperator("Additional Commands")
+                .AddLine("- /ath restart, /ath stop");
+        }
+
+        return message.Build().ToString();
     }
 
     public int CountTotalAttempts()
@@ -306,36 +323,49 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        return
-            new Message.Builder()
-                .ClearLines()
-                .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
+        Message.Builder message = new Message.Builder();
+
+        message
+            .ClearLines()
+            .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}");
+        if (!Plugin.Minimalist.Value)
+        {
+            message
                 .AddBreakSpace()
                 .AddSeperator("Result")
                 .AddBreakSpace()
                 .AddKeyValue("Status", CurrentLevel.Status)
                 .AddBreakSpace()
                 .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}")
-                .AddBreakSpace()
-                .AddSeperator("Stats")
+                ;
+        }
+
+        message
+            .AddBreakSpace()
+            .AddSeperator("Stats");
+        if (!Plugin.Minimalist.Value)
+        {
+            message
                 .AddBreakSpace()
                 .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
                 .AddBreakSpace()
-                .AddKeyValue("Your Time", resultDisplay)
-                .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
-                .AddBreakSpace()
-                .AddKeyValue("Attempts", $"{CurrentLevel.Attempt}")
-                .AddBreakSpace()
-                .AddKeyValue("Duration", $"{CurrentLevel.Duration.ToFormattedString()}")
-                .AddBreakSpace()
-                .AddSeperator("Current Run")
-                .AddBreakSpace()
-                .AddKeyValue("Total ATs", $"{AuthorMedals}")
-                .AddBreakSpace()
-                .AddKeyValue("Time left", TimeFormatter.FormatDuration((int)CurrentDuration.TotalSeconds))
-                .Build()
-                .ToString();
+                .AddKeyValue("Your Time", resultDisplay);
+        }
+
+        message
+            .AddBreakSpace()
+            .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+            .AddBreakSpace()
+            .AddKeyValue("Attempts", $"{CurrentLevel.Attempt}")
+            .AddBreakSpace()
+            .AddKeyValue("Duration", $"{CurrentLevel.Duration.ToFormattedString()}")
+            .AddBreakSpace()
+            .AddSeperator("Current Run")
+            .AddBreakSpace()
+            .AddKeyValue("Total ATs", $"{AuthorMedals}")
+            .AddBreakSpace()
+            .AddKeyValue("Time left", TimeFormatter.FormatDuration((int)CurrentDuration.TotalSeconds));
+        return message.Build().ToString();
     }
 
     public bool IsTimeOver()

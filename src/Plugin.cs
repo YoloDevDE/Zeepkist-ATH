@@ -18,6 +18,7 @@ public class Plugin : BaseUnityPlugin
 
     // Declare the ConfigEntry for the "Save Playlist on Run End" option
     public static ConfigEntry<bool> SavePlaylistOnRunEnd { get; set; }
+    public static ConfigEntry<bool> Minimalist { get; set; }
 
     private void Awake()
     {
@@ -28,7 +29,13 @@ public class Plugin : BaseUnityPlugin
             false, // Default value
             "Literally what it says. what did you expect" // Description
         );
-
+        // Initialize the ConfigEntry with a default value of false
+        Minimalist = Config.Bind(
+            "General", // Category
+            "Minimalist", // Key
+            false, // Default value
+            "Makes it a bit less text" // Description
+        );
         _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
         _harmony.PatchAll();
 
