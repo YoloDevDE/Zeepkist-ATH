@@ -45,7 +45,7 @@ public class AthStateMachine : IStateMachine
                          $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.Levelbeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
                          $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
                          $"<#ffffff>-----------Results-----------<br>" +
-                         $"<#ffffff>AT/Gold/Fail  : <#AF00AF>{Ctx.AuthorMedals}<#ffffff>/<#FFD600>{Ctx.GoldMedals}<#ffffff>/<#FF0000>{Ctx.Skips}<br>"
+                         $"<#ffffff>AT/Gold/None  : <#AF00AF>{Ctx.AuthorMedals}<#ffffff>/<#FFD600>{Ctx.GoldMedals}<#ffffff>/<#FF0000>{Ctx.Skips - Ctx.GoldMedals}<br>"
             ;
 
         ChatApi.SendMessage(message);

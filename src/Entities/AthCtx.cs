@@ -177,15 +177,19 @@ public class AthCtx
         string resultDisplay = "--:--.---";
 
 
-        Message.Builder builder = new Message.Builder()
+        Message.Builder message = new Message.Builder()
             .ClearLines()
             .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
             .AddBreakSpace()
             .AddSeperator("Goals")
             .AddBreakSpace()
-            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
-            .AddBreakSpace()
-            .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
+            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
+        if (!CurrentLevel.GoldSkipUnlocked)
+        {
+            message
+                .AddBreakSpace()
+                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
+        }
 
         if (currentResult != null)
         {
@@ -193,13 +197,20 @@ public class AthCtx
             positiveResult = Math.Abs(result);
             diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
 
-            builder
+            message
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay);
+                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : "AT ") + "Beaten by" : (CurrentLevel.GoldSkipUnlocked ? "" : "AT ") + "Missed by")}", diffDisplay);
+        }
+
+        if (CurrentLevel.GoldSkipUnlocked)
+        {
+            message
+                .AddBreakSpace()
+                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
 
         return
-            builder
+            message
                 .Build()
                 .ToString();
     }
@@ -222,17 +233,38 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        return new Message.Builder()
+        Message.Builder message = new Message.Builder();
+        message
             .ClearLines()
             .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
             .AddBreakSpace()
             .AddSeperator("Result")
             .AddBreakSpace()
-            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
-            .AddBreakSpace()
-            .AddKeyValue("Your Time", resultDisplay)
-            .AddBreakSpace()
-            .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
+        if (!CurrentLevel.GoldSkipUnlocked)
+        {
+            message
+                .AddBreakSpace()
+                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
+                .AddBreakSpace()
+                .AddKeyValue(">Your Time", resultDisplay)
+                .AddBreakSpace()
+                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "AT Beaten by" : "AT Missed by")}", diffDisplay);
+        }
+
+        else
+        {
+            message
+                .AddBreakSpace()
+                .AddKeyValue(">Your Time", resultDisplay)
+                .AddBreakSpace()
+                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+                .AddBreakSpace()
+                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
+                ;
+        }
+
+        return message
             .Build()
             .ToString();
     }
@@ -349,7 +381,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
                 .AddBreakSpace()
-                .AddKeyValue("Your Time", resultDisplay);
+                .AddKeyValue(">Your Time", resultDisplay);
         }
 
         message
