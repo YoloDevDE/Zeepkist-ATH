@@ -4,7 +4,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>1.16.2</Version>
+        <Version>1.16.3</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <PackageId>Author Time Hunting</PackageId>
