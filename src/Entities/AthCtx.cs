@@ -70,9 +70,9 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddLine($"If you '/skip' a map you get a {TimeSpan.FromSeconds(PunishTime).ToFormattedString()} penalty except you:")
                 .AddBreakSpace()
-                .AddLine("- You obtained AT or Gold")
+                .AddLine("- obtained AT or Gold")
                 .AddBreakSpace()
-                .AddLine("- You use a 'Free-Skip'");
+                .AddLine("- use a 'Free-Skip'");
         }
         else
         {
