@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace AuthorTimeHunting.Util;
 
@@ -39,7 +40,16 @@ public class Message
             const int totalWidth = 32; // Total width of the separator line
             const char separatorChar = '-';
 
-            if (headline.Length >= totalWidth)
+            // Remove all tags (anything between < and >) and store them to reinsert later
+            string cleanHeadline = Regex.Replace(headline, "<.*?>", "");
+            List<string> tags = new List<string>();
+            foreach (Match match in Regex.Matches(headline, "<.*?>"))
+            {
+                tags.Add(match.Value);
+            }
+
+            // Centering logic
+            if (cleanHeadline.Length >= totalWidth)
             {
                 _message.Lines.Add(new string(separatorChar, totalWidth));
                 _message.Lines.Add("<br>" + headline + "<br>");
@@ -47,12 +57,22 @@ public class Message
             }
             else
             {
-                int padding = (totalWidth - headline.Length) / 2;
-                string centeredHeadline = new string(separatorChar, padding) + headline + new string(separatorChar, padding);
+                int padding = (totalWidth - cleanHeadline.Length) / 2;
+                string centeredHeadline = new string(separatorChar, padding) + cleanHeadline + new string(separatorChar, padding);
 
+                // Add extra separatorChar if needed to reach totalWidth
                 if (centeredHeadline.Length < totalWidth)
                 {
                     centeredHeadline += separatorChar;
+                }
+
+                // Reinsert tags back into the centered headline
+                int insertIndex = 0;
+                foreach (string tag in tags)
+                {
+                    insertIndex = centeredHeadline.IndexOf(cleanHeadline, insertIndex);
+                    centeredHeadline = centeredHeadline.Insert(insertIndex, tag);
+                    insertIndex += tag.Length;
                 }
 
                 _message.Lines.Add(centeredHeadline);
@@ -107,7 +127,7 @@ public class Message
             string formattedKey = key.Length > keySpace ? key.Substring(0, keySpace) : key;
             string formattedValue = value.Length > valueSpace ? value.Substring(0, valueSpace) : value;
 
-            return formattedKey.PadRight(middleIndex - 1).Replace("::", $"{removedKeyPart}") + ":" + formattedValue.PadLeft(totalWidth - middleIndex).Replace("::", $"{removedValuePart}");
+            return formattedKey.PadRight(middleIndex - 1).Replace("::", $"{removedKeyPart}") + ":" + "<color=#ffffff>" + formattedValue.PadLeft(totalWidth - middleIndex).Replace("::", $"{removedValuePart}") + "</color>";
         }
 
         public Message Build()

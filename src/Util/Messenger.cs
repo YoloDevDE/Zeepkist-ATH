@@ -1,4 +1,4 @@
-﻿using ZeepSDK.Chat;
+﻿using ZeepkistClient;
 using ZeepSDK.Messaging;
 
 namespace AuthorTimeHunting.Util;
@@ -12,6 +12,6 @@ public static class Messenger
 
     public static void SendChat(string text)
     {
-        ChatApi.SendMessage(text);
+        ZeepkistNetwork.SendCustomChatMessage(false, ZeepkistNetwork.LocalPlayer.SteamID, "<br><color=#ffffff>" + text + "</color>", "---- Author Time Hunting ----");
     }
 }

@@ -52,7 +52,7 @@ public class StateMasterOn : IState
         SubStateMachine.StateMachineFinished -= Stop;
     }
 
-    private void SkipBrokenLevel()
+    public void SkipBrokenLevel()
     {
         if (AthStateMachine.Ctx.CurrentLevel != null)
         {

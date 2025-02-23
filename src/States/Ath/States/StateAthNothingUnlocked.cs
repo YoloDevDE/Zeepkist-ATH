@@ -1,6 +1,6 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using ZeepSDK.Chat;
+using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -22,7 +22,7 @@ public class StateAthNothingUnlocked : IState
 
     public void Execute()
     {
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLevelResult());
+        Messenger.SendChat(AthStateMachine.Ctx.MessageLevelResult());
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 

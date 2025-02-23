@@ -1,6 +1,7 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 
@@ -27,7 +28,7 @@ public class StateAthStopping : IState
         AthStateMachine.StopTimer();
         try
         {
-            ChatApi.SendMessage(AthStateMachine.Ctx.MessageFinalResult());
+            Messenger.SendChat(AthStateMachine.Ctx.MessageFinalResult());
             ChatApi.SendMessage("/servermessage blue 0 ATH finished!");
             if (Plugin.SavePlaylistOnRunEnd.Value)
             {

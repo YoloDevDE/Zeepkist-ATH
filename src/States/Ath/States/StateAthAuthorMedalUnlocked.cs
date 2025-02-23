@@ -2,7 +2,6 @@
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
-using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -28,7 +27,7 @@ public class StateAthAuthorMedalUnlocked : IState
     public void Execute()
     {
         Messenger.Notify().LogCustomColors("Author Medal acquired!<br>[Respawn to continue]", Color.white, new Color(0.5f, 0f, 0.5f), 10f);
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLevelResult());
+        Messenger.SendChat(AthStateMachine.Ctx.MessageLevelResult());
         StateMachine.TransitionTo(new StateAthPostRun(StateMachine));
     }
 

@@ -32,7 +32,25 @@ public class StateAthLoadingNewLevel : IState
 
     public async void Execute()
     {
-        LevelItem levelItem = await GraphQLService.Instance.GetRandomLevelAsync();
+        LevelItem levelItem;
+
+        // Fetch a random level for PreCachedLevel
+        AthStateMachine.Ctx.PreCachedLevel = await GraphQLService.Instance.GetRandomLevelAsync();
+
+        if (AthStateMachine.Ctx.PreCachedLevel == null)
+        {
+            // If PreCachedLevel is null, get a random level for both levelItem and PreCachedLevel
+            levelItem = await GraphQLService.Instance.GetRandomLevelAsync();
+        }
+        else
+        {
+            // If PreCachedLevel is not null, use it as the current level and fetch a new random level for PreCachedLevel
+            levelItem = AthStateMachine.Ctx.PreCachedLevel;
+        }
+
+        AthStateMachine.Ctx.PreCachedLevel = await GraphQLService.Instance.GetRandomLevelAsync();
+
+        // Create a playlist item from the current levelItem and add it to the playlist
         PlaylistItem playlistItem = new PlaylistItem(
             levelItem.FileUid,
             levelItem.WorkshopId,
@@ -41,14 +59,16 @@ public class StateAthLoadingNewLevel : IState
         );
         MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
         MultiplayerApi.UpdateServerPlaylist();
-        // Continue with the synchronous part
+
+        // Continue with the synchronous part if CurrentLevel is set
         if (AthStateMachine.Ctx.CurrentLevel == null)
         {
             return;
         }
 
+        // Update CurrentLevel end time and send a loading message
         AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLoadingCodex());
+        Messenger.SendChat(AthStateMachine.Ctx.MessageLoadingCodex());
     }
 
     public void Exit()

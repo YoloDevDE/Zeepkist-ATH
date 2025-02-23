@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AuthorTimeHunting.Util;
+using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
 
@@ -28,6 +30,7 @@ public class AthCtx
 
     public bool TimeIsRunningLow { get; set; } = false;
     public Level CurrentLevel { get; set; }
+    public LevelItem PreCachedLevel { get; set; }
     public List<Level> Levels { get; set; } = new List<Level>();
 
 
@@ -46,48 +49,77 @@ public class AthCtx
     public int BrokenTimeInSeconds { get; set; } = 0;
 
 
-    public string MessageStarting()
+    public IEnumerator MessageStartingCoroutine()
     {
+        // Initialize a single message builder
         Message.Builder message = new Message.Builder();
+
+        // Initial Message
         message
             .ClearLines()
-            .AddLine("Author-Time-Hunting started.<br>gl hf!");
+            .AddLine("<size=100%><b><color=#FFA500>Author Time Hunt initiated</color></b>")
+            .AddBreakSpace();
+
         if (!Plugin.Minimalist.Value)
         {
+            // Add Game Objective to the ongoing message
+            message
+                .AddSeperator("<size=110%><b>Objective</b></size>")
+                .AddBreakSpace()
+                .AddLine($"Earn as many <color=#FFD700><b>Author Medals</b></color> as possible in <b>{TimeSpan.FromSeconds(Duration).ToFormattedString()}</b>.");
+            Messenger.SendChat(message.Build().ToString());
+
+            // Wait only if TutorialConfig is disabled
+            if (Plugin.TutorialConfig.Value)
+            {
+                yield return new WaitForSeconds(5);
+            }
+
+            // Add Game Rules to the ongoing message
             message
                 .AddBreakSpace()
-                .AddSeperator("Basics")
+                .AddSeperator("<size=110%><b>Rules</b></size>")
                 .AddBreakSpace()
-                .AddLine($"You have {TimeSpan.FromSeconds(Duration).ToFormattedString()} on random maps to get as many Author Medals as possible.")
+                .AddLine("<b>#1 Skipping</b>:<br><margin-left=3em><color=#ff8800>/fs</color> adds a penalty unless an <color=#AF00AF>Author</color> or <color=#FFD600>Gold</color> medal is achieved.</margin>")
                 .AddBreakSpace()
+                .AddLine("<b>#2 Broken Levels</b>:<br><margin-left=3em>If a level is unbeatable, use <color=#ff8800>/ath broken</color>.</margin>")
                 .AddBreakSpace()
-                .AddLine("If an AT is not obtainable you use this command:")
-                .AddBreakSpace()
-                .AddLine("- /ath broken")
-                .AddBreakSpace()
-                .AddLine("DO NOT ABUSE THIS >:(")
-                .AddBreakSpace()
-                .AddBreakSpace()
-                .AddLine($"If you '/skip' a map you get a {TimeSpan.FromSeconds(PunishTime).ToFormattedString()} penalty except you:")
-                .AddBreakSpace()
-                .AddLine("- obtained AT or Gold")
-                .AddBreakSpace()
-                .AddLine("- use a 'Free-Skip'");
-        }
-        else
-        {
-            message
-                .AddBreakSpace()
-                .AddSeperator("Commands")
-                .AddLine("- /fs -> Skips a Level")
-                .AddBreakSpace()
-                .AddLine("- /ath broken -> Skips without punishment")
-                .AddBreakSpace()
-                .AddSeperator("Additional Commands")
-                .AddLine("- /ath restart, /ath stop");
+                .AddLine("<size=80%><color=#FF0000><b>Do not misuse commands.</b></color></size>");
+            Messenger.SendChat(message.Build().ToString());
+
+            // Wait only if TutorialConfig is disabled
+            if (Plugin.TutorialConfig.Value)
+            {
+                yield return new WaitForSeconds(5);
+            }
         }
 
-        return message.Build().ToString();
+        // Add Command List to the ongoing message
+        message
+            .AddBreakSpace()
+            .AddSeperator("<size=110%><color=#1E90FF><b>Commands</b></color></size>")
+            .AddBreakSpace()
+            .AddLine("<size=90%>")
+            .AddLine("<color=#00FF00>/fs</color> -> Skip the current level (penalty applied if no Author/Gold)").AddBreakSpace()
+            .AddLine("<color=#00FF00>/ath broken</color> -> Skips a broken level").AddBreakSpace()
+            .AddLine("<color=#00FF00>/ath restart</color> -> Start a new run").AddBreakSpace()
+            .AddLine("<color=#00FF00>/ath stop</color> -> End the current run")
+            .AddLine("</size>");
+        Messenger.SendChat(message.Build().ToString());
+
+        // Wait only if TutorialConfig is disabled
+        if (Plugin.TutorialConfig.Value)
+        {
+            yield return new WaitForSeconds(5);
+        }
+
+        // Add final message and note about disabling tutorial without additional waiting
+        message
+            .AddBreakSpace()
+            .AddLine("<size=100%><color=#00FF00>Good luck and have fun!</color></size>")
+            .AddBreakSpace()
+            .AddLine("<size=90%><color=#808080>Tip: You can disable this tutorial in the settings.</color></size>");
+        Messenger.SendChat(message.Build().ToString());
     }
 
     public int CountTotalAttempts()
@@ -179,7 +211,7 @@ public class AthCtx
 
         Message.Builder message = new Message.Builder()
             .ClearLines()
-            .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}")
+            .AddLine($"<color=#ff8800>{CurrentLevel.Name}</color> by <color=#ff8800>{CurrentLevel.Author}</color>")
             .AddBreakSpace()
             .AddSeperator("Goals")
             .AddBreakSpace()
@@ -286,7 +318,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("Total Skips", $"{CountLevelSkips()}")
             .AddBreakSpace()
-            .AddKeyValue("ATs Oneshotted!", $"{CountOneShotATs()}")
+            .AddKeyValue("ATs Oneshot", $"{CountOneShotATs()}")
             .AddBreakSpace()
             .AddKeyValue("Attempts/AT", $"{AverageAttemptsPerAt():F2}")
             .AddBreakSpace()
@@ -322,7 +354,7 @@ public class AthCtx
         {
             builder.AddSeperator("This Author haunted you :skull:")
                 .AddBreakSpace()
-                .AddLine($"And their name is...<br>'{likedAuthor.Author}' !")
+                .AddLine($"And their name is ...<br><color=#ff8800>{likedAuthor.Author}</color>")
                 .AddBreakSpace()
                 .AddLine($"You've beaten {likedAuthor.Levels.Count} of their levels:")
                 .AddBreakSpace();
@@ -398,6 +430,47 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("Time left", TimeFormatter.FormatDuration((int)CurrentDuration.TotalSeconds));
         return message.Build().ToString();
+    }
+
+
+    public void ShowMessageRunningUI()
+    {
+        // UIBuilder uiBuilder = UIBuilder.Create(
+        //     new Vector2(100, 100),
+        //     new Vector2(400, 300),
+        //     "Level Info",
+        //     new Color(1f, 0.788f, 0.502f, 1f) // Zeepkist beige
+        // );
+        //
+        // PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
+        // double result = 0;
+        // double positiveResult = 0;
+        // string diffDisplay = "--:--.---";
+        //
+        // uiBuilder.AddTMPLabel($"<color=#ff8800>{CurrentLevel.Name}</color> by <color=#ff8800>{CurrentLevel.Author}</color>")
+        //     .AddSpace(10)
+        //     .AddHorizontalLine()
+        //     .AddTMPLabel("Goals")
+        //     .AddSpace(10)
+        //     .AddTMPLabel($"AT: {CurrentLevel.AuthorTime.GetFormattedTime()}");
+        //
+        // if (!CurrentLevel.GoldSkipUnlocked)
+        // {
+        //     uiBuilder.AddTMPLabel($"Gold: {CurrentLevel.GoldTime.GetFormattedTime()}");
+        // }
+        //
+        // if (currentResult != null)
+        // {
+        //     result = currentResult.Time - CurrentLevel.AuthorTime;
+        //     positiveResult = Math.Abs(result);
+        //     diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
+        //
+        //     uiBuilder.AddSpace(10)
+        //         .AddTMPLabel($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}: {diffDisplay}");
+        // }
+        //
+        // uiBuilder.AddButton("Close", () => { Plugin.Instance.MainGUI.ToggleVisibility(); });
+        // Plugin.Instance.MainGUI.SetDynamicUI(uiBuilder);
     }
 
     public bool IsTimeOver()

@@ -3,7 +3,6 @@ using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
-using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -28,7 +27,7 @@ public class StateAthOnARun : IState
     {
         AthStateMachine.Timer.Tick += TimerOnTick;
         RacingApi.RoundStarted += OnRoundNztStarted;
-        RacingApi.CrossedFinishLine += OnCrossedFinishLine;
+        RacingApi.CrossedFinishLine += OnCrossedFinnishLine;
         RacingApi.RoundEnded += OnRoundNztEnded;
     }
 
@@ -43,14 +42,14 @@ public class StateAthOnARun : IState
 
         AthStateMachine.SetServerMessage(false);
         AthStateMachine.Ctx.CurrentLevel.Attempt++;
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageRunning());
+        AthStateMachine.Ctx.ShowMessageRunningUI();
     }
 
     public void Exit()
     {
         AthStateMachine.Timer.Tick -= TimerOnTick;
         RacingApi.RoundStarted -= OnRoundNztStarted;
-        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
+        RacingApi.CrossedFinishLine -= OnCrossedFinnishLine;
         RacingApi.RoundEnded -= OnRoundNztEnded;
     }
 
@@ -59,7 +58,7 @@ public class StateAthOnARun : IState
         StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
     }
 
-    private void OnCrossedFinishLine(float time)
+    private void OnCrossedFinnishLine(float time)
     {
         StateMachine.TransitionTo(new StateAthEvaluateRun(StateMachine));
     }
@@ -72,6 +71,8 @@ public class StateAthOnARun : IState
     private void TimerOnTick()
     {
         AthStateMachine.SetServerMessage(false);
+
+
         if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime)
         {
             AthStateMachine.Ctx.TimeIsRunningLow = true;
