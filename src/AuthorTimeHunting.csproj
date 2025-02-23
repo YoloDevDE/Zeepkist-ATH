@@ -4,7 +4,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>1.16.3</Version>
+        <Version>1.16.4</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <PackageId>Author Time Hunting</PackageId>
@@ -25,9 +25,9 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="16.999.333-alpha"/>
-        <PackageReference Include="ZeepSDK" Version="1.36.3"/>
-        <PackageReference Include="Fody" Version="6.8.2" PrivateAssets="all"/> <!-- Fody package -->
-        <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="all"/> <!-- Costura package -->
+        <PackageReference Include="ZeepSDK" Version="1.40.1"/>
+        <PackageReference Include="Fody" Version="6.9.1" PrivateAssets="all"/> <!-- Fody package -->
+        <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/> <!-- Costura package -->
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
@@ -48,6 +48,9 @@
 
         <!-- Copy DLL to the plugin directory -->
         <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\$(ProjectName)-$(Version).dll&quot;"/>
+
+        <!-- Create a zip file from the directory -->
+        <Exec Command="powershell -Command &quot;Compress-Archive -Path &quot;&apos;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\*&apos;&quot; -DestinationPath &quot;&apos;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)-$(Version).zip&apos;&quot; -Force&quot;"/>
     </Target>
 
     <!-- Enable debug logging -->

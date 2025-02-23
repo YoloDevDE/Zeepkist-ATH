@@ -27,7 +27,7 @@ public class GraphQLService
     {
         if (_graphQLClient == null)
         {
-            _graphQLClient = new GraphQLHttpClient("https://graphql.zeepkist-gtr.com", new NewtonsoftJsonSerializer());
+            _graphQLClient = new GraphQLHttpClient("https://graphql.zeepki.st/", new NewtonsoftJsonSerializer());
             Console.WriteLine("GraphQL client initialized.");
         }
     }
@@ -41,7 +41,7 @@ public class GraphQLService
             {
                 Query = @"
                     query GetTotalCount {
-                        allLevels(first: 1) {
+                        allLevels {
                             totalCount
                         }
                     }"
