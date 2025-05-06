@@ -38,7 +38,7 @@ public class AthStateMachine : IStateMachine
         string timeLeftColor = paused || Ctx.CurrentDuration.TotalSeconds > Ctx.PunishTime ? stateColor : "#ff0000";
         string currentLevelColor = paused ? "#ffff00" : "#0088ff";
 
-        string message = $"/servermessage white 0 <size=\"25%\"><align=\"left\"><br><br><voffset=-2em><b>Author-Time-Hunting</b></voffset><br>" +
+        string message = $"/servermessage white 0 <size=\"25%\"><align=\"left\"><b>Author-Time-Hunting</b><br>" +
                          $"<#ffffff>State         : <{stateColor}>{stateText}<br>" +
                          $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}<br>" +
                          $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.Duration.TotalSeconds)}<br>" +

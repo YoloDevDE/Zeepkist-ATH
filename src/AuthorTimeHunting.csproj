@@ -24,9 +24,9 @@
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
-        <PackageReference Include="Zeepkist.GameLibs" Version="16.999.333-alpha"/>
-        <PackageReference Include="ZeepSDK" Version="1.40.1"/>
-        <PackageReference Include="Fody" Version="6.9.1" PrivateAssets="all"/> <!-- Fody package -->
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.5.1800"/>
+        <PackageReference Include="ZeepSDK" Version="1.43.0"/>
+        <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="all"/> <!-- Fody package -->
         <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/> <!-- Costura package -->
     </ItemGroup>
 

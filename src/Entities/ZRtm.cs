@@ -2,7 +2,7 @@
 
 namespace AuthorTimeHunting.Entities;
 
-public class LevelItemsByIdLevel
+public class ZRtm
 {
-    public List<LevelItem> Nodes { get; set; }
+    public List<Node> Nodes { get; set; }
 }
