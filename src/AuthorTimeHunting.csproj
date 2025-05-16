@@ -4,7 +4,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>1.17.0</Version>
+        <Version>1.17.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <PackageId>Author Time Hunting</PackageId>
@@ -25,7 +25,7 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.5.1800"/>
-        <PackageReference Include="ZeepSDK" Version="1.43.0"/>
+        <PackageReference Include="ZeepSDK" Version="1.44.0"/>
         <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="all"/> <!-- Fody package -->
         <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/> <!-- Costura package -->
     </ItemGroup>

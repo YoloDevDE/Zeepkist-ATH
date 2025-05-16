@@ -12,6 +12,7 @@ public class AthStateMachine : IStateMachine
     public AthStateMachine()
     {
         Ctx = new AthCtx();
+        Ctx.FetchNextLevel();
         Timer = new AthTimer();
         InitialState = new StateAthStarting(this);
         FinalState = new StateAthStopping(this);

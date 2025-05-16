@@ -27,7 +27,7 @@ public class GraphQLService
     {
         if (_graphQLClient == null)
         {
-            _graphQLClient = new GraphQLHttpClient("https://graphql-beta.zeepki.st/", new NewtonsoftJsonSerializer());
+            _graphQLClient = new GraphQLHttpClient("https://graphql.zeepki.st/", new NewtonsoftJsonSerializer());
             Console.WriteLine("GraphQL client initialized.");
         }
     }
@@ -40,8 +40,8 @@ public class GraphQLService
         {
             GraphQLRequest query = new GraphQLRequest
             {
-                Query = @"
-                   query GetLevelInfo {
+                Query = """
+                        query GetRandomLEvel {
                           zRtm(first: 1, pMaxAuthorTime: 180) {
                             nodes {
                               name
@@ -51,7 +51,8 @@ public class GraphQLService
                               workshopId
                             }
                           }
-                        }"
+                        }
+                        """
             };
 
             GraphQLResponse<Root> response = await _graphQLClient.SendQueryAsync<Root>(query);

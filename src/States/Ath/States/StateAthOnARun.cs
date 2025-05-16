@@ -1,9 +1,9 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
-using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -43,7 +43,7 @@ public class StateAthOnARun : IState
 
         AthStateMachine.SetServerMessage(false);
         AthStateMachine.Ctx.CurrentLevel.Attempt++;
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageRunning());
+        MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageRunning());
     }
 
     public void Exit()

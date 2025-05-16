@@ -32,7 +32,15 @@ public class StateAthLoadingNewLevel : IState
 
     public async void Execute()
     {
-        LevelItem levelItem = await GraphQLService.Instance.GetRandomLevelAsync();
+        LevelItem levelItem = AthStateMachine.Ctx.NextLevel;
+
+        // Keep fetching new level until we get a valid one
+        while (levelItem == null)
+        {
+            await AthStateMachine.Ctx.FetchNextLevel();
+            levelItem = AthStateMachine.Ctx.NextLevel;
+        }
+
         PlaylistItem playlistItem = new PlaylistItem(
             levelItem.FileUid,
             levelItem.WorkshopId,
@@ -41,6 +49,7 @@ public class StateAthLoadingNewLevel : IState
         );
         MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
         MultiplayerApi.UpdateServerPlaylist();
+
         // Continue with the synchronous part
         if (AthStateMachine.Ctx.CurrentLevel == null)
         {
@@ -48,11 +57,12 @@ public class StateAthLoadingNewLevel : IState
         }
 
         AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
-        ChatApi.SendMessage(AthStateMachine.Ctx.MessageLoadingCodex());
+        MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageLoadingCodex());
     }
 
     public void Exit()
     {
+        AthStateMachine.Ctx.FetchNextLevel();
         RacingApi.LevelLoaded -= OnLevelLoaded;
         AthStateMachine.Timer.Tick -= TimerOnTick;
     }

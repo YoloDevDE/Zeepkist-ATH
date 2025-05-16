@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.Util;
+using Crosstales;
 using ZeepkistClient;
 using ZeepkistNetworking;
 
@@ -10,6 +13,11 @@ namespace AuthorTimeHunting.Entities;
 public class AthCtx
 {
     public int Skips = 0;
+
+    public AthCtx()
+    {
+        FetchNextLevel();
+    }
     // Constructor (if needed)
     // You may add a constructor if you want to initialize certain properties differently.
 
@@ -28,6 +36,7 @@ public class AthCtx
 
     public bool TimeIsRunningLow { get; set; } = false;
     public Level CurrentLevel { get; set; }
+    public LevelItem NextLevel { get; set; }
     public List<Level> Levels { get; set; } = new List<Level>();
 
 
@@ -51,41 +60,52 @@ public class AthCtx
         Message.Builder message = new Message.Builder();
         message
             .ClearLines()
-            .AddLine("Author-Time-Hunting started.<br>gl hf!");
+            .AddLine("<#FFD700>Welcome to Author-Time-Hunting!</color>")
+            .AddBreakSpace();
+
         if (!Plugin.Minimalist.Value)
         {
             message
+                .AddSeperator("Game Rules")
                 .AddBreakSpace()
-                .AddSeperator("Basics")
+                .AddKeyValue("Time Limit", $"{TimeSpan.FromSeconds(Duration).ToFormattedString()}")
                 .AddBreakSpace()
-                .AddLine($"You have {TimeSpan.FromSeconds(Duration).ToFormattedString()} on random maps to get as many Author Medals as possible.")
+                .AddKeyValue("Goal", "Get as many Author Medals as possible")
                 .AddBreakSpace()
+                .AddSeperator("Skipping Rules")
                 .AddBreakSpace()
-                .AddLine("If an AT is not obtainable you use this command:")
+                .AddLine("Using <#FF4500>/skip</color> gives a penalty of:")
                 .AddBreakSpace()
-                .AddLine("- /ath broken")
+                .AddKeyValue("Time", $"{TimeSpan.FromSeconds(PunishTime).ToFormattedString()}")
                 .AddBreakSpace()
-                .AddLine("DO NOT ABUSE THIS >:(")
+                .AddLine("No penalty if your:")
                 .AddBreakSpace()
+                .AddKeyValue("• Medal", $"Got <#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> or Gold")
                 .AddBreakSpace()
-                .AddLine($"If you '/skip' a map you get a {TimeSpan.FromSeconds(PunishTime).ToFormattedString()} penalty except you:")
+                .AddKeyValue("• Skip Type", $"Used <#{ColorExtension.bg_Freeskip.CTToHexRGB()}>'Free-Skip'</color>")
                 .AddBreakSpace()
-                .AddLine("- obtained AT or Gold")
+                .AddSeperator("Broken Maps")
                 .AddBreakSpace()
-                .AddLine("- use a 'Free-Skip'");
+                .AddLine("If AT is impossible, use:")
+                .AddBreakSpace()
+                .AddKeyValue("Command", "<#FF4500>/ath broken</color>")
+                .AddBreakSpace()
+                .AddLine("<#FF0000>Please use this responsibly!</color>");
         }
         else
         {
             message
-                .AddBreakSpace()
                 .AddSeperator("Commands")
-                .AddLine("- /fs -> Skips a Level")
                 .AddBreakSpace()
-                .AddLine("- /ath broken -> Skips without punishment")
-                .AddBreakSpace()
-                .AddSeperator("Additional Commands")
-                .AddLine("- /ath restart, /ath stop");
+                .AddKeyValue("/fs", "Skip level (free)")
+                .AddKeyValue("/ath broken", "Skip unbeatable map")
+                .AddKeyValue("/ath restart", "Restart the hunt")
+                .AddKeyValue("/ath stop", "End the hunt");
         }
+
+        message
+            .AddBreakSpace()
+            .AddLine("<color=#FFD700>Good luck & have fun!</color>");
 
         return message.Build().ToString();
     }
@@ -101,6 +121,11 @@ public class AthCtx
             .Where(level => level.Duration.TotalMinutes >= 5 && !level.LevelBroken)
             .OrderByDescending(level => level.Duration)
             .FirstOrDefault();
+    }
+
+    public async Task FetchNextLevel()
+    {
+        NextLevel = await GraphQLService.Instance.GetRandomLevelAsync();
     }
 
     public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
@@ -173,8 +198,8 @@ public class AthCtx
         // Initialize default values
         double result = 0;
         double positiveResult = 0;
-        string diffDisplay = "--:--.---";
-        string resultDisplay = "--:--.---";
+        string diffDisplay = " --:--.---";
+        string resultDisplay = " --:--.---";
 
 
         Message.Builder message = new Message.Builder()
@@ -183,12 +208,12 @@ public class AthCtx
             .AddBreakSpace()
             .AddSeperator("Goals")
             .AddBreakSpace()
-            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
+            .AddKeyValue($"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
         if (!CurrentLevel.GoldSkipUnlocked)
         {
             message
                 .AddBreakSpace()
-                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
+                .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
 
         if (currentResult != null)
@@ -199,14 +224,16 @@ public class AthCtx
 
             message
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : "AT ") + "Beaten by" : (CurrentLevel.GoldSkipUnlocked ? "" : "AT ") + "Missed by")}", diffDisplay);
+                .AddKeyValue(
+                    $"{(CurrentLevel.Levelbeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> ") + "Beaten by" : (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> ") + "Missed by")}",
+                    "<#aaaa00>" + diffDisplay + "</color>");
         }
 
         if (CurrentLevel.GoldSkipUnlocked)
         {
             message
                 .AddBreakSpace()
-                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
+                .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
 
         return
@@ -222,8 +249,8 @@ public class AthCtx
         // Initialize default values
         double result = 0;
         double positiveResult = 0;
-        string diffDisplay = "--:--.---";
-        string resultDisplay = "--:--.---";
+        string diffDisplay = " --:--.---";
+        string resultDisplay = " --:--.---";
 
         if (currentResult != null)
         {
@@ -240,12 +267,12 @@ public class AthCtx
             .AddBreakSpace()
             .AddSeperator("Result")
             .AddBreakSpace()
-            .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
+            .AddKeyValue($"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
         if (!CurrentLevel.GoldSkipUnlocked)
         {
             message
                 .AddBreakSpace()
-                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
+                .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
                 .AddBreakSpace()
                 .AddKeyValue(">Your Time", resultDisplay)
                 .AddBreakSpace()
@@ -260,7 +287,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
                 .AddBreakSpace()
-                .AddKeyValue("Gold", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
+                .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
                 ;
         }
 
@@ -288,9 +315,9 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("ATs Oneshotted!", $"{CountOneShotATs()}")
             .AddBreakSpace()
-            .AddKeyValue("Attempts/AT", $"{AverageAttemptsPerAt():F2}")
+            .AddKeyValue($"Attempts/<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{AverageAttemptsPerAt():F2}")
             .AddBreakSpace()
-            .AddKeyValue("Time/AT", $"{AverageTimePerAt().ToFormattedString()}")
+            .AddKeyValue($"Time/<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{AverageTimePerAt().ToFormattedString()}")
             .AddBreakSpace();
 
         try
@@ -379,7 +406,7 @@ public class AthCtx
         {
             message
                 .AddBreakSpace()
-                .AddKeyValue("AT", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
+                .AddKeyValue($"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{CurrentLevel.AuthorTime.GetFormattedTime()}")
                 .AddBreakSpace()
                 .AddKeyValue(">Your Time", resultDisplay);
         }

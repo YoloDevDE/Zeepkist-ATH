@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace AuthorTimeHunting.Util;
 
@@ -9,7 +11,7 @@ public class Message
 
     public override string ToString()
     {
-        return "<br>" + string.Join("", Lines);
+        return "<#d0d0d0><br>" + string.Join("", Lines) + "</color>";
     }
 
     public class Builder
@@ -68,47 +70,69 @@ public class Message
             return this;
         }
 
+        private string StripRichTextTags(string input)
+        {
+            StringBuilder result = new StringBuilder();
+            List<int> openTagIndices = new List<int>();
+            List<int> closeTagIndices = new List<int>();
+            bool insideTag = false;
+
+            // First find all tag positions
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] == '<')
+                {
+                    openTagIndices.Add(i);
+                    insideTag = true;
+                }
+                else if (input[i] == '>' && insideTag)
+                {
+                    closeTagIndices.Add(i);
+                    insideTag = false;
+                }
+            }
+
+            // Only process if we have matching tags
+            if (openTagIndices.Count == closeTagIndices.Count)
+            {
+                int currentPos = 0;
+                for (int i = 0; i < openTagIndices.Count; i++)
+                {
+                    // Add text before tag
+                    result.Append(input.Substring(currentPos, openTagIndices[i] - currentPos));
+                    currentPos = closeTagIndices[i] + 1;
+                }
+
+                // Add remaining text after last tag
+                if (currentPos < input.Length)
+                {
+                    result.Append(input.Substring(currentPos));
+                }
+
+                return result.ToString();
+            }
+
+            return input; // Return original if tags don't match
+        }
+
+        private string FormatKeyValue(string key, string value, int keyLength, int totalLength)
+        {
+            string strippedKey = StripRichTextTags(key);
+            string strippedValue = StripRichTextTags(value);
+
+            string padding = new string(' ', Math.Max(0, keyLength - strippedKey.Length));
+            string formattedString = $"{key}{padding}: {value}";
+
+            return formattedString;
+        }
+
         public Builder AddKeyValue(string key, string value)
         {
-            string formattedLine = FormatKeyValue(key, value, 15, 30);
+            string formattedLine = FormatKeyValue(key, value, 15, 45);
             _message.Lines.Add(formattedLine);
             return this;
         }
 
-        private static string FormatKeyValue(string key, string value, int middleIndex, int totalWidth)
-        {
-            // Initialize temporary variables to store the removed parts
-            string removedKeyPart = string.Empty;
-            string removedValuePart = string.Empty;
-
-            // Remove everything between two colons in the key and store it in removedKeyPart
-            int keyColonStart = key.IndexOf(':');
-            int keyColonEnd = key.LastIndexOf(':');
-            if (keyColonStart != keyColonEnd && keyColonStart >= 0 && keyColonEnd > keyColonStart)
-            {
-                removedKeyPart = key.Substring(keyColonStart, keyColonEnd - keyColonStart + 1);
-                key = key.Remove(keyColonStart + 1, keyColonEnd - keyColonStart - 1);
-            }
-
-            // Remove everything between two colons in the value and store it in removedValuePart
-            int valueColonStart = value.IndexOf(':');
-            int valueColonEnd = value.LastIndexOf(':');
-            if (valueColonStart != valueColonEnd && valueColonStart >= 0 && valueColonEnd > valueColonStart)
-            {
-                removedValuePart = value.Substring(valueColonStart, valueColonEnd - valueColonStart + 1);
-                value = value.Remove(valueColonStart + 1, valueColonEnd - valueColonStart - 1);
-            }
-
-            // Calculate spaces for key and value
-            int keySpace = middleIndex - 1;
-            int valueSpace = totalWidth - middleIndex - 1;
-
-            // Trim key and value if they exceed their spaces
-            string formattedKey = key.Length > keySpace ? key.Substring(0, keySpace) : key;
-            string formattedValue = value.Length > valueSpace ? value.Substring(0, valueSpace) : value;
-
-            return formattedKey.PadRight(middleIndex - 1).Replace("::", $"{removedKeyPart}") + ":" + formattedValue.PadLeft(totalWidth - middleIndex).Replace("::", $"{removedValuePart}");
-        }
 
         public Message Build()
         {

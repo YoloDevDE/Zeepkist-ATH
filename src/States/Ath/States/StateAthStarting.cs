@@ -1,6 +1,7 @@
-﻿using AuthorTimeHunting.Interfaces;
+﻿using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 
@@ -22,18 +23,31 @@ public class StateAthStarting : IState
     // Public Methods
     public void Enter()
     {
+        AthStateMachine.Ctx.FetchNextLevel();
     }
 
-    public void Execute()
+    public async void Execute()
     {
         // Starting Text
         ChatApi.SendMessage("/settime 86400");
         ZeepkistNetwork.CurrentLobby.Playlist.Clear();
         ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
-        ChatApi.SendMessage("/fs");
-        Messenger.SendChat(
+        LevelItem levelItem = AthStateMachine.Ctx.NextLevel;
+        MessageSenderService.SendLocalMessage(
+            "Fetching 1st Level..."
+        );
+        // Keep fetching new level until we get a valid one
+        while (levelItem == null)
+        {
+            await AthStateMachine.Ctx.FetchNextLevel();
+            levelItem = AthStateMachine.Ctx.NextLevel;
+        }
+
+        MessageSenderService.SendLocalMessage(
             AthStateMachine.Ctx.MessageStarting()
         );
+        ChatApi.SendMessage("/fs");
+
 
         AthStateMachine.StartTimer();
         StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
