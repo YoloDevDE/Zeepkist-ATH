@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace AuthorTimeHunting.Util;
 
@@ -70,65 +68,16 @@ public class Message
             return this;
         }
 
-        private string StripRichTextTags(string input)
+
+        private string FormatKeyValue(string key, string value)
         {
-            StringBuilder result = new StringBuilder();
-            List<int> openTagIndices = new List<int>();
-            List<int> closeTagIndices = new List<int>();
-            bool insideTag = false;
-
-            // First find all tag positions
-            for (int i = 0; i < input.Length; i++)
-            {
-                if (input[i] == '<')
-                {
-                    openTagIndices.Add(i);
-                    insideTag = true;
-                }
-                else if (input[i] == '>' && insideTag)
-                {
-                    closeTagIndices.Add(i);
-                    insideTag = false;
-                }
-            }
-
-            // Only process if we have matching tags
-            if (openTagIndices.Count == closeTagIndices.Count)
-            {
-                int currentPos = 0;
-                for (int i = 0; i < openTagIndices.Count; i++)
-                {
-                    // Add text before tag
-                    result.Append(input.Substring(currentPos, openTagIndices[i] - currentPos));
-                    currentPos = closeTagIndices[i] + 1;
-                }
-
-                // Add remaining text after last tag
-                if (currentPos < input.Length)
-                {
-                    result.Append(input.Substring(currentPos));
-                }
-
-                return result.ToString();
-            }
-
-            return input; // Return original if tags don't match
-        }
-
-        private string FormatKeyValue(string key, string value, int keyLength, int totalLength)
-        {
-            string strippedKey = StripRichTextTags(key);
-            string strippedValue = StripRichTextTags(value);
-
-            string padding = new string(' ', Math.Max(0, keyLength - strippedKey.Length));
-            string formattedString = $"{key}{padding}: {value}";
-
+            string formattedString = $"{key} <indent=8em>:</indent><indent=9em>{value}</indent>";
             return formattedString;
         }
 
         public Builder AddKeyValue(string key, string value)
         {
-            string formattedLine = FormatKeyValue(key, value, 15, 45);
+            string formattedLine = FormatKeyValue(key, value);
             _message.Lines.Add(formattedLine);
             return this;
         }

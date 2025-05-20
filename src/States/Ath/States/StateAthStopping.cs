@@ -25,6 +25,7 @@ public class StateAthStopping : IState
 
     public void Execute()
     {
+        RandomLevelService.GenerateRandomLevel();
         AthStateMachine.StopTimer();
         try
         {

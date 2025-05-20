@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using GraphQL;
@@ -34,7 +36,7 @@ public class GraphQLService
 
 
     // Method to get a random level
-    public async Task<LevelItem> GetRandomLevelAsync()
+    public async Task<List<LevelItem>> GetRandomLevelAsync()
     {
         try
         {
@@ -42,13 +44,19 @@ public class GraphQLService
             {
                 Query = """
                         query GetRandomLEvel {
-                          zRtm(first: 1, pMaxAuthorTime: 180) {
+                          zRtm(
+                            pMaxAuthorTime: 180
+                            pMinFinishes: 1
+                            filter: {deleted: {equalTo: false}}
+                            first: 2
+                          ) {
                             nodes {
                               name
                               validationTimeAuthor
                               fileAuthor
                               fileUid
                               workshopId
+                              authorId
                             }
                           }
                         }
@@ -82,18 +90,17 @@ public class GraphQLService
                 return null;
             }
 
-            // Convert Node to LevelItem
-            Node node = response.Data.ZRtm.Nodes[0];
-            LevelItem levelItem = new LevelItem
+            // Convert all Nodes to LevelItems
+            List<LevelItem> levelItems = response.Data.ZRtm.Nodes.Select(node => new LevelItem
             {
                 Name = node.Name,
                 ValidationTimeAuthor = node.ValidationTimeAuthor,
                 FileAuthor = node.FileAuthor,
                 FileUid = node.FileUid,
                 WorkshopId = ulong.Parse(node.WorkshopId)
-            };
+            }).ToList();
 
-            return levelItem;
+            return levelItems;
         }
         catch (Exception ex)
         {

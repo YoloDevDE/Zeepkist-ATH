@@ -1,9 +1,8 @@
-﻿using AuthorTimeHunting.Entities;
+﻿using System.Threading.Tasks;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepkistClient;
-using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -23,37 +22,29 @@ public class StateAthStarting : IState
     // Public Methods
     public void Enter()
     {
-        AthStateMachine.Ctx.FetchNextLevel();
     }
 
     public async void Execute()
     {
-        // Starting Text
-        ChatApi.SendMessage("/settime 86400");
-        ZeepkistNetwork.CurrentLobby.Playlist.Clear();
-        ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
-        LevelItem levelItem = AthStateMachine.Ctx.NextLevel;
-        MessageSenderService.SendLocalMessage(
-            "Fetching 1st Level..."
-        );
-        // Keep fetching new level until we get a valid one
-        while (levelItem == null)
-        {
-            await AthStateMachine.Ctx.FetchNextLevel();
-            levelItem = AthStateMachine.Ctx.NextLevel;
-        }
+        // Wait until the GameState is not 0
+        await WaitUntilGameStateNotZero();
 
-        MessageSenderService.SendLocalMessage(
-            AthStateMachine.Ctx.MessageStarting()
-        );
-        ChatApi.SendMessage("/fs");
-
-
+        MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageStarting());
         AthStateMachine.StartTimer();
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthPreparePlaylist(StateMachine));
     }
 
     public void Exit()
     {
+    }
+
+    private async Task WaitUntilGameStateNotZero()
+    {
+        while (ZeepkistNetwork.CurrentLobby.GameState != 0)
+        {
+            await Task.Delay(1000); // Check every 100ms to not block the thread
+        }
+
+        await Task.Delay(1000); // Check every 100ms to not block the thread
     }
 }

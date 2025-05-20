@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.Util;
 using Crosstales;
@@ -12,37 +11,25 @@ namespace AuthorTimeHunting.Entities;
 
 public class AthCtx
 {
+    // Constants
+    private const int DEFAULT_DURATION = 60 * 60; // 1 hour in seconds
+    private const int DEFAULT_PUNISH_TIME = 60 * 5; // 5 minutes in seconds
+
+    // Fields
     public int Skips = 0;
 
-    public AthCtx()
-    {
-        FetchNextLevel();
-    }
-    // Constructor (if needed)
-    // You may add a constructor if you want to initialize certain properties differently.
+    /// <summary>
+    ///     Initializes a new instance of AthCtx and starts fetching the first level
+    /// </summary>
 
-    // Properties
+
+    // Properties - Time related
     public DateTime StartTime { get; } = DateTime.Now;
-    public int Duration { get; } = 60 * 60;
-    public int LoadingTimeInSeconds { get; set; } = 0;
 
-    public int PauseTimeInSeconds { get; set; } = 0;
-
-    public int PunishTime { get; } = 60 * 5;
-
-
-    public int Punishments { set; get; } = 0;
-    public int FreeSkips { get; set; } = 1;
-
-    public bool TimeIsRunningLow { get; set; } = false;
-    public Level CurrentLevel { get; set; }
-    public LevelItem NextLevel { get; set; }
-    public List<Level> Levels { get; set; } = new List<Level>();
-
-
+    public int Duration { get; } = DEFAULT_DURATION;
+    public int PunishTime { get; } = DEFAULT_PUNISH_TIME;
     public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).Duration();
-    public int AuthorMedals { get; set; } = 0;
-    public int GoldMedals { get; set; } = 0;
+    public TimeSpan CurrentDurationWithoutPunishments => DateTime.Now.Subtract(EndTimeWithoutPunishments).Duration();
 
     public DateTime EndTime =>
         StartTime
@@ -52,9 +39,140 @@ public class AthCtx
             .AddSeconds(BrokenTimeInSeconds)
             .AddSeconds(-(PunishTime * Punishments));
 
+    public DateTime EndTimeWithoutPunishments =>
+        StartTime
+            .AddSeconds(Duration + 1)
+            .AddSeconds(PauseTimeInSeconds)
+            .AddSeconds(LoadingTimeInSeconds)
+            .AddSeconds(BrokenTimeInSeconds);
+
+    // Properties - Time adjustments
+    public int LoadingTimeInSeconds { get; set; } = 0;
+    public int PauseTimeInSeconds { get; set; } = 0;
     public int BrokenTimeInSeconds { get; set; } = 0;
 
+    // Properties - Level and progress tracking
+    public Level CurrentLevel { get; set; }
+    public LevelItem NextLevel => RandomLevelService.CurrentLevel;
+    public List<Level> Levels { get; set; } = new List<Level>();
+    public bool TimeIsRunningLow { get; set; } = false;
 
+    // Properties - Game statistics
+    public int AuthorMedals { get; set; } = 0;
+    public int GoldMedals { get; set; } = 0;
+    public int Punishments { set; get; } = 0;
+    public int FreeSkips { get; set; } = 1;
+
+    public bool FirstLevel { get; set; } = true;
+
+    #region Level Management Methods
+
+    /// <summary>
+    ///     Checks if the time for the run is over
+    /// </summary>
+    public bool IsTimeOver()
+    {
+        return DateTime.Now >= EndTime;
+    }
+
+    #endregion
+
+    #region Level Statistics Methods
+
+    /// <summary>
+    ///     Counts the total number of level attempts across all levels
+    /// </summary>
+    public int CountTotalAttempts()
+    {
+        return Levels.Sum(level => level.Attempt);
+    }
+
+    /// <summary>
+    ///     Finds the level that took the longest time (5+ minutes) and wasn't marked as broken
+    /// </summary>
+    public Level LevelYouShouldHaveSkippedThis()
+    {
+        return Levels
+            .Where(level => level.Duration.TotalMinutes >= 5 && !level.LevelBroken)
+            .OrderByDescending(level => level.Duration)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    ///     Finds the easiest level based on attempts and time taken
+    /// </summary>
+    public Level LevelThatWasVeryEasy()
+    {
+        return Levels
+            .Where(level => level.Levelbeaten)
+            .OrderBy(level => level.Attempt)
+            .ThenBy(level => level.Duration)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    ///     Counts how many levels were skipped
+    /// </summary>
+    public int CountLevelSkips()
+    {
+        return Levels.Count(level => level.LevelSkipped);
+    }
+
+    /// <summary>
+    ///     Counts how many author times were achieved on the first attempt
+    /// </summary>
+    public int CountOneShotATs()
+    {
+        return Levels.Count(level => level.Levelbeaten && level.Attempt == 1);
+    }
+
+    /// <summary>
+    ///     Calculates the average number of attempts per author time achieved
+    /// </summary>
+    public double AverageAttemptsPerAt()
+    {
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
+        return !beatenLevels.Any() ? 0 : beatenLevels.Average(level => level.Attempt);
+    }
+
+    /// <summary>
+    ///     Calculates the average time spent per author time achieved
+    /// </summary>
+    public TimeSpan AverageTimePerAt()
+    {
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
+        if (!beatenLevels.Any())
+        {
+            return TimeSpan.Zero;
+        }
+
+        long averageTicks = (long)beatenLevels.Average(level => level.Duration.Ticks);
+        return TimeSpan.FromTicks(averageTicks);
+    }
+
+    /// <summary>
+    ///     Identifies an author whose levels the player has beaten multiple times
+    /// </summary>
+    public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
+    {
+        return Levels
+            .Where(level => level.Levelbeaten)
+            .GroupBy(level => level.Author)
+            .Where(group => group.Count() >= 2)
+            .Select(group => (
+                Author: group.Key,
+                Levels: group.ToList()
+            ))
+            .FirstOrDefault();
+    }
+
+    #endregion
+
+    #region Message Formatting Methods
+
+    /// <summary>
+    ///     Formats the welcome message for the start of a run
+    /// </summary>
     public string MessageStarting()
     {
         Message.Builder message = new Message.Builder();
@@ -65,42 +183,11 @@ public class AthCtx
 
         if (!Plugin.Minimalist.Value)
         {
-            message
-                .AddSeperator("Game Rules")
-                .AddBreakSpace()
-                .AddKeyValue("Time Limit", $"{TimeSpan.FromSeconds(Duration).ToFormattedString()}")
-                .AddBreakSpace()
-                .AddKeyValue("Goal", "Get as many Author Medals as possible")
-                .AddBreakSpace()
-                .AddSeperator("Skipping Rules")
-                .AddBreakSpace()
-                .AddLine("Using <#FF4500>/skip</color> gives a penalty of:")
-                .AddBreakSpace()
-                .AddKeyValue("Time", $"{TimeSpan.FromSeconds(PunishTime).ToFormattedString()}")
-                .AddBreakSpace()
-                .AddLine("No penalty if your:")
-                .AddBreakSpace()
-                .AddKeyValue("• Medal", $"Got <#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> or Gold")
-                .AddBreakSpace()
-                .AddKeyValue("• Skip Type", $"Used <#{ColorExtension.bg_Freeskip.CTToHexRGB()}>'Free-Skip'</color>")
-                .AddBreakSpace()
-                .AddSeperator("Broken Maps")
-                .AddBreakSpace()
-                .AddLine("If AT is impossible, use:")
-                .AddBreakSpace()
-                .AddKeyValue("Command", "<#FF4500>/ath broken</color>")
-                .AddBreakSpace()
-                .AddLine("<#FF0000>Please use this responsibly!</color>");
+            AddDetailedWelcomeInfo(message);
         }
         else
         {
-            message
-                .AddSeperator("Commands")
-                .AddBreakSpace()
-                .AddKeyValue("/fs", "Skip level (free)")
-                .AddKeyValue("/ath broken", "Skip unbeatable map")
-                .AddKeyValue("/ath restart", "Restart the hunt")
-                .AddKeyValue("/ath stop", "End the hunt");
+            AddMinimalistWelcomeInfo(message);
         }
 
         message
@@ -110,87 +197,50 @@ public class AthCtx
         return message.Build().ToString();
     }
 
-    public int CountTotalAttempts()
+    private void AddDetailedWelcomeInfo(Message.Builder message)
     {
-        return Levels.Sum(level => level.Attempt);
+        message
+            .AddSeperator("Game Rules")
+            .AddBreakSpace()
+            .AddKeyValue("Time Limit", $"{TimeSpan.FromSeconds(Duration).ToFormattedString()}")
+            .AddBreakSpace()
+            .AddKeyValue("Goal", "Get as many Author Medals as possible")
+            .AddBreakSpace()
+            .AddSeperator("Skipping Rules")
+            .AddBreakSpace()
+            .AddLine("Using <#FF4500>/skip</color> gives a penalty of:")
+            .AddBreakSpace()
+            .AddKeyValue("Time", $"{TimeSpan.FromSeconds(PunishTime).ToFormattedString()}")
+            .AddBreakSpace()
+            .AddLine("No penalty if your:")
+            .AddBreakSpace()
+            .AddKeyValue("• Medal", $"Got <#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> or Gold")
+            .AddBreakSpace()
+            .AddKeyValue("• Skip Type", $"Used <#{ColorExtension.bg_Freeskip.CTToHexRGB()}>'Free-Skip'</color>")
+            .AddBreakSpace()
+            .AddSeperator("Broken Maps")
+            .AddBreakSpace()
+            .AddLine("If AT is impossible, use:")
+            .AddBreakSpace()
+            .AddKeyValue("Command", "<#FF4500>/ath broken</color>")
+            .AddBreakSpace()
+            .AddLine("<#FF0000>Please use this responsibly!</color>");
     }
 
-    public Level LevelYouShouldHaveSkippedThis()
+    private void AddMinimalistWelcomeInfo(Message.Builder message)
     {
-        return Levels
-            .Where(level => level.Duration.TotalMinutes >= 5 && !level.LevelBroken)
-            .OrderByDescending(level => level.Duration)
-            .FirstOrDefault();
+        message
+            .AddSeperator("Commands")
+            .AddBreakSpace()
+            .AddKeyValue("/fs", "Skip level (free)")
+            .AddKeyValue("/ath broken", "Skip unbeatable map")
+            .AddKeyValue("/ath restart", "Restart the hunt")
+            .AddKeyValue("/ath stop", "End the hunt");
     }
 
-    public async Task FetchNextLevel()
-    {
-        NextLevel = await GraphQLService.Instance.GetRandomLevelAsync();
-    }
-
-    public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
-    {
-        (string Author, List<Level> Levels) likedAuthor = Levels
-            .Where(level => level.Levelbeaten) // Only consider beaten levels
-            .GroupBy(level => level.Author) // Group by author
-            .Where(group => group.Count() >= 2) // Find authors with 2 or more beaten levels
-            .Select(group => (
-                Author: group.Key,
-                Levels: group.ToList() // Get the list of levels beaten by this author
-            ))
-            .FirstOrDefault(); // Take the first author that meets the condition
-
-        return likedAuthor; // Will return null if no author meets the criteria
-    }
-
-
-    public Level LevelThatWasVeryEasy()
-    {
-        return Levels
-            .Where(level => level.Levelbeaten)
-            .OrderBy(level => level.Attempt)
-            .ThenBy(level => level.Duration)
-            .FirstOrDefault();
-    }
-
-    public int CountLevelSkips()
-    {
-        return Levels.Count(level => level.LevelSkipped);
-    }
-
-    public int CountOneShotATs()
-    {
-        return Levels.Count(level => level.Levelbeaten && level.Attempt == 1);
-    }
-
-    public double AverageAttemptsPerAt()
-    {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
-
-        if (!beatenLevels.Any())
-        {
-            return 0; // Return 0 or another appropriate default value if no levels have been beaten
-        }
-
-        return beatenLevels.Average(level => level.Attempt);
-    }
-
-    public TimeSpan AverageTimePerAt()
-    {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
-
-        if (!beatenLevels.Any())
-        {
-            return TimeSpan.Zero; // Return zero if no levels have been beaten
-        }
-
-        // Calculate the average TimeSpan by converting to ticks
-        long averageTicks = (long)beatenLevels.Average(level => level.Duration.Ticks);
-
-        // Convert the average ticks back to TimeSpan
-        return TimeSpan.FromTicks(averageTicks);
-    }
-
+    /// <summary>
+    ///     Formats the message shown during an active run
+    /// </summary>
     public string MessageRunning()
     {
         PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
@@ -199,8 +249,6 @@ public class AthCtx
         double result = 0;
         double positiveResult = 0;
         string diffDisplay = " --:--.---";
-        string resultDisplay = " --:--.---";
-
 
         Message.Builder message = new Message.Builder()
             .ClearLines()
@@ -209,6 +257,8 @@ public class AthCtx
             .AddSeperator("Goals")
             .AddBreakSpace()
             .AddKeyValue($"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
+
+        // Show gold time if gold skip isn't unlocked yet
         if (!CurrentLevel.GoldSkipUnlocked)
         {
             message
@@ -216,6 +266,7 @@ public class AthCtx
                 .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
 
+        // Add current result if available
         if (currentResult != null)
         {
             result = currentResult.Time - CurrentLevel.AuthorTime;
@@ -229,6 +280,7 @@ public class AthCtx
                     "<#aaaa00>" + diffDisplay + "</color>");
         }
 
+        // Add gold time if gold skip is unlocked
         if (CurrentLevel.GoldSkipUnlocked)
         {
             message
@@ -236,12 +288,12 @@ public class AthCtx
                 .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
 
-        return
-            message
-                .Build()
-                .ToString();
+        return message.Build().ToString();
     }
 
+    /// <summary>
+    ///     Formats the message shown after completing a level
+    /// </summary>
     public string MessageLevelResult()
     {
         PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
@@ -268,6 +320,7 @@ public class AthCtx
             .AddSeperator("Result")
             .AddBreakSpace()
             .AddKeyValue($"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color>", $"{CurrentLevel.AuthorTime.GetFormattedTime()}");
+
         if (!CurrentLevel.GoldSkipUnlocked)
         {
             message
@@ -278,7 +331,6 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "AT Beaten by" : "AT Missed by")}", diffDisplay);
         }
-
         else
         {
             message
@@ -287,15 +339,15 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
                 .AddBreakSpace()
-                .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}")
-                ;
+                .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
 
-        return message
-            .Build()
-            .ToString();
+        return message.Build().ToString();
     }
 
+    /// <summary>
+    ///     Formats the final summary message shown at the end of a run
+    /// </summary>
     public string MessageFinalResult()
     {
         Level youShouldHaveSkippedThis = LevelYouShouldHaveSkippedThis();
@@ -322,19 +374,10 @@ public class AthCtx
 
         try
         {
-            // Conditionally add the section for the longest duration level
+            // Add the "should have skipped" section if applicable
             if (youShouldHaveSkippedThis != null)
             {
-                builder.AddSeperator("You should have skipped this :yannics:")
-                    .AddBreakSpace()
-                    .AddLine($"{youShouldHaveSkippedThis.Name} by {youShouldHaveSkippedThis.Author}")
-                    .AddBreakSpace()
-                    .AddKeyValue("Status", $"{youShouldHaveSkippedThis.Status}")
-                    .AddBreakSpace()
-                    .AddKeyValue("Duration", $"{youShouldHaveSkippedThis.Duration.ToFormattedString()}")
-                    .AddBreakSpace()
-                    .AddKeyValue("Attempts", $"{youShouldHaveSkippedThis.Attempt}")
-                    .AddBreakSpace();
+                AddShouldHaveSkippedSection(builder, youShouldHaveSkippedThis);
             }
         }
         catch (Exception e)
@@ -343,27 +386,49 @@ public class AthCtx
             // Handle the exception or continue execution
         }
 
-        // Conditionally add the section for the author with beaten levels
+        // Add the "liked author" section if applicable
         (string Author, List<Level> Levels) likedAuthor = YouLikedThisAuthorALot();
         if (likedAuthor.Levels != null && likedAuthor.Levels.Count > 0)
         {
-            builder.AddSeperator("This Author haunted you :skull:")
-                .AddBreakSpace()
-                .AddLine($"And their name is...<br>'{likedAuthor.Author}' !")
-                .AddBreakSpace()
-                .AddLine($"You've beaten {likedAuthor.Levels.Count} of their levels:")
-                .AddBreakSpace();
-
-            foreach (Level level in likedAuthor.Levels)
-            {
-                builder.AddLine($"- {level.Name}")
-                    .AddBreakSpace();
-            }
+            AddLikedAuthorSection(builder, likedAuthor);
         }
 
         return builder.Build().ToString();
     }
 
+    private void AddShouldHaveSkippedSection(Message.Builder builder, Level level)
+    {
+        builder.AddSeperator("You should have skipped this :yannics:")
+            .AddBreakSpace()
+            .AddLine($"{level.Name} by {level.Author}")
+            .AddBreakSpace()
+            .AddKeyValue("Status", $"{level.Status}")
+            .AddBreakSpace()
+            .AddKeyValue("Duration", $"{level.Duration.ToFormattedString()}")
+            .AddBreakSpace()
+            .AddKeyValue("Attempts", $"{level.Attempt}")
+            .AddBreakSpace();
+    }
+
+    private void AddLikedAuthorSection(Message.Builder builder, (string Author, List<Level> Levels) likedAuthor)
+    {
+        builder.AddSeperator("This Author haunted you :skull:")
+            .AddBreakSpace()
+            .AddLine($"And their name is...<br>'{likedAuthor.Author}' !")
+            .AddBreakSpace()
+            .AddLine($"You've beaten {likedAuthor.Levels.Count} of their levels:")
+            .AddBreakSpace();
+
+        foreach (Level level in likedAuthor.Levels)
+        {
+            builder.AddLine($"- {level.Name}")
+                .AddBreakSpace();
+        }
+    }
+
+    /// <summary>
+    ///     Formats the message shown during level loading
+    /// </summary>
     public string MessageLoadingCodex()
     {
         PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
@@ -387,6 +452,7 @@ public class AthCtx
         message
             .ClearLines()
             .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}");
+
         if (!Plugin.Minimalist.Value)
         {
             message
@@ -395,13 +461,13 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("Status", CurrentLevel.Status)
                 .AddBreakSpace()
-                .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}")
-                ;
+                .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}");
         }
 
         message
             .AddBreakSpace()
             .AddSeperator("Stats");
+
         if (!Plugin.Minimalist.Value)
         {
             message
@@ -424,11 +490,9 @@ public class AthCtx
             .AddKeyValue("Total ATs", $"{AuthorMedals}")
             .AddBreakSpace()
             .AddKeyValue("Time left", TimeFormatter.FormatDuration((int)CurrentDuration.TotalSeconds));
+
         return message.Build().ToString();
     }
 
-    public bool IsTimeOver()
-    {
-        return DateTime.Now >= EndTime;
-    }
+    #endregion
 }

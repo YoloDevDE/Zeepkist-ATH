@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
@@ -7,13 +8,14 @@ using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
-using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthLoadingNewLevel : IState
 {
+    private string _expectedLevelUid;
+
     public StateAthLoadingNewLevel(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
@@ -30,27 +32,9 @@ public class StateAthLoadingNewLevel : IState
         AthStateMachine.Timer.Tick += TimerOnTick;
     }
 
-    public async void Execute()
+    public void Execute()
     {
-        LevelItem levelItem = AthStateMachine.Ctx.NextLevel;
-
-        // Keep fetching new level until we get a valid one
-        while (levelItem == null)
-        {
-            await AthStateMachine.Ctx.FetchNextLevel();
-            levelItem = AthStateMachine.Ctx.NextLevel;
-        }
-
-        PlaylistItem playlistItem = new PlaylistItem(
-            levelItem.FileUid,
-            levelItem.WorkshopId,
-            levelItem.Name,
-            levelItem.FileAuthor
-        );
-        MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
-        MultiplayerApi.UpdateServerPlaylist();
-
-        // Continue with the synchronous part
+        _expectedLevelUid = PlaylistService.Instance.GetNextLevel().UID;
         if (AthStateMachine.Ctx.CurrentLevel == null)
         {
             return;
@@ -62,7 +46,6 @@ public class StateAthLoadingNewLevel : IState
 
     public void Exit()
     {
-        AthStateMachine.Ctx.FetchNextLevel();
         RacingApi.LevelLoaded -= OnLevelLoaded;
         AthStateMachine.Timer.Tick -= TimerOnTick;
     }
@@ -72,10 +55,29 @@ public class StateAthLoadingNewLevel : IState
         AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
-    private void OnLevelLoaded()
+    private async void OnLevelLoaded()
     {
-        MultiplayerApi.SetNextLevelIndex(ZeepkistNetwork.CurrentLobby.Playlist.Count - 1);
+        if (_expectedLevelUid != LevelApi.CurrentLevel.UID)
+        {
+            if (AthStateMachine.Ctx.FirstLevel)
+            {
+                StateMachine.TransitionTo(new StateAthStarting(StateMachine));
+                return;
+            }
+
+            Messenger.Notify().LogError("Level Broken - Autoskip applied");
+
+            RandomLevelService.RemoveCurrentLevelFromPlaylist();
+            await Task.Delay(2500);
+            ChatApi.SendMessage("/fs");
+            StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+            return;
+        }
+
+
         AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
+
+
         if (AthStateMachine.Ctx.Levels.Contains(AthStateMachine.Ctx.CurrentLevel))
         {
             ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
@@ -86,6 +88,16 @@ public class StateAthLoadingNewLevel : IState
         }
 
         AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
+
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
+        if (AthStateMachine.Ctx.FirstLevel)
+        {
+            AthStateMachine.Ctx.FirstLevel = !AthStateMachine.Ctx.FirstLevel;
+            return;
+        }
+
+        await PlaylistService.Instance.WaitForPlaylistReady();
+        RandomLevelService.NextLevelProcedure();
+        await PlaylistService.Instance.WaitForPlaylistReady();
     }
 }

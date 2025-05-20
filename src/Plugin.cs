@@ -1,5 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
 using BepInEx.Configuration;
@@ -44,6 +45,7 @@ public class Plugin : BaseUnityPlugin
         ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
         ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
 
+
         _masterStateMachine = new MasterStateMachine();
         _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
@@ -51,8 +53,16 @@ public class Plugin : BaseUnityPlugin
         // You can now access _savePlaylistOnRunEnd.Value to check if the option is enabled
     }
 
+    private void Start()
+    {
+        RandomLevelService.GenerateRandomLevel();
+        PlaylistService _ = PlaylistService.Instance;
+    }
+
     private void OnDestroy()
     {
+        PlaylistService.Instance.Dispose();
+
         _harmony?.UnpatchSelf();
         _harmony = null;
     }

@@ -15,6 +15,7 @@
         </RestoreAdditionalProjectSources>
         <Authors>Hi Im Yolo</Authors>
         <Title>Author Time Hunting</Title>
+        <ImplicitUsings>disable</ImplicitUsings>
     </PropertyGroup>
 
     <!-- Package References -->
@@ -25,7 +26,7 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.5.1800"/>
-        <PackageReference Include="ZeepSDK" Version="1.44.0"/>
+        <PackageReference Include="ZeepSDK" Version="1.44.3"/>
         <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="all"/> <!-- Fody package -->
         <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/> <!-- Costura package -->
     </ItemGroup>

@@ -12,7 +12,6 @@ public class AthStateMachine : IStateMachine
     public AthStateMachine()
     {
         Ctx = new AthCtx();
-        Ctx.FetchNextLevel();
         Timer = new AthTimer();
         InitialState = new StateAthStarting(this);
         FinalState = new StateAthStopping(this);
@@ -36,12 +35,14 @@ public class AthStateMachine : IStateMachine
     {
         string stateColor = paused ? "#ffff00" : "#0088ff";
         string stateText = paused ? "paused" : "running";
-        string timeLeftColor = paused || Ctx.CurrentDuration.TotalSeconds > Ctx.PunishTime ? stateColor : "#ff0000";
+        string timeLeftColor = paused || Ctx.CurrentDuration.TotalSeconds > Ctx.PunishTime ? stateColor : "#ff4a4a";
         string currentLevelColor = paused ? "#ffff00" : "#0088ff";
 
         string message = $"/servermessage white 0 <size=\"25%\"><align=\"left\"><b>Author-Time-Hunting</b><br>" +
                          $"<#ffffff>State         : <{stateColor}>{stateText}<br>" +
-                         $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}<br>" +
+                         $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}</color> " +
+                         $"{(Ctx.Punishments == 0 ? "" : $"(<{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDurationWithoutPunishments.TotalSeconds)}</color> - <#ff4a4a>{TimeSpan.FromSeconds(Ctx.PunishTime * Ctx.Punishments).ToFormattedString()}</color>)")}" +
+                         $"<br>" +
                          $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.Duration.TotalSeconds)}<br>" +
                          $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.Levelbeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
                          $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
