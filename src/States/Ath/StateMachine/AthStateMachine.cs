@@ -3,6 +3,7 @@ using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
+using Crosstales;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
@@ -33,12 +34,12 @@ public class AthStateMachine : IStateMachine
 
     public void SetServerMessage(bool paused)
     {
-        string stateColor = paused ? "#ffff00" : "#0088ff";
+        string stateColor = paused ? "#ff8800" : "#00ff44";
         string stateText = paused ? "paused" : "running";
         string timeLeftColor = paused || Ctx.CurrentDuration.TotalSeconds > Ctx.PunishTime ? stateColor : "#ff4a4a";
-        string currentLevelColor = paused ? "#ffff00" : "#0088ff";
+        string currentLevelColor = paused ? "#ff8800" : "#00ff44";
 
-        string message = $"/servermessage white 0 <size=\"25%\"><align=\"left\"><b>Author-Time-Hunting</b><br>" +
+        string message = $"/servermessage white 0 <size=\"20%\"><align=\"left\"><b><#{ColorDefinitions.Author.CTToHexRGB()}>Author-Time-Hunting</color></b><br>" +
                          $"<#ffffff>State         : <{stateColor}>{stateText}<br>" +
                          $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}</color> " +
                          $"{(Ctx.Punishments == 0 ? "" : $"(<{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDurationWithoutPunishments.TotalSeconds)}</color> - <#ff4a4a>{TimeSpan.FromSeconds(Ctx.PunishTime * Ctx.Punishments).ToFormattedString()}</color>)")}" +
@@ -46,7 +47,7 @@ public class AthStateMachine : IStateMachine
                          $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.Duration.TotalSeconds)}<br>" +
                          $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.LevelBeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
                          $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
-                         $"<#ffffff>============Results============<br>" +
+                         $"<#ffffff>=========={{ Results }}==========<br>" +
                          $"<#ffffff>AT/Gold/None  : <#AF00AF>{Ctx.AuthorMedals}<#ffffff>/<#FFD600>{Ctx.GoldMedals}<#ffffff>/<#FF0000>{Ctx.Skips - Ctx.GoldMedals}<br>"
             ;
 

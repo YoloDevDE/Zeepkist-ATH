@@ -50,6 +50,6 @@ public class StateAthStarting : IState
             await Task.Delay(100);
         }
 
-        await Task.Delay(2500);
+        await Task.Delay(5000);
     }
 }

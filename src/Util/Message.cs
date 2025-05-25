@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace AuthorTimeHunting.Util;
 
@@ -9,7 +11,7 @@ public class Message
 
     public override string ToString()
     {
-        return "<#d0d0d0><br>" + string.Join("", Lines) + "</color>";
+        return "<#f0f0f0><br>" + string.Join("", Lines) + "</color>";
     }
 
     public class Builder
@@ -39,16 +41,19 @@ public class Message
             const int totalWidth = 32; // Total width of the separator line
             const char separatorChar = '=';
 
-            if (headline.Length >= totalWidth)
+            // Remove TMP tags for length calculation
+            string plainHeadline = Regex.Replace(headline, "<.*?>", "");
+
+            if (plainHeadline.Length >= totalWidth)
             {
                 _message.Lines.Add(new string(separatorChar, totalWidth));
-                _message.Lines.Add("<br><font-weight=\"900\"><#ffffff>{ " + headline + "} </color></font-weight><br>");
+                _message.Lines.Add("<br><b><font-weight=\"900\"><#ff8800>{ " + headline + "} </color></font-weight></b><br>");
                 _message.Lines.Add(new string(separatorChar, totalWidth));
             }
             else
             {
-                int padding = (totalWidth - headline.Length) / 2 - 2;
-                string centeredHeadline = new string(separatorChar, padding) + "<font-weight=\"900\"><#ffffff>{ " + headline + " }</color></font-weight>" + new string(separatorChar, padding);
+                int padding = Math.Max((totalWidth - plainHeadline.Length) / 2 - 4, 0);
+                string centeredHeadline = new string(separatorChar, padding) + "<b><font-weight=\"900\"><#ff8800>{ " + headline + " }</color></font-weight></b>" + new string(separatorChar, padding);
 
                 if (centeredHeadline.Length < totalWidth)
                 {
