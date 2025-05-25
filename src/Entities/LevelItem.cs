@@ -9,6 +9,7 @@ public class LevelItem
     public string FileUid { get; set; }
     public string FileAuthor { get; set; }
     public float ValidationTimeAuthor { get; set; }
+    public float ValidationTimeGold { get; set; }
     public ulong AuthorId { get; set; }
 
     public OnlineZeeplevel ToOnlineZeepLevel()
@@ -21,10 +22,5 @@ public class LevelItem
             Author = FileAuthor,
             played = false
         };
-    }
-
-    public override string ToString()
-    {
-        return $"{nameof(Name)}: {Name}, {nameof(WorkshopId)}: {WorkshopId}, {nameof(FileUid)}: {FileUid}, {nameof(FileAuthor)}: {FileAuthor}, {nameof(ValidationTimeAuthor)}: {ValidationTimeAuthor}, {nameof(AuthorId)}: {AuthorId}";
     }
 }

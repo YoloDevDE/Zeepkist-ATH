@@ -271,7 +271,7 @@ public class AthCtx
             result = currentResult.Time - CurrentLevel.AuthorTime;
             positiveResult = Math.Abs(result);
             diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
-            string diffColor = result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB(); // Green if better, red if worse
+            string diffColor = "#" + (result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB()); // Green if better, red if worse
             message
                 .AddBreakSpace()
                 .AddKeyValue(
@@ -309,7 +309,7 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        string diffColor = result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB(); // Green if better, red if worse
+        string diffColor = "#" + (result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB()); // Green if better, red if worse
 
         Message.Builder message = new Message.Builder();
         message
@@ -440,7 +440,7 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        string diffColor = result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB(); // Green if better, red if worse
+        string diffColor = "#" + (result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB()); // Green if better, red if worse
         string statusColor = CurrentLevel.LevelBeaten ? "#50E451" :
             CurrentLevel.LevelBroken ? "#A0A0A0" :
             CurrentLevel.GoldSkipUnlocked ? "#FFD600" :

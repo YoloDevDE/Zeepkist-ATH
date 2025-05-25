@@ -54,6 +54,7 @@ public class GraphQLService
                                nodes {
                                  name
                                  validationTimeAuthor
+                                 validationTimeGold
                                  fileAuthor
                                  fileUid
                                  workshopId
@@ -83,6 +84,7 @@ public class GraphQLService
             {
                 Name = node.Name,
                 ValidationTimeAuthor = node.ValidationTimeAuthor,
+                ValidationTimeGold = node.ValidationTimeGold,
                 FileAuthor = node.FileAuthor,
                 FileUid = node.FileUid,
                 AuthorId = ulong.Parse(node.AuthorId),

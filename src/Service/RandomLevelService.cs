@@ -66,7 +66,7 @@ public class RandomLevelService
                 // Starte das Auffüllen im Hintergrund
                 _ = PopulateCachedRandomLevelItems(100);
             }
-        } while (FetchedLevelItems.Any(x => x.FileUid == levelItem.FileUid));
+        } while (FetchedLevelItems.Any(x => x.FileUid == levelItem.FileUid) || levelItem.ValidationTimeAuthor > levelItem.ValidationTimeGold);
 
         FetchedLevelItems.Add(levelItem);
         return levelItem;

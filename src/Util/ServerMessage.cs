@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
-using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 
-namespace AuthorTimeHunting.Commands;
+namespace AuthorTimeHunting.Util;
 
 public class ServerMessage
 {

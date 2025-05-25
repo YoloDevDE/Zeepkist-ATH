@@ -9,4 +9,5 @@ public class Node
     public string WorkshopId { get; set; }
 
     public string AuthorId { get; set; }
+    public float ValidationTimeGold { get; set; }
 }
