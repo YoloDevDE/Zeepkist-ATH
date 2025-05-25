@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
@@ -28,25 +27,27 @@ public class StateAthLoadingNewLevel : IState
 
     public void Enter()
     {
-        RacingApi.LevelLoaded += OnLevelLoaded;
+        RacingApi.PlayerSpawned += OnPlayerSpawned;
         AthStateMachine.Timer.Tick += TimerOnTick;
     }
 
     public void Execute()
     {
-        _expectedLevelUid = PlaylistService.Instance.GetNextLevel().UID;
         if (AthStateMachine.Ctx.CurrentLevel == null)
         {
             return;
         }
 
+        string currentLevelStatus = AthStateMachine.Ctx.CurrentLevel.Status;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = $"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Level: <b>{currentLevelStatus}</b>";
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enableWordWrapping = true;
         AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
         MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageLoadingCodex());
     }
 
     public void Exit()
     {
-        RacingApi.LevelLoaded -= OnLevelLoaded;
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
         AthStateMachine.Timer.Tick -= TimerOnTick;
     }
 
@@ -55,24 +56,24 @@ public class StateAthLoadingNewLevel : IState
         AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
-    private async void OnLevelLoaded()
+    private async void OnPlayerSpawned()
     {
-        if (_expectedLevelUid != LevelApi.CurrentLevel.UID)
-        {
-            if (AthStateMachine.Ctx.FirstLevel)
-            {
-                StateMachine.TransitionTo(new StateAthStarting(StateMachine));
-                return;
-            }
-
-            Messenger.Notify().LogError("Level Broken - Autoskip applied");
-
-            RandomLevelService.RemoveCurrentLevelFromPlaylist();
-            await Task.Delay(2500);
-            ChatApi.SendMessage("/fs");
-            StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
-            return;
-        }
+        // if (_expectedLevelUid != LevelApi.CurrentLevel.UID)
+        // {
+        //     if (AthStateMachine.Ctx.FirstLevel)
+        //     {
+        //         StateMachine.TransitionTo(new StateAthStarting(StateMachine));
+        //         return;
+        //     }
+        //
+        //     Messenger.Notify().LogError("Level Broken - Autoskip applied");
+        //
+        //     RandomLevelService.RemoveCurrentLevelFromPlaylist();
+        //     await Task.Delay(2500);
+        //     ChatApi.SendMessage("/fs");
+        //     StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        //     return;
+        // }
 
 
         AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
@@ -88,16 +89,7 @@ public class StateAthLoadingNewLevel : IState
         }
 
         AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
-
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
-        if (AthStateMachine.Ctx.FirstLevel)
-        {
-            AthStateMachine.Ctx.FirstLevel = !AthStateMachine.Ctx.FirstLevel;
-            return;
-        }
-
-        await PlaylistService.Instance.WaitForPlaylistReady();
-        RandomLevelService.NextLevelProcedure();
-        await PlaylistService.Instance.WaitForPlaylistReady();
+        PlaylistService.Instance.PopulatePlaylist();
     }
 }

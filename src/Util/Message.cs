@@ -24,7 +24,7 @@ public class Message
 
         public Builder ClearLines()
         {
-            _message.Lines.AddRange(Enumerable.Repeat("<br>", 30));
+            _message.Lines.AddRange(Enumerable.Repeat("<br>", 60));
             return this;
         }
 
@@ -37,18 +37,18 @@ public class Message
         public Builder AddSeperator(string headline)
         {
             const int totalWidth = 32; // Total width of the separator line
-            const char separatorChar = '-';
+            const char separatorChar = '=';
 
             if (headline.Length >= totalWidth)
             {
                 _message.Lines.Add(new string(separatorChar, totalWidth));
-                _message.Lines.Add("<br>" + headline + "<br>");
+                _message.Lines.Add("<br><font-weight=\"900\"><#ffffff>{ " + headline + "} </color></font-weight><br>");
                 _message.Lines.Add(new string(separatorChar, totalWidth));
             }
             else
             {
-                int padding = (totalWidth - headline.Length) / 2;
-                string centeredHeadline = new string(separatorChar, padding) + headline + new string(separatorChar, padding);
+                int padding = (totalWidth - headline.Length) / 2 - 2;
+                string centeredHeadline = new string(separatorChar, padding) + "<font-weight=\"900\"><#ffffff>{ " + headline + " }</color></font-weight>" + new string(separatorChar, padding);
 
                 if (centeredHeadline.Length < totalWidth)
                 {

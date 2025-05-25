@@ -21,7 +21,7 @@ public class StateAthAuthorMedalUnlocked : IState
     public void Enter()
     {
         AthStateMachine.Ctx.AuthorMedals++;
-        AthStateMachine.Ctx.CurrentLevel.Levelbeaten = true;
+        AthStateMachine.Ctx.CurrentLevel.LevelBeaten = true;
         AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked = true;
     }
 

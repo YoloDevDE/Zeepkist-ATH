@@ -3,7 +3,6 @@ using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
-using BepInEx.Configuration;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
 
@@ -13,57 +12,78 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
+    private const string ConfigCategoryGeneral = "General";
+
     private Harmony _harmony;
     private IStateMachine _masterStateMachine;
 
+    private Plugin()
+    {
+        Util.Logger.Initialize(Logger);
+        Instance = this;
+    }
 
-    // Declare the ConfigEntry for the "Save Playlist on Run End" option
-    public static ConfigEntry<bool> SavePlaylistOnRunEnd { get; set; }
-    public static ConfigEntry<bool> Minimalist { get; set; }
+    /// <summary>
+    ///     Singleton instance of the plugin
+    /// </summary>
+    public static Plugin Instance { get; private set; }
+
+    /// <summary>
+    ///     Configuration settings for the plugin
+    /// </summary>
+    public PluginConfig Config { get; private set; }
 
     private void Awake()
     {
-        // Initialize the ConfigEntry with a default value of false
-        SavePlaylistOnRunEnd = Config.Bind(
-            "General", // Category
-            "Save Playlist on Run End", // Key
-            false, // Default value
-            "Literally what it says. what did you expect" // Description
-        );
-        // Initialize the ConfigEntry with a default value of false
-        Minimalist = Config.Bind(
-            "General", // Category
-            "Minimalist", // Key
-            false, // Default value
-            "Makes it a bit less text" // Description
-        );
-        _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
-        _harmony.PatchAll();
+        InitializeConfig();
+        InitializeHarmony();
+        RegisterChatCommands();
+        InitializeStateMachine();
 
-        ChatCommandApi.RegisterLocalChatCommand<CommandRestart>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
-        ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
-
-
-        _masterStateMachine = new MasterStateMachine();
-        _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-
-        // You can now access _savePlaylistOnRunEnd.Value to check if the option is enabled
     }
 
     private void Start()
     {
-        RandomLevelService.GenerateRandomLevel();
-        PlaylistService _ = PlaylistService.Instance;
+        InitializeServices();
     }
 
     private void OnDestroy()
     {
-        PlaylistService.Instance.Dispose();
-
         _harmony?.UnpatchSelf();
         _harmony = null;
+    }
+
+    private void InitializeConfig()
+    {
+        Config = new PluginConfig(base.Config);
+    }
+
+    private void InitializeHarmony()
+    {
+        _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
+        _harmony.PatchAll();
+    }
+
+    private void RegisterChatCommands()
+    {
+        ChatCommandApi.RegisterLocalChatCommand<CommandRestart>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
+        ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
+    }
+
+    private void InitializeStateMachine()
+    {
+        _masterStateMachine = new MasterStateMachine();
+        _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
+    }
+
+    private void InitializeServices()
+    {
+        // Initialize singleton services
+        _ = GraphQLService.Instance;
+        _ = RandomLevelService.Instance;
+        _ = PlaylistService.Instance;
     }
 }

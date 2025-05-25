@@ -5,7 +5,7 @@ namespace AuthorTimeHunting.Util;
 public static class ColorExtension
 {
     public static Color text_Author => Color.white;
-    public static Color bg_Author => new Color(0.5f, 0f, 0.5f);
+    public static Color bg_Author => new Color(0.52f, 0.21f, 0.58f);
 
     public static Color text_Gold => Color.black;
     public static Color bg_Gold => new Color(1f, 0.84f, 0f);

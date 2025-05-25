@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.Commands;
@@ -12,7 +13,6 @@ public class ServerMessage
 
     private string command = "/servermessage white 0 ";
 
-    private int lineCount; // To track the number of lines
 
     private string prefix;
 
@@ -27,9 +27,12 @@ public class ServerMessage
 
     public override string ToString()
     {
-        string tmp = "<size=\"0%\">TestTestTest" +
-                     "</size>";
-        return $"{command}{tmp}{prefix}{messageBuilder}{suffix}";
+        return $"{command}{prefix}{messageBuilder}{suffix}";
+    }
+
+    public string GetMessage()
+    {
+        return $"{messageBuilder}";
     }
 
     // Add a line with one or more blocks and optional line-wide formatting
@@ -95,7 +98,6 @@ public class ServerMessage
     private void AppendLineBreak()
     {
         messageBuilder.Append("<br>");
-        lineCount++;
     }
 
     // Prepend a <br> for each line after the 2nd to push the text down
@@ -104,7 +106,7 @@ public class ServerMessage
     public void Send()
     {
         // Simulating sending a message
-        Console.WriteLine(ToString());
+        Logger.LogDebug(ToString());
         ChatApi.SendMessage(ToString());
     }
 

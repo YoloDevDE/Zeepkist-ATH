@@ -1,69 +1,110 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
-using ZeepkistClient;
-using ZeepkistNetworking;
-using ZeepSDK.Multiplayer;
+using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.Service;
 
 public class RandomLevelService
 {
-    public static LevelItem PrevLevel { get; set; }
-    public static LevelItem CurrentLevel { get; set; }
-    public static LevelItem NextLevel { get; set; }
+    private static readonly Lazy<RandomLevelService> _lazyInstance =
+        new Lazy<RandomLevelService>(() => new RandomLevelService());
 
-    public static async void GenerateRandomLevel()
+    private bool _isInitializing;
+
+    private RandomLevelService()
     {
-        List<LevelItem> randomLevelAsync = await GraphQLService.Instance.GetRandomLevelAsync();
-        PrevLevel = CurrentLevel;
-        CurrentLevel = NextLevel ?? randomLevelAsync[0];
-        NextLevel = randomLevelAsync[1];
+        // Starte die Initialisierung im Hintergrund, aber warte nicht darauf
+        _ = InitializeAsync();
     }
 
-    public static void RemoveCurrentLevelFromPlaylist()
-    {
-        int currentIndex = ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex;
-        ZeepkistNetwork.CurrentLobby.Playlist.RemoveAt(currentIndex);
+    public static RandomLevelService Instance => _lazyInstance.Value;
 
-        if (currentIndex < ZeepkistNetwork.CurrentLobby.Playlist.Count)
+    private List<LevelItem> CachedRandomLevelItems { get; } = new List<LevelItem>();
+    private List<LevelItem> FetchedLevelItems { get; } = new List<LevelItem>();
+
+    private async Task InitializeAsync()
+    {
+        if (_isInitializing)
         {
-            MultiplayerApi.SetNextLevelIndex(currentIndex);
+            return;
         }
-        else if (ZeepkistNetwork.CurrentLobby.Playlist.Count > 0)
+
+        _isInitializing = true;
+        try
         {
-            MultiplayerApi.SetNextLevelIndex(ZeepkistNetwork.CurrentLobby.Playlist.Count - 1);
+            await PopulateCachedRandomLevelItems(5);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error initializing RandomLevelService: {ex.Message}");
+        }
+        finally
+        {
+            _isInitializing = false;
         }
     }
 
-    public static void NextLevelProcedure()
+    public LevelItem GetRandomLevelItem()
     {
-        LevelItem currentLevelItem = CurrentLevel;
-        LevelItem nextLevelItem = NextLevel;
-
-        PlaylistItem currentLevelPlaylistItem = new PlaylistItem(
-            currentLevelItem.FileUid,
-            currentLevelItem.WorkshopId,
-            currentLevelItem.Name,
-            currentLevelItem.FileAuthor
-        );
-        PlaylistItem nextLevelPlaylistItem = new PlaylistItem(
-            nextLevelItem.FileUid,
-            nextLevelItem.WorkshopId,
-            "???",
-            "???"
-        );
-        if (ZeepkistNetwork.CurrentLobby.Playlist.Count > 0)
+        // Wenn keine Level im Cache sind, warte synchron auf die Initialisierung
+        if (CachedRandomLevelItems.Count == 0)
         {
-            ZeepkistNetwork.CurrentLobby.Playlist[^1] = new OnlineZeeplevel
+            PopulateCachedRandomLevelItemsSync();
+        }
+
+        LevelItem levelItem;
+        do
+        {
+            levelItem = CachedRandomLevelItems[0];
+            CachedRandomLevelItems.RemoveAt(0);
+
+            if (CachedRandomLevelItems.Count <= 2)
             {
-                Author = 
+                // Starte das Auffüllen im Hintergrund
+                _ = PopulateCachedRandomLevelItems(100);
+            }
+        } while (FetchedLevelItems.Any(x => x.FileUid == levelItem.FileUid));
+
+        FetchedLevelItems.Add(levelItem);
+        return levelItem;
+    }
+
+    // Synchrone Methode als Fallback
+    private void PopulateCachedRandomLevelItemsSync()
+    {
+        try
+        {
+            Task<List<LevelItem>> task = GraphQLService.Instance.GetRandomLevelAsync(5);
+            task.Wait(); // Notwendiges Blocking in diesem Ausnahmefall
+
+            List<LevelItem> levelItems = task.Result;
+            levelItems = levelItems.Where(x => FetchedLevelItems.All(f => f.FileUid != x.FileUid)).ToList();
+            CachedRandomLevelItems.AddRange(levelItems);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error in PopulateCachedRandomLevelItemsSync: {ex.Message}");
+        }
+    }
+
+    private async Task PopulateCachedRandomLevelItems(int amount = 2)
+    {
+        try
+        {
+            List<LevelItem> levelItems = await GraphQLService.Instance.GetRandomLevelAsync(amount);
+            levelItems = levelItems.Where(x => FetchedLevelItems.All(f => f.FileUid != x.FileUid)).ToList();
+
+            if (levelItems.Count > 0)
+            {
+                CachedRandomLevelItems.AddRange(levelItems);
             }
         }
-
-        ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
-        MultiplayerApi.AddLevelToPlaylist(currentLevelPlaylistItem, false);
-        MultiplayerApi.AddLevelToPlaylist(nextLevelPlaylistItem, true);
-        MultiplayerApi.UpdateServerPlaylist();
-        GenerateRandomLevel();
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error in PopulateCachedRandomLevelItems: {ex.Message}");
+        }
     }
 }

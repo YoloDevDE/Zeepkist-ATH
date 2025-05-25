@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using AuthorTimeHunting.Service;
 using AuthorTimeHunting.Util;
 using Crosstales;
 using ZeepkistClient;
@@ -53,7 +52,6 @@ public class AthCtx
 
     // Properties - Level and progress tracking
     public Level CurrentLevel { get; set; }
-    public LevelItem NextLevel => RandomLevelService.CurrentLevel;
     public List<Level> Levels { get; set; } = new List<Level>();
     public bool TimeIsRunningLow { get; set; } = false;
 
@@ -104,7 +102,7 @@ public class AthCtx
     public Level LevelThatWasVeryEasy()
     {
         return Levels
-            .Where(level => level.Levelbeaten)
+            .Where(level => level.LevelBeaten)
             .OrderBy(level => level.Attempt)
             .ThenBy(level => level.Duration)
             .FirstOrDefault();
@@ -123,7 +121,7 @@ public class AthCtx
     /// </summary>
     public int CountOneShotATs()
     {
-        return Levels.Count(level => level.Levelbeaten && level.Attempt == 1);
+        return Levels.Count(level => level.LevelBeaten && level.Attempt == 1);
     }
 
     /// <summary>
@@ -131,7 +129,7 @@ public class AthCtx
     /// </summary>
     public double AverageAttemptsPerAt()
     {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten);
         return !beatenLevels.Any() ? 0 : beatenLevels.Average(level => level.Attempt);
     }
 
@@ -140,7 +138,7 @@ public class AthCtx
     /// </summary>
     public TimeSpan AverageTimePerAt()
     {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.Levelbeaten);
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten);
         if (!beatenLevels.Any())
         {
             return TimeSpan.Zero;
@@ -156,7 +154,7 @@ public class AthCtx
     public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
     {
         return Levels
-            .Where(level => level.Levelbeaten)
+            .Where(level => level.LevelBeaten)
             .GroupBy(level => level.Author)
             .Where(group => group.Count() >= 2)
             .Select(group => (
@@ -181,7 +179,7 @@ public class AthCtx
             .AddLine("<#FFD700>Welcome to Author-Time-Hunting!</color>")
             .AddBreakSpace();
 
-        if (!Plugin.Minimalist.Value)
+        if (!Plugin.Instance.Config.Minimalist.Value)
         {
             AddDetailedWelcomeInfo(message);
         }
@@ -276,7 +274,7 @@ public class AthCtx
             message
                 .AddBreakSpace()
                 .AddKeyValue(
-                    $"{(CurrentLevel.Levelbeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> ") + "Beaten by" : (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> ") + "Missed by")}",
+                    $"{(CurrentLevel.LevelBeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> ") + "Beaten by" : (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorExtension.bg_Author.CTToHexRGB()}>AT</color> ") + "Missed by")}",
                     "<#aaaa00>" + diffDisplay + "</color>");
         }
 
@@ -329,7 +327,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue(">Your Time", resultDisplay)
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "AT Beaten by" : "AT Missed by")}", diffDisplay);
+                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "AT Beaten by" : "AT Missed by")}", diffDisplay);
         }
         else
         {
@@ -337,7 +335,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue(">Your Time", resultDisplay)
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "Beaten by" : "Missed by")}", diffDisplay)
                 .AddBreakSpace()
                 .AddKeyValue($"<#{ColorExtension.bg_Gold.CTToHexRGB()}>Gold</color>", $"{CurrentLevel.GoldTime.GetFormattedTime()}");
         }
@@ -382,7 +380,7 @@ public class AthCtx
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.LogError(e);
             // Handle the exception or continue execution
         }
 
@@ -453,7 +451,7 @@ public class AthCtx
             .ClearLines()
             .AddLine($"{CurrentLevel.Name} by {CurrentLevel.Author}");
 
-        if (!Plugin.Minimalist.Value)
+        if (!Plugin.Instance.Config.Minimalist.Value)
         {
             message
                 .AddBreakSpace()
@@ -461,14 +459,14 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("Status", CurrentLevel.Status)
                 .AddBreakSpace()
-                .AddKeyValue("Penalty", $"{(CurrentLevel.Levelbeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}");
+                .AddKeyValue("Penalty", $"{(CurrentLevel.LevelBeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "0 minutes" : $"{PunishTime / 60} minutes")}");
         }
 
         message
             .AddBreakSpace()
             .AddSeperator("Stats");
 
-        if (!Plugin.Minimalist.Value)
+        if (!Plugin.Instance.Config.Minimalist.Value)
         {
             message
                 .AddBreakSpace()
@@ -479,7 +477,7 @@ public class AthCtx
 
         message
             .AddBreakSpace()
-            .AddKeyValue($"{(CurrentLevel.Levelbeaten ? "Beaten by" : "Missed by")}", diffDisplay)
+            .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "Beaten by" : "Missed by")}", diffDisplay)
             .AddBreakSpace()
             .AddKeyValue("Attempts", $"{CurrentLevel.Attempt}")
             .AddBreakSpace()

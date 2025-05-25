@@ -68,6 +68,8 @@ public class StateMasterOn : IState
 
     private void Stop()
     {
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "RoundNzt over :)";
         StateMachine.TransitionTo(new StateMasterOff(StateMachine));
     }
 

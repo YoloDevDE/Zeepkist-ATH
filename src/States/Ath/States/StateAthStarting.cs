@@ -3,6 +3,7 @@ using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepkistClient;
+using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -27,11 +28,15 @@ public class StateAthStarting : IState
     public async void Execute()
     {
         // Wait until the GameState is not 0
-        await WaitUntilGameStateNotZero();
-
         MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageStarting());
+        await WaitUntilGameStateNotZero();
+        await PlaylistService.Instance.StartNewPlaylist();
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>GL HF!</b>";
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enableWordWrapping = true;
+        await WaitUntilGameStateNotZero();
+        ChatApi.SendMessage("/fs");
         AthStateMachine.StartTimer();
-        StateMachine.TransitionTo(new StateAthPreparePlaylist(StateMachine));
+        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 
     public void Exit()
@@ -42,9 +47,9 @@ public class StateAthStarting : IState
     {
         while (ZeepkistNetwork.CurrentLobby.GameState != 0)
         {
-            await Task.Delay(1000); // Check every 100ms to not block the thread
+            await Task.Delay(100);
         }
 
-        await Task.Delay(1000); // Check every 100ms to not block the thread
+        await Task.Delay(2500);
     }
 }

@@ -6,82 +6,59 @@ public class Level
 {
     public Level(LevelScriptableObject level)
     {
-        FirstTimePlayed = false;
+        // Initialize immutable properties
         LevelUid = level.UID;
         Name = level.Name;
         Author = level.Author;
         AuthorTime = level.TimeAuthor;
         GoldTime = level.TimeGold;
+
+        // Initialize game state
         Attempt = 0;
         Crashes = 0;
-        GoldSkipUnlocked = false;
-        Levelbeaten = false;
+
+        // Initialize status flags
+        FirstTimePlayed = false;
+        LevelBeaten = false;
         LevelBroken = false;
         LevelSkipped = false;
+        GoldSkipUnlocked = false;
+
+        // Set start time
         StartTime = DateTime.Now;
     }
 
-    public string LevelUid { get; set; }
-    public string Name { get; set; }
-    public string Author { get; set; }
-    public double AuthorTime { get; set; }
-    public double GoldTime { get; set; }
+    // Basic level information (immutable after creation)
+    public string LevelUid { get; }
+    public string Name { get; }
+    public string Author { get; }
+    public double AuthorTime { get; }
+    public double GoldTime { get; }
 
+    // Game state
     public int Attempt { get; set; }
     public int Crashes { get; set; }
+    public int PauseDurationInSeconds { get; set; }
 
-    public bool GoldSkipUnlocked { get; set; }
-    public bool Levelbeaten { get; set; }
+    // Level status flags
+    public bool FirstTimePlayed { get; set; }
+    public bool LevelBeaten { get; set; }
     public bool LevelBroken { get; set; }
     public bool LevelSkipped { get; set; }
-    public bool FirstTimePlayed { get; set; }
-    public DateTime StartTime { get; set; }
-    public DateTime EndTime { get; set; } = DateTime.MinValue; // Initialize to MinValue
-
-    public string Status => $"{(Levelbeaten ? "Completed" : LevelBroken ? "Lvl Broken" : GoldSkipUnlocked ? "Gold Skipped" : FreeSkipped ? "Free Skipped" : "Failed")}";
-
-    public TimeSpan Duration
-    {
-        get
-        {
-            DateTime endTime = EndTime == DateTime.MinValue ? DateTime.Now : EndTime;
-            return endTime - StartTime - TimeSpan.FromSeconds(PauseDurationInSeconds - 1);
-        }
-    }
-
-    public int PauseDurationInSeconds { get; set; }
+    public bool GoldSkipUnlocked { get; set; }
     public bool FreeSkipped { get; set; }
 
-    protected bool Equals(Level other)
-    {
-        return LevelUid == other.LevelUid && Author == other.Author;
-    }
+    // Timing
+    public DateTime StartTime { get; set; }
+    public DateTime EndTime { get; set; } = DateTime.MinValue;
 
-    public override bool Equals(object obj)
-    {
-        if (obj is null)
-        {
-            return false;
-        }
+    public TimeSpan Duration =>
+        (EndTime == DateTime.MinValue ? DateTime.Now : EndTime) -
+        StartTime -
+        TimeSpan.FromSeconds(Math.Max(0, PauseDurationInSeconds - 1));
 
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
-
-        if (obj.GetType() != GetType())
-        {
-            return false;
-        }
-
-        return Equals((Level)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            return (LevelUid != null ? LevelUid.GetHashCode() : 0) * 397 ^ (Author != null ? Author.GetHashCode() : 0);
-        }
-    }
+    public string Status => LevelBeaten ? "Completed" :
+        LevelBroken ? "Lvl Broken" :
+        GoldSkipUnlocked ? "Gold Skipped" :
+        FreeSkipped ? "Free Skipped" : "Failed";
 }

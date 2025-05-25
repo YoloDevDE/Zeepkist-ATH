@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Util;
 using GraphQL;
 using GraphQL.Client.Http;
 using GraphQL.Client.Serializer.Newtonsoft;
@@ -30,63 +31,50 @@ public class GraphQLService
         if (_graphQLClient == null)
         {
             _graphQLClient = new GraphQLHttpClient("https://graphql.zeepki.st/", new NewtonsoftJsonSerializer());
-            Console.WriteLine("GraphQL client initialized.");
+            Logger.LogInfo("GraphQL client initialized.");
         }
     }
 
 
     // Method to get a random level
-    public async Task<List<LevelItem>> GetRandomLevelAsync()
+    public async Task<List<LevelItem>> GetRandomLevelAsync(int amount = 2, int maxAuthorTime = 180)
     {
         try
         {
             GraphQLRequest query = new GraphQLRequest
             {
-                Query = """
-                        query GetRandomLEvel {
-                          zRtm(
-                            pMaxAuthorTime: 180
-                            pMinFinishes: 1
-                            filter: {deleted: {equalTo: false}}
-                            first: 2
-                          ) {
-                            nodes {
-                              name
-                              validationTimeAuthor
-                              fileAuthor
-                              fileUid
-                              workshopId
-                              authorId
-                            }
-                          }
-                        }
-                        """
+                Query = $$$"""
+                           query GetRandomLevel {
+                             zRtm(
+                               pMaxAuthorTime: {{{maxAuthorTime}}}
+                               pMinFinishes: 1
+                               filter: {deleted: {equalTo: false}}
+                               first: {{{amount}}}
+                             ) {
+                               nodes {
+                                 name
+                                 validationTimeAuthor
+                                 fileAuthor
+                                 fileUid
+                                 workshopId
+                                 authorId
+                               }
+                             }
+                           }
+                           """
             };
 
             GraphQLResponse<Root> response = await _graphQLClient.SendQueryAsync<Root>(query);
 
-            // Check if response or response.Data is null
-            if (response.Data == null)
+            if (response?.Data?.ZRtm?.Nodes?.Count == 0)
             {
-                Console.WriteLine("Response.Data is null.");
+                Logger.LogError("No level data found in response");
                 return null;
             }
 
-            if (response.Data.ZRtm == null)
+            if (!response?.Data?.ZRtm?.Nodes?.Any() ?? true)
             {
-                Console.WriteLine("Response.Data.ZRtm is null.");
-                return null;
-            }
-
-            if (response.Data.ZRtm.Nodes == null)
-            {
-                Console.WriteLine("Response.Data.ZRtm.Nodes is null");
-                return null;
-            }
-
-            if (response.Data.ZRtm.Nodes.Count == 0)
-            {
-                Console.WriteLine("Response.Data.ZRtm.Nodes is empty");
+                Logger.LogError("Invalid response structure");
                 return null;
             }
 
@@ -97,14 +85,16 @@ public class GraphQLService
                 ValidationTimeAuthor = node.ValidationTimeAuthor,
                 FileAuthor = node.FileAuthor,
                 FileUid = node.FileUid,
+                AuthorId = ulong.Parse(node.AuthorId),
                 WorkshopId = ulong.Parse(node.WorkshopId)
             }).ToList();
 
+            Logger.LogInfo($"Successfully retrieved {levelItems.Count} random levels");
             return levelItems;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"GraphQL GetRandomLevelAsync failed: {ex.Message}");
+            Logger.LogError($"GraphQL GetRandomLevelAsync failed: {ex.Message}");
             throw;
         }
     }

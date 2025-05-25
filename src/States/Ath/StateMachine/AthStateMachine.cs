@@ -44,9 +44,9 @@ public class AthStateMachine : IStateMachine
                          $"{(Ctx.Punishments == 0 ? "" : $"(<{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDurationWithoutPunishments.TotalSeconds)}</color> - <#ff4a4a>{TimeSpan.FromSeconds(Ctx.PunishTime * Ctx.Punishments).ToFormattedString()}</color>)")}" +
                          $"<br>" +
                          $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.Duration.TotalSeconds)}<br>" +
-                         $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.Levelbeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
+                         $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.LevelBeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
                          $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
-                         $"<#ffffff>-----------Results-----------<br>" +
+                         $"<#ffffff>============Results============<br>" +
                          $"<#ffffff>AT/Gold/None  : <#AF00AF>{Ctx.AuthorMedals}<#ffffff>/<#FFD600>{Ctx.GoldMedals}<#ffffff>/<#FF0000>{Ctx.Skips - Ctx.GoldMedals}<br>"
             ;
 
