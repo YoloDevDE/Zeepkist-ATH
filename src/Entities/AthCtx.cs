@@ -271,11 +271,11 @@ public class AthCtx
             result = currentResult.Time - CurrentLevel.AuthorTime;
             positiveResult = Math.Abs(result);
             diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
-            string diffColor = result <= 0 ? "#50E451" : "#FF5A5A"; // Green if better, red if worse
+            string diffColor = result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB(); // Green if better, red if worse
             message
                 .AddBreakSpace()
                 .AddKeyValue(
-                    $"{(CurrentLevel.LevelBeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ") + "<#50E451>Beaten by</color>" : (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ") + "<#FF5A5A>Missed by</color>")}",
+                    $"{(CurrentLevel.LevelBeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ") + "<#50E451>Beaten by</color>" : (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ") + $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}",
                     $"<{diffColor}>{diffDisplay}</color>");
         }
 
@@ -309,7 +309,7 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        string diffColor = result <= 0 ? "#50E451" : "#FF5A5A"; // Green if better, red if worse
+        string diffColor = result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB(); // Green if better, red if worse
 
         Message.Builder message = new Message.Builder();
         message
@@ -327,7 +327,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("<#7FDBFF>Your Time</color>", $"<#FFFFFF>{resultDisplay}</color>")
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>AT Beaten by</color>" : "<#FF5A5A>AT Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>");
+                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>AT Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>AT Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>");
         }
         else
         {
@@ -335,7 +335,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("<#7FDBFF>Your Time</color>", $"<#FFFFFF>{resultDisplay}</color>")
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>Beaten by</color>" : "<#FF5A5A>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
+                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
                 .AddBreakSpace()
                 .AddKeyValue($"<#{ColorDefinitions.Gold.CTToHexRGB()}>Gold</color>", $"<#FFFFFF>{CurrentLevel.GoldTime.GetFormattedTime()}</color>");
         }
@@ -440,7 +440,7 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        string diffColor = result <= 0 ? "#50E451" : "#FF5A5A"; // Green if better, red if worse
+        string diffColor = result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB(); // Green if better, red if worse
         string statusColor = CurrentLevel.LevelBeaten ? "#50E451" :
             CurrentLevel.LevelBroken ? "#A0A0A0" :
             CurrentLevel.GoldSkipUnlocked ? "#FFD600" :
@@ -476,7 +476,7 @@ public class AthCtx
 
         message
             .AddBreakSpace()
-            .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>Beaten by</color>" : "<#FF5A5A>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
+            .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{CurrentLevel.Attempt}</color>")
             .AddBreakSpace()
