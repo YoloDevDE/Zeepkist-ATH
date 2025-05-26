@@ -36,7 +36,7 @@ public class StateAthStarting : IState
         await WaitUntilGameStateNotZero();
         ChatApi.SendMessage("/fs");
         AthStateMachine.StartTimer();
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
     public void Exit()

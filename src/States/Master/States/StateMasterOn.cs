@@ -10,7 +10,6 @@ namespace AuthorTimeHunting.States.Master.States;
 
 public class StateMasterOn : IState
 {
-    // Constructor
     public StateMasterOn(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
@@ -18,7 +17,6 @@ public class StateMasterOn : IState
     }
 
     public AthStateMachine AthStateMachine => (AthStateMachine)SubStateMachine;
-
     public IStateMachine SubStateMachine { get; }
     public IStateMachine StateMachine { get; }
 
@@ -52,27 +50,10 @@ public class StateMasterOn : IState
         SubStateMachine.StateMachineFinished -= Stop;
     }
 
-    private void SkipBrokenLevel()
+    private void OnRoundStarted()
     {
-        if (AthStateMachine.Ctx.CurrentLevel != null)
-        {
-            AthStateMachine.Ctx.CurrentLevel.LevelBroken = true;
-            ChatApi.SendMessage("/fs");
-        }
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
     }
-
-    private void Restart()
-    {
-        StateMachine.TransitionTo(new StateMasterOn(StateMachine));
-    }
-
-    private void Stop()
-    {
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "RoundNzt over :)";
-        StateMachine.TransitionTo(new StateMasterOff(StateMachine));
-    }
-
 
     private void OnTimerTick()
     {
@@ -82,14 +63,29 @@ public class StateMasterOn : IState
         }
     }
 
-
-    private void OnRoundStarted()
+    private void Restart()
     {
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
+        StateMachine.TransitionTo(new StateMasterOn(StateMachine));
+    }
+
+    private void SkipBrokenLevel()
+    {
+        if (AthStateMachine.Ctx.CurrentLevel != null)
+        {
+            AthStateMachine.Ctx.CurrentLevel.LevelBroken = true;
+            ChatApi.SendMessage("/fs");
+        }
     }
 
     private void Start()
     {
         Messenger.Notify().LogWarning("already started");
+    }
+
+    private void Stop()
+    {
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "Thanks for playing ATH :)";
+        StateMachine.TransitionTo(new StateMasterOff(StateMachine));
     }
 }

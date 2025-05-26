@@ -26,7 +26,7 @@ public class StateAthFreeskip : IState
     public void Execute()
     {
         Messenger.Notify().LogCustomColors("'Free-Skip' used", Color.black, Color.white, 5f);
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
     public void Exit()

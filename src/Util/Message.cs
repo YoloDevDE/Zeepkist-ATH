@@ -76,7 +76,7 @@ public class Message
 
         private string FormatKeyValue(string key, string value)
         {
-            string formattedString = $"{key} <indent=8em>:</indent><indent=9em>{value}</indent>";
+            string formattedString = $"{key}<indent=8em>:</indent><indent=9em>{value}</indent>";
             return formattedString;
         }
 

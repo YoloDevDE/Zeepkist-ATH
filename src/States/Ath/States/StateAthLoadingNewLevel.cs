@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
@@ -7,89 +8,153 @@ using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
-using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthLoadingNewLevel : IState
 {
-    private string _expectedLevelUid;
+    #region Constructor
 
     public StateAthLoadingNewLevel(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
+    #endregion
+
+    #region Properties & Fields
+
+    public IStateMachine StateMachine { get; }
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
-    // Properties
-    public IStateMachine StateMachine { get; }
+    #endregion
+
+    #region IState Implementation
 
     public void Enter()
     {
-        RacingApi.PlayerSpawned += OnPlayerSpawned;
         AthStateMachine.Timer.Tick += TimerOnTick;
     }
 
-    public void Execute()
-    {
-        if (AthStateMachine.Ctx.CurrentLevel == null)
-        {
-            return;
-        }
 
-        string currentLevelStatus = AthStateMachine.Ctx.CurrentLevel.Status;
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = $"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Level: <b>{currentLevelStatus}</b>";
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enableWordWrapping = true;
-        AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
-        MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageLoadingCodex());
+    public async void Execute()
+    {
+        try
+        {
+            Logger.LogDebug($"OnPlayerSpawned: Current level UID: {LevelApi.CurrentLevel?.UID}");
+
+            if (!ValidateCurrentLevel())
+            {
+                return;
+            }
+
+            if (IsBrokenLevel())
+            {
+                await HandleBrokenLevel();
+                return;
+            }
+
+            if (!CreateAndValidateNewLevel())
+            {
+                return;
+            }
+
+            if (IsDuplicateLevel())
+            {
+                await HandleDuplicateLevel();
+                return;
+            }
+
+            await ProcessValidLevel();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"OnPlayerSpawned: Unhandled exception: {ex.Message}\nStack trace: {ex.StackTrace}");
+        }
     }
 
     public void Exit()
     {
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
         AthStateMachine.Timer.Tick -= TimerOnTick;
     }
+
+    #endregion
+
+    #region Private Methods
 
     private void TimerOnTick()
     {
         AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
-    private async void OnPlayerSpawned()
+
+    private bool ValidateCurrentLevel()
     {
-        // if (_expectedLevelUid != LevelApi.CurrentLevel.UID)
-        // {
-        //     if (AthStateMachine.Ctx.FirstLevel)
-        //     {
-        //         StateMachine.TransitionTo(new StateAthStarting(StateMachine));
-        //         return;
-        //     }
-        //
-        //     Messenger.Notify().LogError("Level Broken - Autoskip applied");
-        //
-        //     RandomLevelService.RemoveCurrentLevelFromPlaylist();
-        //     await Task.Delay(2500);
-        //     ChatApi.SendMessage("/fs");
-        //     StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
-        //     return;
-        // }
-
-
-        AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
-
-
-        if (AthStateMachine.Ctx.Levels.Contains(AthStateMachine.Ctx.CurrentLevel))
+        if (LevelApi.CurrentLevel != null)
         {
-            ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
-            Messenger.Notify().LogError("Something went wrong.. this level should not have been loaded... skipping (dont worry no penalty is applied)");
-
-            StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
-            return;
+            return true;
         }
 
-        AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
-        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
-        PlaylistService.Instance.PopulatePlaylist();
+        Logger.LogError("OnPlayerSpawned: Current level is null");
+        return false;
     }
+
+    private bool IsBrokenLevel()
+    {
+        return !ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex].UID.Equals(LevelApi.CurrentLevel.UID);
+    }
+
+    private async Task HandleBrokenLevel()
+    {
+        Logger.LogWarning($"OnPlayerSpawned: Level {LevelApi.CurrentLevel.UID} appears to be broken");
+        Messenger.Notify().LogError($"Level Broken - Autoskip applied<br>{ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex].UID}");
+        await PlaylistService.Instance.ReplaceBrokenLevel();
+        await Task.Delay(500);
+        ChatApi.SendMessage("/fs");
+        Logger.LogInfo("OnPlayerSpawned: Transitioning to new LoadingNewLevel state after broken level");
+        StateMachine.TransitionTo(new StateAthLoadingThroughBrokenLevel(StateMachine));
+    }
+
+    private bool CreateAndValidateNewLevel()
+    {
+        Logger.LogDebug("OnPlayerSpawned: Creating new Level object");
+        AthStateMachine.Ctx.CurrentLevel = new Level(LevelApi.CurrentLevel);
+
+        if (AthStateMachine.Ctx.CurrentLevel != null)
+        {
+            return true;
+        }
+
+        Logger.LogError("OnPlayerSpawned: Failed to create Level object");
+        return false;
+    }
+
+    private bool IsDuplicateLevel()
+    {
+        return AthStateMachine.Ctx.Levels.Contains(AthStateMachine.Ctx.CurrentLevel);
+    }
+
+    private async Task HandleDuplicateLevel()
+    {
+        if (ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex == ZeepkistNetwork.CurrentLobby.Playlist.Count - 1)
+        {
+            await PlaylistService.Instance.PopulatePlaylist();
+        }
+
+        Logger.LogWarning("OnPlayerSpawned: Duplicate level detected");
+        ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
+        Messenger.Notify().LogError("Something went wrong.. this level should not have been loaded... skipping (dont worry no penalty is applied)");
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
+    }
+
+    private async Task ProcessValidLevel()
+    {
+        Logger.LogDebug("OnPlayerSpawned: Adding level to tracked levels");
+        AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
+        Logger.LogInfo("OnPlayerSpawned: Transitioning to Pausing state");
+        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
+        await PlaylistService.Instance.PopulatePlaylist();
+    }
+
+    #endregion
 }

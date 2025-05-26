@@ -34,6 +34,7 @@ public class StateAthEvaluateRun : IState
             return;
         }
 
+        AthStateMachine.Ctx.CurrentLevel.PersonalBestTime = currentResult.Time;
         if (currentResult.Time <= currentLevel.AuthorTime)
         {
             StateMachine.TransitionTo(new StateAthAuthorMedalUnlocked(StateMachine));

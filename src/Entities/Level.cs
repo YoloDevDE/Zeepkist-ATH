@@ -47,6 +47,8 @@ public class Level
     public bool LevelSkipped { get; set; }
     public bool GoldSkipUnlocked { get; set; }
     public bool FreeSkipped { get; set; }
+    public float PersonalBestTime { get; set; }
+    public TimeSpan TimeWasted => LevelBroken ? TimeSpan.Zero : LevelBeaten ? Duration - TimeSpan.FromSeconds(PersonalBestTime) : Duration;
 
     // Timing
     public DateTime StartTime { get; set; }
@@ -61,4 +63,19 @@ public class Level
         LevelBroken ? "Lvl Broken" :
         GoldSkipUnlocked ? "Gold Skipped" :
         FreeSkipped ? "Free Skipped" : "Failed";
+
+    public override bool Equals(object obj)
+    {
+        if (obj is Level other)
+        {
+            return LevelUid == other.LevelUid;
+        }
+
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return LevelUid.GetHashCode();
+    }
 }

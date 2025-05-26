@@ -37,7 +37,7 @@ public class StateAthPostRun : IState
 
     private void OnRoundEnded()
     {
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
     private void TimerOnTick()
@@ -51,6 +51,6 @@ public class StateAthPostRun : IState
     private void OnRoundStarted()
     {
         ChatApi.SendMessage("/fs");
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 }

@@ -23,7 +23,7 @@ public class StateAthPenaltySkip : IState
     {
         Messenger.Notify().LogError("'Penalty-Skip' used", 5f);
         AthStateMachine.Ctx.Punishments++;
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
     public void Exit()

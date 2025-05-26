@@ -24,7 +24,7 @@ public class StateAthBrokenSkip : IState
         Messenger.Notify().LogWarning("'broken-Skip' used<br>Spent time refunded", 5f);
         AthStateMachine.Ctx.BrokenTimeInSeconds += (int)AthStateMachine.Ctx.CurrentLevel.Duration.TotalSeconds;
 
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
     public void Exit()

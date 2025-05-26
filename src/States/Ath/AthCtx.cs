@@ -96,6 +96,23 @@ public class AthCtx
             .FirstOrDefault();
     }
 
+    public double AvgAuthorTime()
+    {
+        List<Level> levels = Levels.Where(x => !x.LevelBroken).ToList();
+        return levels.Average(level => level.AuthorTime);
+    }
+
+    public TimeSpan TimeWastedTotal()
+    {
+        TimeSpan totalTime = TimeSpan.Zero;
+        foreach (Level level in Levels)
+        {
+            totalTime = totalTime.Add(level.TimeWasted);
+        }
+
+        return totalTime;
+    }
+
     /// <summary>
     ///     Finds the easiest level based on attempts and time taken
     /// </summary>
@@ -129,7 +146,7 @@ public class AthCtx
     /// </summary>
     public double AverageAttemptsPerAt()
     {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten);
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten).ToList();
         return !beatenLevels.Any() ? 0 : beatenLevels.Average(level => level.Attempt);
     }
 
@@ -138,7 +155,7 @@ public class AthCtx
     /// </summary>
     public TimeSpan AverageTimePerAt()
     {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten);
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten).ToList();
         if (!beatenLevels.Any())
         {
             return TimeSpan.Zero;
@@ -356,24 +373,40 @@ public class AthCtx
             .AddBreakSpace()
             .AddSeperator("<#B336A3>Result</color>")
             .AddBreakSpace()
+            // Medal Stats
             .AddKeyValue("<#64D2FF>Total ATs</color>", $"<#{ColorDefinitions.Author.CTToHexRGB()}>{AuthorMedals}</color>")
-            .AddBreakSpace()
-            .AddKeyValue("<#64D2FF>Total Resets</color>", $"<#FFFFFF>{CountTotalAttempts()}</color>")
-            .AddBreakSpace()
-            .AddKeyValue("<#64D2FF>Total Skips</color>", $"<#FFFFFF>{CountLevelSkips()}</color>")
-            .AddBreakSpace()
             .AddKeyValue("<#64D2FF>ATs Oneshotted!</color>", $"<#50E451>{CountOneShotATs()}</color>")
             .AddBreakSpace()
-            .AddKeyValue($"<#64D2FF>Attempts/<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color></color>", $"<#FFFFFF>{AverageAttemptsPerAt():F2}</color>")
+            // Attempt Stats
+            .AddKeyValue("<#64D2FF>Total Resets</color>", $"<#FFFFFF>{CountTotalAttempts()}</color>")
+            .AddKeyValue("<#64D2FF>Total Skips</color>", $"<#FFFFFF>{CountLevelSkips()}</color>")
+            .AddKeyValue("<#64D2FF>Attempts/AT</color>", $"<#FFFFFF>{AverageAttemptsPerAt():F2}</color>")
             .AddBreakSpace()
-            .AddKeyValue($"<#64D2FF>Time/<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color></color>", $"<#FFFFFF>{AverageTimePerAt().ToFormattedString()}</color>")
+            // Time Stats  
+            .AddKeyValue("<#64D2FF>Avg AT time</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>")
+            .AddKeyValue("<#64D2FF>Time Wasted</color>", $"<#FF5A5A>{TimeWastedTotal().ToFormattedString()}</color>")
+            .AddKeyValue("<#64D2FF>Time/AT</color>", $"<#FFFFFF>{AverageTimePerAt().ToFormattedString()}</color>")
             .AddBreakSpace();
+
         try
         {
-            // Add the "should have skipped" section if applicable
+            // Add the "should have skipped" section if applicable 
             if (youShouldHaveSkippedThis != null)
             {
                 AddShouldHaveSkippedSection(builder, youShouldHaveSkippedThis);
+            }
+
+            // Add the easiest level section if applicable
+            if (easiestLevel != null)
+            {
+                builder.AddSeperator("<#50E451>Easiest Level</color>")
+                    .AddBreakSpace()
+                    .AddLine($"<#64D2FF>{easiestLevel.Name}</color> by <#FFD700>{easiestLevel.Author}</color>")
+                    .AddBreakSpace()
+                    .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{easiestLevel.Attempt}</color>")
+                    .AddBreakSpace()
+                    .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{easiestLevel.Duration.ToFormattedString()}</color>")
+                    .AddBreakSpace();
             }
         }
         catch (Exception e)
@@ -384,7 +417,7 @@ public class AthCtx
 
         // Add the "liked author" section if applicable
         (string Author, List<Level> Levels) likedAuthor = YouLikedThisAuthorALot();
-        if (likedAuthor.Levels != null && likedAuthor.Levels.Count > 0)
+        if (likedAuthor.Levels is { Count: > 0 })
         {
             AddLikedAuthorSection(builder, likedAuthor);
         }
@@ -422,9 +455,30 @@ public class AthCtx
     }
 
     /// <summary>
+    ///     Formats the message shown when a level is broken
+    /// </summary>
+    public string MessageBrokenLevel(OnlineZeeplevel level)
+    {
+        Message.Builder message = new Message.Builder();
+        message
+            .ClearLines()
+            .AddSeperator("<#FF0000>Broken Level</color>")
+            .AddBreakSpace()
+            .AddLine("<#FF5555>Oops! This level appears to be broken or unplayable.</color>")
+            .AddBreakSpace()
+            .AddLine($"<#64D2FF>{level.Name}</color> by <#FFD700>{level.Author}</color>")
+            .AddBreakSpace()
+            .AddLine("<#FFFFFF>Automatic recovery in progress</color>")
+            .AddBreakSpace()
+            .AddLine("<#AAAAAA>No time penalty will be applied for this broken level</color>");
+
+        return message.Build().ToString();
+    }
+
+    /// <summary>
     ///     Formats the message shown during level loading
     /// </summary>
-    public string MessageLoadingCodex()
+    public string MessageLevelSummary()
     {
         PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
         // Initialize default values
@@ -481,6 +535,8 @@ public class AthCtx
             .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{CurrentLevel.Attempt}</color>")
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{CurrentLevel.Duration.ToFormattedString()}</color>")
+            .AddBreakSpace()
+            .AddKeyValue("<#7FDBFF>Time Wasted</color>", $"<#FF5A5A>{CurrentLevel.TimeWasted.ToFormattedString()}</color>")
             .AddBreakSpace()
             .AddSeperator("<#B336A3>Current Run</color>")
             .AddBreakSpace()

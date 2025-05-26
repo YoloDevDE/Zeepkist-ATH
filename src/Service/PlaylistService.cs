@@ -16,8 +16,12 @@ public class PlaylistService
     }
 
     public static PlaylistService Instance { get; } = new PlaylistService();
+    public OnlineZeeplevel CurrentBrokenZeeplevel { get; set; }
 
     private List<OnlineZeeplevel> CachedOnlineZeeplevels { get; set; } = new List<OnlineZeeplevel>();
+
+
+    public OnlineZeeplevel GetCurrentZeepkistNetworkPlaylistLevel => ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
 
     private int CurrentPlaylistIndex()
     {
@@ -101,6 +105,33 @@ public class PlaylistService
             }
         }
     }
+
+    public async Task ReplaceBrokenLevel()
+    {
+        try
+        {
+            Logger.LogInfo("PlaylistService: Attempting to remove last level from playlist");
+
+            if (CachedOnlineZeeplevels == null || CachedOnlineZeeplevels.Count == 0)
+            {
+                Logger.LogInfo("PlaylistService: Cannot remove level - playlist is empty");
+                return;
+            }
+
+            CurrentBrokenZeeplevel = GetCurrentZeepkistNetworkPlaylistLevel;
+            Logger.LogDebug($"PlaylistService: Removing level at index {CachedOnlineZeeplevels.Count - 1}");
+            CachedOnlineZeeplevels.RemoveAt(CachedOnlineZeeplevels.Count - 1);
+            Logger.LogInfo($"PlaylistService: Successfully removed level. Playlist now contains {CachedOnlineZeeplevels.Count} levels");
+
+            await PopulatePlaylist();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"PlaylistService: Error removing last level: {ex.Message}");
+            throw;
+        }
+    }
+
 
     private OnlineZeeplevel GetCensoredLevel(OnlineZeeplevel onlineZeeplevel)
     {
