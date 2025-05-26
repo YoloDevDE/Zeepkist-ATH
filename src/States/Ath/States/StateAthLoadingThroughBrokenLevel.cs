@@ -35,6 +35,12 @@ public class StateAthLoadingThroughBrokenLevel : IState
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Level: <b>Broken</b>";
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enableWordWrapping = true;
         MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageBrokenLevel(PlaylistService.Instance.CurrentBrokenZeeplevel));
+        AthStateMachine.Ctx.Retries--;
+        if (AthStateMachine.Ctx.Retries <= 0)
+        {
+            Logger.LogWarning("OnPlayerSpawned: Retries exceeded");
+            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
+        }
     }
 
     public void Exit()

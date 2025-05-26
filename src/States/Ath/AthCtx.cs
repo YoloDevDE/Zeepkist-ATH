@@ -13,9 +13,12 @@ public class AthCtx
     // Constants
     private const int DEFAULT_DURATION = 60 * 60; // 1 hour in seconds
     private const int DEFAULT_PUNISH_TIME = 60 * 5; // 5 minutes in seconds
+    private const int RETRIES = 3;
 
     // Fields
     public int Skips = 0;
+
+    public int Retries { get; set; } = RETRIES;
 
     /// <summary>
     ///     Initializes a new instance of AthCtx and starts fetching the first level
@@ -62,6 +65,11 @@ public class AthCtx
     public int FreeSkips { get; set; } = 1;
 
     public bool FirstLevel { get; set; } = true;
+
+    public void ResetRetries()
+    {
+        Retries = RETRIES;
+    }
 
     #region Level Management Methods
 
@@ -251,9 +259,9 @@ public class AthCtx
         message
             .AddSeperator("<#50E451>Commands</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7AFF7A>/fs</color>", "<#E0E0E0>Skip level (free)</color>")
-            .AddKeyValue("<#7AFF7A>/ath broken</color>", "<#E0E0E0>Skip unbeatable map</color>")
-            .AddKeyValue("<#7AFF7A>/ath restart</color>", "<#E0E0E0>Restart the hunt</color>")
+            .AddKeyValue("<#7AFF7A>/fs</color>", "<#E0E0E0>Skip level (free)</color>").AddBreakSpace()
+            .AddKeyValue("<#7AFF7A>/ath broken</color>", "<#E0E0E0>Skip unbeatable map</color>").AddBreakSpace()
+            .AddKeyValue("<#7AFF7A>/ath restart</color>", "<#E0E0E0>Restart the hunt</color>").AddBreakSpace()
             .AddKeyValue("<#7AFF7A>/ath stop</color>", "<#E0E0E0>End the hunt</color>");
     }
 
@@ -374,17 +382,17 @@ public class AthCtx
             .AddSeperator("<#B336A3>Result</color>")
             .AddBreakSpace()
             // Medal Stats
-            .AddKeyValue("<#64D2FF>Total ATs</color>", $"<#{ColorDefinitions.Author.CTToHexRGB()}>{AuthorMedals}</color>")
+            .AddKeyValue("<#64D2FF>Total ATs</color>", $"<#{ColorDefinitions.Author.CTToHexRGB()}>{AuthorMedals}</color>").AddBreakSpace()
             .AddKeyValue("<#64D2FF>ATs Oneshotted!</color>", $"<#50E451>{CountOneShotATs()}</color>")
             .AddBreakSpace()
             // Attempt Stats
-            .AddKeyValue("<#64D2FF>Total Resets</color>", $"<#FFFFFF>{CountTotalAttempts()}</color>")
-            .AddKeyValue("<#64D2FF>Total Skips</color>", $"<#FFFFFF>{CountLevelSkips()}</color>")
+            .AddKeyValue("<#64D2FF>Total Resets</color>", $"<#FFFFFF>{CountTotalAttempts()}</color>").AddBreakSpace()
+            .AddKeyValue("<#64D2FF>Total Skips</color>", $"<#FFFFFF>{CountLevelSkips()}</color>").AddBreakSpace()
             .AddKeyValue("<#64D2FF>Attempts/AT</color>", $"<#FFFFFF>{AverageAttemptsPerAt():F2}</color>")
             .AddBreakSpace()
             // Time Stats  
-            .AddKeyValue("<#64D2FF>Avg AT time</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>")
-            .AddKeyValue("<#64D2FF>Time Wasted</color>", $"<#FF5A5A>{TimeWastedTotal().ToFormattedString()}</color>")
+            .AddKeyValue("<#64D2FF>Avg AT time</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>").AddBreakSpace()
+            .AddKeyValue("<#64D2FF>Time Wasted</color>", $"<#FF5A5A>{TimeWastedTotal().ToFormattedString()}</color>").AddBreakSpace()
             .AddKeyValue("<#64D2FF>Time/AT</color>", $"<#FFFFFF>{AverageTimePerAt().ToFormattedString()}</color>")
             .AddBreakSpace();
 
@@ -469,6 +477,8 @@ public class AthCtx
             .AddLine($"<#64D2FF>{level.Name}</color> by <#FFD700>{level.Author}</color>")
             .AddBreakSpace()
             .AddLine("<#FFFFFF>Automatic recovery in progress</color>")
+            .AddBreakSpace()
+            .AddLine($"<#AAAAAA>Retries left: {Retries}</color>")
             .AddBreakSpace()
             .AddLine("<#AAAAAA>No time penalty will be applied for this broken level</color>");
 

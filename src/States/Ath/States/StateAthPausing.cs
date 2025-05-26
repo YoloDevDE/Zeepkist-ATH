@@ -29,6 +29,7 @@ public class StateAthPausing : IState
 
     public void Execute()
     {
+        AthStateMachine.Ctx.ResetRetries();
         AthStateMachine.SetServerMessage(true);
     }
 

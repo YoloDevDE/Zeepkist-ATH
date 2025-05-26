@@ -118,7 +118,7 @@ public class PlaylistService
                 return;
             }
 
-            CurrentBrokenZeeplevel = GetCurrentZeepkistNetworkPlaylistLevel;
+            CurrentBrokenZeeplevel = ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
             Logger.LogDebug($"PlaylistService: Removing level at index {CachedOnlineZeeplevels.Count - 1}");
             CachedOnlineZeeplevels.RemoveAt(CachedOnlineZeeplevels.Count - 1);
             Logger.LogInfo($"PlaylistService: Successfully removed level. Playlist now contains {CachedOnlineZeeplevels.Count} levels");
