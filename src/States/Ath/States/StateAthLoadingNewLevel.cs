@@ -8,10 +8,11 @@ using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepSDK.Chat;
 using ZeepSDK.Level;
+using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthLoadingNewLevel : IState
+public class StateAthLoadingNewLevel : AthState
 {
     #region Constructor
 
@@ -24,20 +25,19 @@ public class StateAthLoadingNewLevel : IState
 
     #region Properties & Fields
 
-    public IStateMachine StateMachine { get; }
+    public override IStateMachine StateMachine { get; }
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     #endregion
 
     #region IState Implementation
 
-    public void Enter()
+    public override void Enter()
     {
-        AthStateMachine.Timer.Tick += TimerOnTick;
+        RacingApi.LevelLoaded += OnLevelLoaded;
     }
 
-
-    public async void Execute()
+    private async void OnLevelLoaded()
     {
         try
         {
@@ -73,20 +73,24 @@ public class StateAthLoadingNewLevel : IState
         }
     }
 
-    public void Exit()
+
+    public override void Execute()
     {
-        AthStateMachine.Timer.Tick -= TimerOnTick;
+    }
+
+    public override void Exit()
+    {
+        RacingApi.LevelLoaded -= OnLevelLoaded;
+    }
+
+    public override void OnAthTimerTick()
+    {
+        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
     #endregion
 
     #region Private Methods
-
-    private void TimerOnTick()
-    {
-        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
-    }
-
 
     private bool ValidateCurrentLevel()
     {
@@ -101,19 +105,29 @@ public class StateAthLoadingNewLevel : IState
 
     private bool IsBrokenLevel()
     {
-        return !ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex].UID.Equals(LevelApi.CurrentLevel.UID);
+        int currentIndex = ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex;
+        int playlistCount = ZeepkistNetwork.CurrentLobby.Playlist.Count;
+
+        if (currentIndex < 0 || currentIndex >= playlistCount)
+        {
+            return true;
+        }
+
+        return !ZeepkistNetwork.CurrentLobby.Playlist[currentIndex].UID.Equals(LevelApi.CurrentLevel.UID);
     }
 
     private async Task HandleBrokenLevel()
     {
         Logger.LogWarning($"OnPlayerSpawned: Level {LevelApi.CurrentLevel.UID} appears to be broken");
         Messenger.Notify().LogError($"Level Broken - Autoskip applied<br>{ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex].UID}");
-        await PlaylistService.Instance.ReplaceBrokenLevel();
-        await Task.Delay(500);
+        await PlaylistService.ReplaceBrokenLevel();
+        await Task.Delay(3000);
         ChatApi.SendMessage("/fs");
         Logger.LogInfo("OnPlayerSpawned: Transitioning to new LoadingNewLevel state after broken level");
         StateMachine.TransitionTo(new StateAthLoadingThroughBrokenLevel(StateMachine));
     }
+
+    private PlaylistService PlaylistService => PlaylistService.Instance;
 
     private bool CreateAndValidateNewLevel()
     {
@@ -144,7 +158,7 @@ public class StateAthLoadingNewLevel : IState
         Logger.LogWarning("OnPlayerSpawned: Duplicate level detected");
         ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
         Messenger.Notify().LogError("Something went wrong.. this level should not have been loaded... skipping (dont worry no penalty is applied)");
-        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
+        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 
     private async Task ProcessValidLevel()
@@ -152,8 +166,8 @@ public class StateAthLoadingNewLevel : IState
         Logger.LogDebug("OnPlayerSpawned: Adding level to tracked levels");
         AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
         Logger.LogInfo("OnPlayerSpawned: Transitioning to Pausing state");
-        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
         await PlaylistService.Instance.PopulatePlaylist();
+        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 
     #endregion

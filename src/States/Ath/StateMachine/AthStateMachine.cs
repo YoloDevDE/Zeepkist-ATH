@@ -8,17 +8,21 @@ using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
 
-public class AthStateMachine : IStateMachine
+public class AthStateMachine : IStateMachine, IDisposable
 {
+    private bool disposed;
+    private bool timerStarted;
+
     public AthStateMachine()
     {
         Ctx = new AthCtx();
         Timer = new AthTimer();
         InitialState = new StateAthStarting(this);
         FinalState = new StateAthStopping(this);
+        timerStarted = false;
     }
 
-    public AthTimer Timer { get; set; }
+    private AthTimer Timer { get; }
     public AthCtx Ctx { get; set; }
 
 
@@ -32,6 +36,13 @@ public class AthStateMachine : IStateMachine
         StateMachineFinished?.Invoke();
     }
 
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+
     public void SetServerMessage(bool paused)
     {
         string stateColor = paused ? "#ff8800" : "#00ff44";
@@ -44,7 +55,7 @@ public class AthStateMachine : IStateMachine
                          $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}</color> " +
                          $"{(Ctx.Punishments == 0 ? "" : $"(<{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDurationWithoutPunishments.TotalSeconds)}</color> - <#ff4a4a>{TimeSpan.FromSeconds(Ctx.PunishTime * Ctx.Punishments).ToFormattedString()}</color>)")}" +
                          $"<br>" +
-                         $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.Duration.TotalSeconds)}<br>" +
+                         $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.PlayDuration.TotalSeconds)}<br>" +
                          $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.LevelBeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
                          $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
                          $"<#ffffff>=========={{ Results }}==========<br>" +
@@ -54,14 +65,49 @@ public class AthStateMachine : IStateMachine
         ChatApi.SendMessage(message);
     }
 
+    public void OnAthTimerTick()
+    {
+        ((AthState)CurrentState).OnAthTimerTick();
+    }
 
     public void StartTimer()
     {
+        if (timerStarted)
+        {
+            return;
+        }
+
         Timer.Start();
+        Timer.Tick += OnAthTimerTick;
+        timerStarted = true;
     }
 
     public void StopTimer()
     {
         Timer.Stop();
+
+        Timer.Tick -= OnAthTimerTick;
+        timerStarted = false;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            StopTimer();
+            Timer?.Dispose();
+        }
+
+        disposed = true;
+    }
+
+    ~AthStateMachine()
+    {
+        Dispose(false);
     }
 }

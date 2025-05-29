@@ -28,22 +28,32 @@ public class AthCtx
     // Properties - Time related
     public DateTime StartTime { get; } = DateTime.Now;
 
-    public int Duration { get; } = DEFAULT_DURATION;
+    public int Duration { get; } = DEFAULT_DURATION + 1;
+
     public int PunishTime { get; } = DEFAULT_PUNISH_TIME;
-    public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).Duration();
+
+    // public TimeSpan CurrentDuration => DateTime.Now.Subtract(EndTime).PlayDuration();
+    public TimeSpan CurrentDuration => GetMapsDurationTotal();
     public TimeSpan CurrentDurationWithoutPunishments => DateTime.Now.Subtract(EndTimeWithoutPunishments).Duration();
 
+
+    // public DateTime EndTime =>
+    //     EndTimeWithoutPunishments
+    //         .AddSeconds(-(PunishTime * Punishments));
+
+    // public DateTime EndTimeWithoutPunishments =>
+    //     StartTime
+    //         .AddSeconds(PlayDuration)
+    //         .AddSeconds(PauseTimeInSeconds)
+    //         .AddSeconds(LoadingTimeInSeconds)
+    //         .AddSeconds(BrokenTimeInSeconds);
     public DateTime EndTime =>
-        StartTime
-            .AddSeconds(Duration + 1)
-            .AddSeconds(PauseTimeInSeconds)
-            .AddSeconds(LoadingTimeInSeconds)
-            .AddSeconds(BrokenTimeInSeconds)
+        EndTimeWithoutPunishments
             .AddSeconds(-(PunishTime * Punishments));
 
     public DateTime EndTimeWithoutPunishments =>
         StartTime
-            .AddSeconds(Duration + 1)
+            .AddSeconds(Duration)
             .AddSeconds(PauseTimeInSeconds)
             .AddSeconds(LoadingTimeInSeconds)
             .AddSeconds(BrokenTimeInSeconds);
@@ -64,7 +74,17 @@ public class AthCtx
     public int Punishments { set; get; } = 0;
     public int FreeSkips { get; set; } = 1;
 
-    public bool FirstLevel { get; set; } = true;
+    public TimeSpan GetMapsDurationTotal()
+    {
+        double totalSeconds = 0;
+        foreach (Level level in Levels)
+        {
+            totalSeconds += level.PlayDuration.TotalSeconds;
+        }
+
+        return TimeSpan.FromSeconds(Duration - totalSeconds + PunishTime * Punishments);
+    }
+
 
     public void ResetRetries()
     {
@@ -99,8 +119,8 @@ public class AthCtx
     public Level LevelYouShouldHaveSkippedThis()
     {
         return Levels
-            .Where(level => level.Duration.TotalMinutes >= 5 && !level.LevelBroken)
-            .OrderByDescending(level => level.Duration)
+            .Where(level => level.PlayDuration.TotalMinutes >= 5 && !level.LevelBroken)
+            .OrderByDescending(level => level.PlayDuration)
             .FirstOrDefault();
     }
 
@@ -129,7 +149,7 @@ public class AthCtx
         return Levels
             .Where(level => level.LevelBeaten)
             .OrderBy(level => level.Attempt)
-            .ThenBy(level => level.Duration)
+            .ThenBy(level => level.PlayDuration)
             .FirstOrDefault();
     }
 
@@ -169,7 +189,7 @@ public class AthCtx
             return TimeSpan.Zero;
         }
 
-        long averageTicks = (long)beatenLevels.Average(level => level.Duration.Ticks);
+        long averageTicks = (long)beatenLevels.Average(level => level.PlayDuration.Ticks);
         return TimeSpan.FromTicks(averageTicks);
     }
 
@@ -225,7 +245,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddLine("<#E0E0E0>Race against time to collect as many Author Medals as possible!</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{TimeSpan.FromSeconds(Duration).ToFormattedString()}</color>")
+            .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FFFFFF>{TimeSpan.FromSeconds(Duration).ToFormattedString()}</color>")
             .AddBreakSpace()
             .AddSeperator("<#64D2FF>Rules</color>")
             .AddBreakSpace()
@@ -268,7 +288,7 @@ public class AthCtx
     /// <summary>
     ///     Formats the message shown during an active run
     /// </summary>
-    public string MessageRunning()
+    public string MessageOnARun()
     {
         PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
         // Initialize default values
@@ -391,7 +411,7 @@ public class AthCtx
             .AddKeyValue("<#64D2FF>Attempts/AT</color>", $"<#FFFFFF>{AverageAttemptsPerAt():F2}</color>")
             .AddBreakSpace()
             // Time Stats  
-            .AddKeyValue("<#64D2FF>Avg AT time</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>").AddBreakSpace()
+            .AddKeyValue("<#64D2FF>Avg AT</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>").AddBreakSpace()
             .AddKeyValue("<#64D2FF>Time Wasted</color>", $"<#FF5A5A>{TimeWastedTotal().ToFormattedString()}</color>").AddBreakSpace()
             .AddKeyValue("<#64D2FF>Time/AT</color>", $"<#FFFFFF>{AverageTimePerAt().ToFormattedString()}</color>")
             .AddBreakSpace();
@@ -413,7 +433,7 @@ public class AthCtx
                     .AddBreakSpace()
                     .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{easiestLevel.Attempt}</color>")
                     .AddBreakSpace()
-                    .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{easiestLevel.Duration.ToFormattedString()}</color>")
+                    .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FFFFFF>{easiestLevel.PlayDuration.ToFormattedString()}</color>")
                     .AddBreakSpace();
             }
         }
@@ -441,7 +461,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Status</color>", $"<#FFFFFF>{level.Status}</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FF7A7A>{level.Duration.ToFormattedString()}</color>")
+            .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FF7A7A>{level.PlayDuration.ToFormattedString()}</color>")
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{level.Attempt}</color>")
             .AddBreakSpace();
@@ -544,7 +564,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{CurrentLevel.Attempt}</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{CurrentLevel.Duration.ToFormattedString()}</color>")
+            .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FFFFFF>{CurrentLevel.PlayDuration.ToFormattedString()}</color>")
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Time Wasted</color>", $"<#FF5A5A>{CurrentLevel.TimeWasted.ToFormattedString()}</color>")
             .AddBreakSpace()

@@ -27,9 +27,9 @@ public class StateMasterOn : IState
         CommandStart.CommandTrigger += Start;
         CommandRestart.CommandTrigger += Restart;
         RacingApi.RoundStarted += OnRoundStarted;
-        AthStateMachine.Timer.Tick += OnTimerTick;
         CommandSkipBroken.CommandTrigger += SkipBrokenLevel;
         SubStateMachine.StateMachineFinished += Stop;
+        AthStateMachine.StartTimer();
         Messenger.Notify().Log("started");
     }
 
@@ -40,12 +40,12 @@ public class StateMasterOn : IState
     public void Exit()
     {
         Messenger.Notify().Log("stopped");
+        AthStateMachine.StopTimer();
         CommandStop.CommandTrigger -= Stop;
         MultiplayerApi.DisconnectedFromGame -= Stop;
         CommandStart.CommandTrigger -= Start;
         CommandRestart.CommandTrigger -= Restart;
         RacingApi.RoundStarted -= OnRoundStarted;
-        AthStateMachine.Timer.Tick -= OnTimerTick;
         CommandSkipBroken.CommandTrigger -= SkipBrokenLevel;
         SubStateMachine.StateMachineFinished -= Stop;
     }
@@ -55,13 +55,6 @@ public class StateMasterOn : IState
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
     }
 
-    private void OnTimerTick()
-    {
-        if (AthStateMachine.Ctx.IsTimeOver())
-        {
-            Stop();
-        }
-    }
 
     private void Restart()
     {

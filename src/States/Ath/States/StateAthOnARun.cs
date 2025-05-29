@@ -1,76 +1,91 @@
 ﻿using System;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
+using ZeepkistClient;
+using ZeepkistNetworking;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthOnARun : IState
+public class StateAthOnARun : AthState
 {
-    // Private Fields
-
-    // Constructor
     public StateAthOnARun(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+    public override IStateMachine StateMachine { get; }
 
-    // Properties
-    public IStateMachine StateMachine { get; }
-
-    // Public Methods
-    public void Enter()
+    public override void Enter()
     {
-        AthStateMachine.Timer.Tick += TimerOnTick;
-        RacingApi.RoundStarted += OnRoundNztStarted;
+        RacingApi.RoundStarted += OnRoundStarted;
+        RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.CrossedFinishLine += OnCrossedFinishLine;
-        RacingApi.RoundEnded += OnRoundNztEnded;
     }
 
-
-    public void Execute()
+    public override void Execute()
     {
-        if (AthStateMachine.Ctx.CurrentLevel.FirstTimePlayed)
-        {
-            AthStateMachine.Ctx.CurrentLevel.FirstTimePlayed = false;
-            AthStateMachine.Ctx.CurrentLevel.StartTime = DateTime.Now;
-        }
-
         AthStateMachine.SetServerMessage(false);
-        AthStateMachine.Ctx.CurrentLevel.Attempt++;
-        MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageRunning());
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageOnARun());
     }
 
-    public void Exit()
+    public override void Exit()
     {
-        AthStateMachine.Timer.Tick -= TimerOnTick;
-        RacingApi.RoundStarted -= OnRoundNztStarted;
+        RacingApi.RoundStarted -= OnRoundStarted;
+        RacingApi.RoundEnded -= OnRoundEnded;
         RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
-        RacingApi.RoundEnded -= OnRoundNztEnded;
     }
 
-    private void OnRoundNztEnded()
+    private void OnRoundEnded()
     {
         StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
     }
 
     private void OnCrossedFinishLine(float time)
     {
-        StateMachine.TransitionTo(new StateAthEvaluateRun(StateMachine));
+        ZeepkistNetworkPlayer networkPlayer = ZeepkistNetwork.LocalPlayer;
+        PlayerBase.Result currentResult = networkPlayer?.CurrentResult;
+        Level currentLevel = AthStateMachine.Ctx.CurrentLevel;
+
+        if (currentResult == null)
+        {
+            StateMachine.TransitionTo(new StateAthPausing(StateMachine));
+            return;
+        }
+
+        currentLevel.PersonalBestTime = currentResult.Time;
+
+        if (currentResult.Time <= currentLevel.AuthorTime)
+        {
+            Messenger.Notify().LogCustomColors("Author Medal acquired!<br>[Respawn to continue]", Color.white, new Color(0.5f, 0f, 0.5f), 10f);
+            StateMachine.TransitionTo(new StateAthWaitingForRespawn(StateMachine));
+            return;
+        }
+
+        if (currentResult.Time <= currentLevel.GoldTime && !currentLevel.GoldSkipUnlocked)
+        {
+            currentLevel.GoldSkipUnlocked = true;
+            Messenger.Notify().LogCustomColors("Gold Medal acquired!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 10f);
+        }
+
+        StateMachine.TransitionTo(new StateAthPausing(StateMachine));
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageLevelResult());
     }
 
-    private void OnRoundNztStarted()
+    private void OnRoundStarted()
     {
-        StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
+        AthStateMachine.Ctx.CurrentLevel.Attempt++;
+        Execute();
     }
 
-    private void TimerOnTick()
+    public override void OnAthTimerTick()
     {
+        AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
         AthStateMachine.SetServerMessage(false);
         if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime)
         {

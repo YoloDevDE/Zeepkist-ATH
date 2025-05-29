@@ -1,10 +1,13 @@
 ﻿using System;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
+using UnityEngine;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthEvaluateSkip : IState
+public class StateAthEvaluateSkip : AthState
 {
     public StateAthEvaluateSkip(IStateMachine stateMachine)
     {
@@ -13,45 +16,82 @@ public class StateAthEvaluateSkip : IState
 
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
-    public IStateMachine StateMachine { get; }
+    public override IStateMachine StateMachine { get; }
 
-    public void Enter()
+    public override void Enter()
     {
     }
 
-    public void Execute()
+    public override void Execute()
     {
-        AthStateMachine.Ctx.CurrentLevel.LevelSkipped = true;
-        if (AthStateMachine.Ctx.CurrentLevel.LevelBroken)
+        AthCtx athCtx = AthStateMachine.Ctx;
+        athCtx.CurrentLevel.LevelSkipped = true;
+
+        if (athCtx.CurrentLevel.LevelBroken)
         {
-            StateMachine.TransitionTo(new StateAthBrokenSkip(StateMachine));
-            return;
+            HandleBrokenSkip(athCtx);
+        }
+        else
+        {
+            athCtx.Skips += 1;
+
+            if (athCtx.CurrentLevel.GoldSkipUnlocked)
+            {
+                HandleGoldSkip(athCtx);
+            }
+            else if (athCtx.FreeSkips > 0)
+            {
+                HandleFreeSkip(athCtx);
+            }
+            else if (athCtx.EndTime <= DateTime.Now.AddSeconds(athCtx.PunishTime))
+            {
+                HandleTimeExpiredSkip(athCtx);
+            }
+            else
+            {
+                HandlePenaltySkip(athCtx);
+            }
         }
 
-        AthStateMachine.Ctx.Skips += 1;
-        if (AthStateMachine.Ctx.CurrentLevel.GoldSkipUnlocked)
-        {
-            StateMachine.TransitionTo(new StateAthGoldSkip(StateMachine));
-            return;
-        }
-
-        if (AthStateMachine.Ctx.FreeSkips > 0)
-        {
-            StateMachine.TransitionTo(new StateAthFreeskip(StateMachine));
-            return;
-        }
-
-        if (AthStateMachine.Ctx.EndTime <= DateTime.Now.AddSeconds(AthStateMachine.Ctx.PunishTime))
-        {
-            StateMachine.TransitionTo(new StateAthPunishExceeded(StateMachine));
-            return;
-        }
-
-
-        StateMachine.TransitionTo(new StateAthPenaltySkip(StateMachine));
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
-    public void Exit()
+    public override void Exit()
     {
+    }
+
+    public override void OnAthTimerTick()
+    {
+    }
+
+    private static void HandleBrokenSkip(AthCtx ctx)
+    {
+        Messenger.Notify().LogWarning("'Broken-Skip' used<br>Spent time refunded", 5f);
+        ctx.BrokenTimeInSeconds += (int)ctx.CurrentLevel.PlayDuration.TotalSeconds;
+    }
+
+    private static void HandleGoldSkip(AthCtx ctx)
+    {
+        ctx.GoldMedals++;
+        Messenger.Notify().LogCustomColors("'Gold-Skip' used", Color.black, new Color(1f, 0.84f, 0f), 5f);
+    }
+
+    private static void HandleFreeSkip(AthCtx ctx)
+    {
+        ctx.FreeSkips--;
+        ctx.CurrentLevel.FreeSkipped = true;
+        Messenger.Notify().LogCustomColors("'Free-Skip' used", Color.black, Color.white, 5f);
+    }
+
+    private static void HandleTimeExpiredSkip(AthCtx ctx)
+    {
+        Messenger.Notify().LogCustomColors("Well.. I tried to warn you.. Challenge is over once the level is loaded.", Color.white, Color.red, 10f);
+        ctx.Punishments++;
+    }
+
+    private static void HandlePenaltySkip(AthCtx ctx)
+    {
+        Messenger.Notify().LogError("'Penalty-Skip' used", 5f);
+        ctx.Punishments++;
     }
 }

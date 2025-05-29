@@ -8,7 +8,7 @@ using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthStopping : IState
+public class StateAthStopping : AthState
 {
     public StateAthStopping(IStateMachine stateMachine)
     {
@@ -18,18 +18,18 @@ public class StateAthStopping : IState
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     // Properties
-    public IStateMachine StateMachine { get; }
+    public override IStateMachine StateMachine { get; }
 
-    public void Enter()
+    public override void Enter()
     {
     }
 
-    public void Execute()
+    public override void Execute()
     {
-        AthStateMachine.StopTimer();
         try
         {
-            MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageFinalResult());
+            StateMachine.InvokeFinish();
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageFinalResult());
             ChatApi.SendMessage("/servermessage blue 0 ATH finished!");
             if (!Plugin.Instance.Config.SavePlaylistOnRunEnd.Value)
             {
@@ -51,7 +51,11 @@ public class StateAthStopping : IState
     }
 
 
-    public void Exit()
+    public override void Exit()
+    {
+    }
+
+    public override void OnAthTimerTick()
     {
     }
 }

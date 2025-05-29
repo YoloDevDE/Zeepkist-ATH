@@ -47,7 +47,7 @@ public class Message
             if (plainHeadline.Length >= totalWidth)
             {
                 _message.Lines.Add(new string(separatorChar, totalWidth));
-                _message.Lines.Add("<br><b><font-weight=\"900\"><#ff8800>{ " + headline + "} </color></font-weight></b><br>");
+                _message.Lines.Add("<br><align=\"center\"><b><font-weight=\"900\"><#ff8800>" + headline + "</color></font-weight></b></align><br><align=\"left\">");
                 _message.Lines.Add(new string(separatorChar, totalWidth));
             }
             else

@@ -5,6 +5,7 @@ using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
+using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
 
 namespace AuthorTimeHunting.Service;
@@ -41,6 +42,16 @@ public class PlaylistService
     {
         CachedOnlineZeeplevels = new List<OnlineZeeplevel>();
         await PopulatePlaylist();
+    }
+
+    public void SkipLevel()
+    {
+        ChatApi.SendMessage("/fs");
+    }
+
+    public void SkipToLastLevel()
+    {
+        ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
     }
 
     public async Task PopulatePlaylist()
@@ -97,7 +108,7 @@ public class PlaylistService
             // Try to send a message to players if possible
             try
             {
-                MessageSenderService.SendLocalMessage("Error updating playlist. Please check the logs for details.");
+                ChatMessageService.SendCustomMessage("Error updating playlist. Please check the logs for details.");
             }
             catch
             {

@@ -1,52 +1,40 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using ZeepSDK.PhotoMode;
+using ZeepSDK.Chat;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthPausing : AthState
+public class StateAthWaitingForRespawn : AthState
 {
-    // Constructor
-    public StateAthPausing(IStateMachine stateMachine)
+    public StateAthWaitingForRespawn(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
     }
 
     public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
-    // Properties
     public override IStateMachine StateMachine { get; }
 
-    // Public Methods
     public override void Enter()
     {
         RacingApi.RoundStarted += OnRoundStarted;
-        PhotoModeApi.PhotoModeEntered += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         AthStateMachine.Ctx.CurrentLevel.StartPause();
     }
 
     public override void Execute()
     {
-        AthStateMachine.Ctx.ResetRetries();
         AthStateMachine.SetServerMessage(true);
     }
 
     public override void Exit()
     {
-        AthStateMachine.Ctx.CurrentLevel.EndPause();
         RacingApi.RoundStarted -= OnRoundStarted;
-        PhotoModeApi.PhotoModeEntered -= OnRoundStarted;
         RacingApi.RoundEnded -= OnRoundEnded;
+        AthStateMachine.Ctx.CurrentLevel.EndPause();
     }
 
-    private void OnRoundEnded()
-    {
-        StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
-    }
-
-    // Private Methods
     public override void OnAthTimerTick()
     {
         AthStateMachine.Ctx.PauseTimeInSeconds += 1;
@@ -54,9 +42,15 @@ public class StateAthPausing : AthState
         AthStateMachine.SetServerMessage(true);
     }
 
+    private void OnRoundEnded()
+    {
+        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
+    }
 
+
+    // Private Methods
     private void OnRoundStarted()
     {
-        StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
+        ChatApi.SendMessage("/fs");
     }
 }

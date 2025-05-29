@@ -26,6 +26,11 @@ public class AthTimer
         _timer.Start();
     }
 
+    public void Dispose()
+    {
+        _timer.Dispose();
+    }
+
     public void Stop()
     {
         _timer.Stop();

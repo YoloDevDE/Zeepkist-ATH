@@ -1,13 +1,11 @@
-﻿using System.Threading.Tasks;
-using AuthorTimeHunting.Interfaces;
+﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using ZeepkistClient;
-using ZeepSDK.Chat;
+using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthStarting : IState
+public class StateAthStarting : AthState
 {
     // Constructor
     public StateAthStarting(IStateMachine stateMachine)
@@ -15,41 +13,39 @@ public class StateAthStarting : IState
         StateMachine = stateMachine;
     }
 
-    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
+    private PlaylistService PlaylistService => PlaylistService.Instance;
+    private AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     // Properties
-    public IStateMachine StateMachine { get; }
+    public override IStateMachine
+        StateMachine { get; }
 
     // Public Methods
-    public void Enter()
+    public override void Enter()
     {
+        RacingApi.RoundEnded += OnRoundEnded;
     }
 
-    public async void Execute()
+
+    public override async void Execute()
     {
-        // Wait until the GameState is not 0
-        MessageSenderService.SendLocalMessage(AthStateMachine.Ctx.MessageStarting());
-        await WaitUntilGameStateNotZero();
-        await PlaylistService.Instance.StartNewPlaylist();
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>GL HF!</b>";
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enableWordWrapping = true;
-        await WaitUntilGameStateNotZero();
-        ChatApi.SendMessage("/fs");
-        AthStateMachine.StartTimer();
-        StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
+        await PlaylistService.StartNewPlaylist();
+        PlaylistService.SkipLevel();
     }
 
-    public void Exit()
+    public override void Exit()
     {
+        RacingApi.RoundEnded -= OnRoundEnded;
     }
 
-    private async Task WaitUntilGameStateNotZero()
+    public override void OnAthTimerTick()
     {
-        while (ZeepkistNetwork.CurrentLobby.GameState != 0)
-        {
-            await Task.Delay(100);
-        }
+        AthStateMachine.Ctx.PauseTimeInSeconds += 1;
+    }
 
-        await Task.Delay(5000);
+    private void OnRoundEnded()
+    {
+        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
     }
 }
