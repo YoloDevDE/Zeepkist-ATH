@@ -24,7 +24,6 @@ public class StateAthPausing : AthState
         RacingApi.RoundStarted += OnRoundStarted;
         PhotoModeApi.PhotoModeEntered += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
-        AthStateMachine.Ctx.CurrentLevel.StartPause();
     }
 
     public override void Execute()
@@ -35,7 +34,6 @@ public class StateAthPausing : AthState
 
     public override void Exit()
     {
-        AthStateMachine.Ctx.CurrentLevel.EndPause();
         RacingApi.RoundStarted -= OnRoundStarted;
         PhotoModeApi.PhotoModeEntered -= OnRoundStarted;
         RacingApi.RoundEnded -= OnRoundEnded;
@@ -49,8 +47,6 @@ public class StateAthPausing : AthState
     // Private Methods
     public override void OnAthTimerTick()
     {
-        AthStateMachine.Ctx.PauseTimeInSeconds += 1;
-        AthStateMachine.Ctx.CurrentLevel.UpdatePause();
         AthStateMachine.SetServerMessage(true);
     }
 

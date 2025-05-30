@@ -1,5 +1,4 @@
-﻿using System;
-using AuthorTimeHunting.Entities;
+﻿using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
@@ -43,7 +42,7 @@ public class StateAthEvaluateSkip : AthState
             {
                 HandleFreeSkip(athCtx);
             }
-            else if (athCtx.EndTime <= DateTime.Now.AddSeconds(athCtx.PunishTime))
+            else if (athCtx.GetRemainingTime().TotalMilliseconds - athCtx.PunishTime <= 0)
             {
                 HandleTimeExpiredSkip(athCtx);
             }
@@ -67,7 +66,6 @@ public class StateAthEvaluateSkip : AthState
     private static void HandleBrokenSkip(AthCtx ctx)
     {
         Messenger.Notify().LogWarning("'Broken-Skip' used<br>Spent time refunded", 5f);
-        ctx.BrokenTimeInSeconds += (int)ctx.CurrentLevel.PlayDuration.TotalSeconds;
     }
 
     private static void HandleGoldSkip(AthCtx ctx)

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
-using ZeepSDK.Multiplayer;
 
 namespace AuthorTimeHunting.Service;
 
@@ -56,65 +54,68 @@ public class PlaylistService
 
     public async Task PopulatePlaylist()
     {
-        Logger.LogInfo("PlaylistService: Starting playlist population");
-
-        try
-        {
-            // Wait until the GameState is not 0
-            Logger.LogDebug("PlaylistService: Waiting for GameState to change from 0 before updating playlist");
-            await WaitUntilGameStateNotZero();
-            Logger.LogInfo($"PlaylistService: GameState is now {ZeepkistNetwork.CurrentLobby.GameState}, proceeding with playlist update");
-
-            // Log the current state of the playlist
-            Logger.LogDebug($"PlaylistService: Current playlist has {CachedOnlineZeeplevels.Count} levels before adding new level");
-
-            // Get a new random level and log details
-            LevelItem levelItem = RandomLevelService.Instance.GetRandomLevelItem();
-            Logger.LogInfo($"PlaylistService: Adding new level to playlist: '{levelItem.Name}' (UID: {levelItem.FileUid})");
-
-            // Convert to OnlineZeepLevel and add to cache
-            OnlineZeeplevel onlineLevel = levelItem.ToOnlineZeepLevel();
-            CachedOnlineZeeplevels.Add(onlineLevel);
-            Logger.LogDebug($"PlaylistService: Successfully added level to cached playlist at index {CachedOnlineZeeplevels.Count - 1}");
-
-            // Update the current and next playlist indices
-            int currentIndex = CurrentPlaylistIndex();
-            int nextIndex = NextPlaylistIndex();
-            Logger.LogDebug($"PlaylistService: Setting playlist indices - Current: {currentIndex}, Next: {nextIndex}");
-
-            ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = currentIndex;
-            ZeepkistNetwork.CurrentLobby.NextPlaylistIndex = nextIndex;
-            ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
-
-            // Update the playlist in the lobby
-            Logger.LogDebug($"PlaylistService: Updating lobby playlist with {CachedOnlineZeeplevels.Count} levels");
-            ZeepkistNetwork.CurrentLobby.Playlist.Clear();
-            ZeepkistNetwork.CurrentLobby.Playlist.AddRange(CachedOnlineZeeplevels);
-
-            // Apply censoring to the last level if needed
-            Logger.LogDebug("PlaylistService: Applying censoring to the last level in playlist");
-            ZeepkistNetwork.CurrentLobby.Playlist[^1] = GetCensoredLevel(CachedOnlineZeeplevels[^1]);
-
-            // Update the server playlist
-            Logger.LogInfo("PlaylistService: Sending updated playlist to server");
-            MultiplayerApi.UpdateServerPlaylist();
-
-            Logger.LogInfo($"PlaylistService: Playlist population completed successfully. Playlist now contains {CachedOnlineZeeplevels.Count} levels");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"PlaylistService: Error during playlist population: {ex.Message}\nStack trace: {ex.StackTrace}");
-
-            // Try to send a message to players if possible
-            try
-            {
-                ChatMessageService.SendCustomMessage("Error updating playlist. Please check the logs for details.");
-            }
-            catch
-            {
-                // Silently ignore if sending message fails
-            }
-        }
+        // Logger.LogInfo("PlaylistService: Starting playlist population");
+        //
+        // try
+        // {
+        //     // Wait until the GameState is not 0
+        //     Logger.LogDebug("PlaylistService: Waiting for GameState to change from 0 before updating playlist");
+        //     await WaitUntilGameStateNotZero();
+        //     Logger.LogInfo($"PlaylistService: GameState is now {ZeepkistNetwork.CurrentLobby.GameState}, proceeding with playlist update");
+        //
+        //     // Log the current state of the playlist
+        //     Logger.LogDebug($"PlaylistService: Current playlist has {CachedOnlineZeeplevels.Count} levels before adding new level");
+        //
+        //     // Get a new random level and log details
+        //     LevelItem levelItem = RandomLevelService.Instance.GetRandomLevelItem();
+        //     Logger.LogInfo($"PlaylistService: Adding new level to playlist: '{levelItem.Name}' (UID: {levelItem.FileUid})");
+        //
+        //     // Convert to OnlineZeepLevel and add to cache
+        //     OnlineZeeplevel onlineLevel = levelItem.ToOnlineZeepLevel();
+        //     CachedOnlineZeeplevels.Add(onlineLevel);
+        //     Logger.LogDebug($"PlaylistService: Successfully added level to cached playlist at index {CachedOnlineZeeplevels.Count - 1}");
+        //
+        //     // Update the current and next playlist indices
+        //     int currentIndex = CurrentPlaylistIndex();
+        //     int nextIndex = NextPlaylistIndex();
+        //     Logger.LogDebug($"PlaylistService: Setting playlist indices - Current: {currentIndex}, Next: {nextIndex}");
+        //
+        //     ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = currentIndex;
+        //     ZeepkistNetwork.CurrentLobby.NextPlaylistIndex = nextIndex;
+        //     ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
+        //
+        //     // Update the playlist in the lobby
+        //     Logger.LogDebug($"PlaylistService: Updating lobby playlist with {CachedOnlineZeeplevels.Count} levels");
+        //     ZeepkistNetwork.CurrentLobby.Playlist.Clear();
+        //     ZeepkistNetwork.CurrentLobby.Playlist.AddRange(CachedOnlineZeeplevels);
+        //
+        //     // Apply censoring to the last level if needed
+        //     Logger.LogDebug("PlaylistService: Applying censoring to the last level in playlist");
+        //     ZeepkistNetwork.CurrentLobby.Playlist[^1] = GetCensoredLevel(CachedOnlineZeeplevels[^1]);
+        //
+        //     // Update the server playlist
+        //     Logger.LogInfo("PlaylistService: Sending updated playlist to server");
+        //     if (CachedOnlineZeeplevels.Count > 0)
+        //     {
+        //         MultiplayerApi.UpdateServerPlaylist();
+        //     }
+        //
+        //     Logger.LogInfo($"PlaylistService: Playlist population completed successfully. Playlist now contains {CachedOnlineZeeplevels.Count} levels");
+        // }
+        // catch (Exception ex)
+        // {
+        //     Logger.LogError($"PlaylistService: Error during playlist population: {ex.Message}\nStack trace: {ex.StackTrace}");
+        //
+        //     // Try to send a message to players if possible
+        //     try
+        //     {
+        //         ChatMessageService.SendCustomMessage("Error updating playlist. Please check the logs for details.");
+        //     }
+        //     catch
+        //     {
+        //         // Silently ignore if sending message fails
+        //     }
+        // }
     }
 
     public async Task ReplaceBrokenLevel()

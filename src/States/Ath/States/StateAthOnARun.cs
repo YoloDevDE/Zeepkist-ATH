@@ -1,5 +1,4 @@
-﻿using System;
-using AuthorTimeHunting.Entities;
+﻿using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
@@ -26,6 +25,7 @@ public class StateAthOnARun : AthState
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.CrossedFinishLine += OnCrossedFinishLine;
+        AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
     }
 
     public override void Execute()
@@ -36,6 +36,7 @@ public class StateAthOnARun : AthState
 
     public override void Exit()
     {
+        AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
         RacingApi.RoundStarted -= OnRoundStarted;
         RacingApi.RoundEnded -= OnRoundEnded;
         RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
@@ -74,7 +75,7 @@ public class StateAthOnARun : AthState
         }
 
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
-        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageLevelResult());
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageCrossedFinishLine());
     }
 
     private void OnRoundStarted()
@@ -85,9 +86,14 @@ public class StateAthOnARun : AthState
 
     public override void OnAthTimerTick()
     {
-        AthStateMachine.Ctx.CurrentLevel.EndTime = DateTime.Now;
+        if (AthStateMachine.Ctx.IsTimeOver())
+        {
+            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
+            return;
+        }
+
         AthStateMachine.SetServerMessage(false);
-        if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.CurrentDuration.TotalSeconds <= AthStateMachine.Ctx.PunishTime)
+        if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.GetRemainingTime().TotalMilliseconds <= AthStateMachine.Ctx.PunishTime)
         {
             AthStateMachine.Ctx.TimeIsRunningLow = true;
             Messenger.Notify().LogCustomColors("Time is running low!<br>A 'Penalty-Skip' will end the run!", Color.white, Color.red, 10f);

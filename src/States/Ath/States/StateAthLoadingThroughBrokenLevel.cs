@@ -27,7 +27,7 @@ public class StateAthLoadingThroughBrokenLevel : AthState
 
     public override void Enter()
     {
-        RacingApi.RoundStarted += OnRoundStarted;
+        RacingApi.LevelLoaded += OnLevelLoaded;
     }
 
     public override void Execute()
@@ -46,15 +46,14 @@ public class StateAthLoadingThroughBrokenLevel : AthState
 
     public override void Exit()
     {
-        RacingApi.RoundStarted -= OnRoundStarted;
+        RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
     public override void OnAthTimerTick()
     {
-        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
-    private async void OnRoundStarted()
+    private async void OnLevelLoaded()
     {
         try
         {
@@ -74,7 +73,7 @@ public class StateAthLoadingThroughBrokenLevel : AthState
                 await Task.Delay(500);
                 PlaylistService.SkipLevel();
                 Logger.LogInfo("OnRoundStarted: Transitioning to new LoadingNewLevel state after broken level");
-                StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
+                StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
 
                 return;
             }
@@ -98,7 +97,7 @@ public class StateAthLoadingThroughBrokenLevel : AthState
                 Logger.LogWarning("OnRoundStarted: Duplicate level detected");
                 PlaylistService.SkipToLastLevel();
                 Messenger.Notify().LogError("Something went wrong.. this level should not have been loaded... skipping (dont worry no penalty is applied)");
-                StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
+                StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
                 return;
             }
 

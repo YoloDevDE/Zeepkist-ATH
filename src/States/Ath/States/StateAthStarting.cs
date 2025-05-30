@@ -1,6 +1,9 @@
-﻿using AuthorTimeHunting.Interfaces;
+﻿using System;
+using System.Threading.Tasks;
+using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -29,9 +32,57 @@ public class StateAthStarting : AthState
 
     public override async void Execute()
     {
-        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
-        await PlaylistService.StartNewPlaylist();
-        PlaylistService.SkipLevel();
+        try
+        {
+            // Sende Startmeldung
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
+
+            // Starte neue Playlist mit Fehlerbehandlung
+            bool playlistStarted = false;
+            int retryCount = 3; // Maximal 3 Versuche
+
+            while (!playlistStarted && retryCount > 0)
+            {
+                try
+                {
+                    await PlaylistService.StartNewPlaylist();
+                    playlistStarted = true;
+                }
+                catch (Exception ex)
+                {
+                    retryCount--;
+                    Logger.LogError($"Failed to start playlist: {ex.Message}");
+
+                    if (retryCount <= 0)
+                    {
+                        Messenger.Notify().LogError("Failed to start playlist after multiple attempts");
+                        // Weiter zum nächsten Schritt trotz Fehler
+                    }
+
+                    // Kurze Pause vor dem nächsten Versuch
+                    await Task.Delay(500);
+                }
+            }
+
+            // Versuche zum nächsten Level zu springen, auch wenn die Playlist nicht gestartet wurde
+            try
+            {
+                PlaylistService.SkipLevel();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to skip level: {ex.Message}");
+                Messenger.Notify().LogError("Error while skipping to the first level");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Execute failed: {ex.Message}\nStack trace: {ex.StackTrace}");
+            Messenger.Notify().LogError("Something went wrong while starting the hunt");
+
+            // Optional: Transition zu einem Fehler-State oder Reset-State
+            // StateMachine.TransitionTo(new StateAthError(StateMachine));
+        }
     }
 
     public override void Exit()
@@ -41,7 +92,6 @@ public class StateAthStarting : AthState
 
     public override void OnAthTimerTick()
     {
-        AthStateMachine.Ctx.PauseTimeInSeconds += 1;
     }
 
     private void OnRoundEnded()

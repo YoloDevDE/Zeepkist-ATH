@@ -45,22 +45,48 @@ public class AthStateMachine : IStateMachine, IDisposable
 
     public void SetServerMessage(bool paused)
     {
-        string stateColor = paused ? "#ff8800" : "#00ff44";
-        string stateText = paused ? "paused" : "running";
-        string timeLeftColor = paused || Ctx.CurrentDuration.TotalSeconds > Ctx.PunishTime ? stateColor : "#ff4a4a";
-        string currentLevelColor = paused ? "#ff8800" : "#00ff44";
+        var colors = new
+        {
+            State = paused ? "#ff8800" : "#00ff44",
+            TimeLeft = paused ? "#ff8800" : Ctx.GetRemainingTime().TotalMilliseconds > Ctx.PunishTime ? "#00ff44" : "#ff4a4a",
+            CurrentLevel = paused ? "#ff8800" : "#00ff44",
+            Author = ColorDefinitions.Author.CTToHexRGB(),
+            Default = "#ffffff",
+            AuthorSkip = "#AF00AF",
+            GoldSkip = "#FFD600",
+            FreeSkip = "#00ffff",
+            EndRunSkip = "#0f0f0f",
+            PenaltySkip = "#FF0000",
+            Section = "#64D2FF"
+        };
 
-        string message = $"/servermessage white 0 <size=\"20%\"><align=\"left\"><b><#{ColorDefinitions.Author.CTToHexRGB()}>Author-Time-Hunting</color></b><br>" +
-                         $"<#ffffff>State         : <{stateColor}>{stateText}<br>" +
-                         $"<#ffffff>Time Left     : <{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDuration.TotalSeconds)}</color> " +
-                         $"{(Ctx.Punishments == 0 ? "" : $"(<{timeLeftColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentDurationWithoutPunishments.TotalSeconds)}</color> - <#ff4a4a>{TimeSpan.FromSeconds(Ctx.PunishTime * Ctx.Punishments).ToFormattedString()}</color>)")}" +
-                         $"<br>" +
-                         $"<#ffffff>Current Level : <{currentLevelColor}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.PlayDuration.TotalSeconds)}<br>" +
-                         $"<#ffffff>Current Skip  : {(Ctx.CurrentLevel.LevelBeaten ? "<#AF00AF>Author Skip" : Ctx.CurrentLevel.GoldSkipUnlocked ? "<#FFD600>Gold Skip" : Ctx.FreeSkips > 0 ? $"<#00ffff>Free Skip ({Ctx.FreeSkips}x left)" : Ctx.TimeIsRunningLow ? "<#880000>!END RUN SKIP!" : "<#FF0000>Penalty Skip!")}<br>" +
-                         $"<#ffffff>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
-                         $"<#ffffff>=========={{ Results }}==========<br>" +
-                         $"<#ffffff>AT/Gold/None  : <#AF00AF>{Ctx.AuthorMedals}<#ffffff>/<#FFD600>{Ctx.GoldMedals}<#ffffff>/<#FF0000>{Ctx.Skips - Ctx.GoldMedals}<br>"
-            ;
+        string skipText = Ctx.CurrentLevel.LevelBeaten ? $"<{colors.AuthorSkip}>Author Skip" :
+            Ctx.CurrentLevel.GoldSkipUnlocked ? $"<{colors.GoldSkip}>Gold Skip" :
+            Ctx.FreeSkips > 0 ? $"<{colors.FreeSkip}>Free Skip ({Ctx.FreeSkips}x left)" :
+            Ctx.TimeIsRunningLow ? $"<{colors.EndRunSkip}>:skull:FATAL SKIP:skull:" :
+            $"<{colors.PenaltySkip}>Penalty Skip!";
+
+        string punishmentText = Ctx.Punishments == 0
+            ? ""
+            : $"(<{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - " +
+              $"<#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PunishTime * Ctx.Punishments).ToFormattedString()}</color>)";
+
+        string message = $"/servermessage white 0 <size=\"20%\"><align=\"left\"><b><#{colors.Author}><uppercase>Author-Time-Hunting</uppercase></color></b><br>" +
+
+                         // === RUN STATUS ===
+                         $"<{colors.Section}>=== Run Status ===<br>" +
+                         $"<{colors.Default}>State         : <{colors.State}>{(paused ? "PAUSE" : "ACTIVE")}<br>" +
+                         $"<{colors.Default}>Time Left     : <{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTime().TotalMilliseconds)}</color> {punishmentText}<br>" +
+                         $"<{colors.Default}>Skip Type     : {skipText}<br>" +
+
+                         // === CURRENT LEVEL ===
+                         $"<{colors.Section}>=== Current Level ===<br>" +
+                         $"<{colors.Default}>Level Time    : <{colors.CurrentLevel}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds)}<br>" +
+                         $"<{colors.Default}>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
+
+                         // === OVERALL STATS ===
+                         $"<{colors.Section}>=== Overall Stats ===<br>" +
+                         $"<{colors.Default}>AT/Gold/Skips : <{colors.AuthorSkip}>{Ctx.AuthorMedals}<{colors.Default}>/<{colors.GoldSkip}>{Ctx.GoldMedals}<{colors.Default}>/<{colors.PenaltySkip}>{Ctx.Skips - Ctx.GoldMedals}<br>";
 
         ChatApi.SendMessage(message);
     }

@@ -42,6 +42,11 @@ public class StateAthLoadingNewLevel : AthState
         try
         {
             Logger.LogDebug($"OnPlayerSpawned: Current level UID: {LevelApi.CurrentLevel?.UID}");
+            if (AthStateMachine.Ctx.IsTimeOver())
+            {
+                StateMachine.TransitionTo(new StateAthStopping(StateMachine));
+                return;
+            }
 
             if (!ValidateCurrentLevel())
             {
@@ -80,12 +85,12 @@ public class StateAthLoadingNewLevel : AthState
 
     public override void Exit()
     {
+        AthStateMachine.Ctx.CurrentLevel.Start();
         RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
     public override void OnAthTimerTick()
     {
-        AthStateMachine.Ctx.LoadingTimeInSeconds += 1;
     }
 
     #endregion
@@ -99,6 +104,7 @@ public class StateAthLoadingNewLevel : AthState
             return true;
         }
 
+        StateMachine.TransitionTo(new StateAthLoadingThroughBrokenLevel(StateMachine));
         Logger.LogError("OnPlayerSpawned: Current level is null");
         return false;
     }
@@ -110,6 +116,7 @@ public class StateAthLoadingNewLevel : AthState
 
         if (currentIndex < 0 || currentIndex >= playlistCount)
         {
+            StateMachine.TransitionTo(new StateAthLoadingThroughBrokenLevel(StateMachine));
             return true;
         }
 
@@ -139,6 +146,7 @@ public class StateAthLoadingNewLevel : AthState
             return true;
         }
 
+        StateMachine.TransitionTo(new StateAthLoadingThroughBrokenLevel(StateMachine));
         Logger.LogError("OnPlayerSpawned: Failed to create Level object");
         return false;
     }
@@ -167,6 +175,7 @@ public class StateAthLoadingNewLevel : AthState
         AthStateMachine.Ctx.Levels.Add(AthStateMachine.Ctx.CurrentLevel);
         Logger.LogInfo("OnPlayerSpawned: Transitioning to Pausing state");
         await PlaylistService.Instance.PopulatePlaylist();
+
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
     }
 

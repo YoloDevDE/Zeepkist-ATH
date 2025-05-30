@@ -2,20 +2,27 @@
 
 namespace AuthorTimeHunting.Util;
 
-public class TimeFormatter
+public abstract class TimeFormatter
 {
-    public static string FormatDuration(int durationInSeconds)
+    public static string FormatDuration(int durationInMilliseconds)
     {
-        TimeSpan timeSpan = TimeSpan.FromSeconds(durationInSeconds);
-
-        // Überprüfe, ob Stunden vorhanden sind
-        if (timeSpan.TotalHours >= 1)
-            // Format für Stunden:Minuten:Sekunden
+        // Return "none" if time is below 0
+        if (durationInMilliseconds < 0)
         {
-            return string.Format("{0:D2}:{1:D2}:{2:D2}", (int)timeSpan.TotalHours, timeSpan.Minutes, timeSpan.Seconds);
+            return "none";
         }
 
-        // Format für Minuten:Sekunden
-        return string.Format("{0:D2}:{1:D2}", timeSpan.Minutes, timeSpan.Seconds);
+        TimeSpan timeSpan = TimeSpan.FromMilliseconds(durationInMilliseconds);
+
+        // Round to nearest second
+        int totalSeconds = (int)Math.Round(timeSpan.TotalSeconds);
+        int hours = totalSeconds / 3600;
+        int minutes = totalSeconds % 3600 / 60;
+        int seconds = totalSeconds % 60;
+
+        // Check if hours are present
+        return hours >= 1
+            ? $"{hours:D2}:{minutes:D2}:{seconds:D2}"
+            : $"{minutes:D2}:{seconds:D2}";
     }
 }
