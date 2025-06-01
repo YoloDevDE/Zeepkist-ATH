@@ -31,7 +31,7 @@ public class Plugin : BaseUnityPlugin
     /// <summary>
     ///     Configuration settings for the plugin
     /// </summary>
-    public PluginConfig Config { get; private set; }
+    public PluginConfig MyConfig { get; private set; }
 
     private void Awake()
     {
@@ -56,7 +56,7 @@ public class Plugin : BaseUnityPlugin
 
     private void InitializeConfig()
     {
-        Config = new PluginConfig(base.Config);
+        MyConfig = new PluginConfig(Config);
     }
 
     private void InitializeHarmony()

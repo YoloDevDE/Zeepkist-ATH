@@ -9,7 +9,7 @@ public class AthTimer
 
     public AthTimer()
     {
-        _timer = new Timer(1000);
+        _timer = new Timer(11);
         _timer.Elapsed += OnTimedEvent;
         _timer.AutoReset = true;
     }

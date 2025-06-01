@@ -5,18 +5,13 @@ using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthPausing : AthState
+public class StateAthPausing(IStateMachine stateMachine) : AthState
 {
     // Constructor
-    public StateAthPausing(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
 
-    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     // Properties
-    public override IStateMachine StateMachine { get; }
+    public override IStateMachine StateMachine { get; } = stateMachine;
 
     // Public Methods
     public override void Enter()

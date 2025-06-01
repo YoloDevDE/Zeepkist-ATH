@@ -1,21 +1,13 @@
-﻿using AuthorTimeHunting.Entities;
-using AuthorTimeHunting.Interfaces;
+﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthEvaluateSkip : AthState
+public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
 {
-    public StateAthEvaluateSkip(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
-
-    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
-
-    public override IStateMachine StateMachine { get; }
+    public override IStateMachine StateMachine { get; } = stateMachine;
 
     public override void Enter()
     {
@@ -42,7 +34,7 @@ public class StateAthEvaluateSkip : AthState
             {
                 HandleFreeSkip(athCtx);
             }
-            else if (athCtx.GetRemainingTime().TotalMilliseconds - athCtx.PunishTime <= 0)
+            else if (athCtx.GetRemainingTime().TotalMilliseconds - athCtx.PunishTimeInMilliseconds <= 0)
             {
                 HandleTimeExpiredSkip(athCtx);
             }

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using AuthorTimeHunting.Util;
+using UnityEngine;
 
 namespace AuthorTimeHunting.Entities;
 
@@ -63,6 +65,12 @@ public class Level
     }
 
     private List<DateTime> TimeStamps { get; } = [];
+
+    public void UnlockGoldSkip()
+    {
+        Messenger.Notify().LogCustomColors("Gold Medal acquired!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 10f);
+        GoldSkipUnlocked = true;
+    }
 
     public void AddTimeStamp()
     {

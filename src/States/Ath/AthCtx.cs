@@ -1,19 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Util;
 using Crosstales;
 using ZeepkistClient;
 using ZeepkistNetworking;
 
-namespace AuthorTimeHunting.Entities;
+namespace AuthorTimeHunting.States.Ath;
 
 public class AthCtx
 {
     // Constants
-    private const int DEFAULT_DURATION = 60 * 60 * 1000; // 1 hour in seconds
-    private const int DEFAULT_PUNISH_TIME = 60 * 29 * 1000; // 5 minutes in seconds
+    private const int DEFAULT_DURATION_IN_MILLIS = 60 * 11 * 1000; // 1 hour in seconds
+    private const int DEFAULT_PUNISH_TIME_IN_MILLIS = 60 * 5 * 1000; // 5 minutes in seconds
     private const int RETRIES = 3;
+    private bool _previousTimeRunningLowState;
 
     // Fields
     public int Skips = 0;
@@ -28,26 +30,26 @@ public class AthCtx
     // Properties - Time related
     public DateTime StartTime { get; } = DateTime.Now;
 
-    public int Duration { get; } = DEFAULT_DURATION;
+    public int Duration { get; } = DEFAULT_DURATION_IN_MILLIS;
 
-    public int PunishTime { get; } = DEFAULT_PUNISH_TIME;
+    public int PunishTimeInMilliseconds { get; } = DEFAULT_PUNISH_TIME_IN_MILLIS;
 
 
-    // Properties - Time adjustments
-    public int LoadingTimeInSeconds { get; set; } = 0;
-    public int PauseTimeInSeconds { get; set; } = 0;
-    public int BrokenTimeInSeconds { get; set; } = 0;
-
-    // Properties - Level and progress tracking
     public Level CurrentLevel { get; set; }
-    public List<Level> Levels { get; set; } = new List<Level>();
-    public bool TimeIsRunningLow { get; set; } = false;
+    public List<Level> Levels { get; set; } = [];
 
-    // Properties - Game statistics
+    public bool HasTimeRunningLowNotified { get; set; }
+
+    public bool IsTimeRunningLow => GetRemainingTime().TotalMilliseconds <= GetAccumulatedPunishTime();
     public int AuthorMedals { get; set; } = 0;
     public int GoldMedals { get; set; } = 0;
     public int Punishments { set; get; } = 0;
     public int FreeSkips { get; set; } = 1;
+
+    public int GetAccumulatedPunishTime()
+    {
+        return PunishTimeInMilliseconds * Punishments;
+    }
 
     public TimeSpan GetTotalLevelDuration()
     {
@@ -66,7 +68,7 @@ public class AthCtx
 
     public TimeSpan GetRemainingTime()
     {
-        return TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + PunishTime * Punishments));
+        return TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + GetAccumulatedPunishTime()));
     }
 
     public TimeSpan GetRemainingTimeWithoutPunishments()
@@ -90,6 +92,27 @@ public class AthCtx
     }
 
     #endregion
+
+    public bool CheckAndNotifyTimeRunningLow()
+    {
+        bool currentState = IsTimeRunningLow;
+        bool shouldNotify = false;
+
+        // Detect transition from normal to low time
+        if (currentState && !_previousTimeRunningLowState)
+        {
+            HasTimeRunningLowNotified = true;
+            shouldNotify = true;
+        }
+        // Reset notification when time is no longer running low
+        else if (!currentState && _previousTimeRunningLowState)
+        {
+            HasTimeRunningLowNotified = false;
+        }
+
+        _previousTimeRunningLowState = currentState;
+        return shouldNotify;
+    }
 
     #region Level Statistics Methods
 
@@ -211,7 +234,7 @@ public class AthCtx
             .ClearLines()
             .AddLine("<#FFD700>Welcome to Author-Time-Hunting!</color>")
             .AddBreakSpace();
-        if (!Plugin.Instance.Config.Minimalist.Value)
+        if (!Plugin.Instance.MyConfig.Minimalist.Value)
         {
             AddDetailedWelcomeInfo(message);
         }
@@ -226,40 +249,32 @@ public class AthCtx
         return message.Build().ToString();
     }
 
+    public void InitializingNewLevel(LevelScriptableObject levelScriptableObject)
+    {
+        Level level = new Level(levelScriptableObject);
+        CurrentLevel = level;
+        Levels.Add(level);
+        CurrentLevel.Start();
+    }
+
     private void AddDetailedWelcomeInfo(Message.Builder message)
     {
         message
             .AddSeperator("<#B336A3>Author Time Hunting</color>")
             .AddBreakSpace()
-            .AddLine("<#E0E0E0>Race against time to collect as many Author Medals as possible!</color>")
+            .AddLine("<#E0E0E0>Collect Author Medals within the time limit!</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FFFFFF>{TimeSpan.FromMilliseconds(Duration).ToFormattedString()}</color>")
+            .AddSeperator("<#B336A3>Settings</color>")
             .AddBreakSpace()
-            .AddSeperator("<#64D2FF>Rules</color>")
+            .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{TimeSpan.FromMilliseconds(Duration).ToFormattedString()}</color>")
             .AddBreakSpace()
-            .AddLine($"•<indent=1em>Each level has an <#{ColorDefinitions.Author.CTToHexRGB()}>Author Medal time</color> to beat</indent>")
-            .AddBreakSpace()
-            .AddLine($"<indent=1em>Once you got the <#{ColorDefinitions.Author.CTToHexRGB()}>AT</color>, the mod will skip you to the next level</indent>")
-            .AddBreakSpace()
-            .AddLine("<#E0E0E0>•<indent=1em>You can skip levels, but with penalties</indent></color>")
-            .AddBreakSpace()
-            .AddSeperator("<#FF5A5A>Skipping Rules</color>")
-            .AddBreakSpace()
-            .AddKeyValue("<#FF7A7A>Skip Penalty</color>", $"<#FF4040>{TimeSpan.FromMilliseconds(PunishTime).ToFormattedString()}</color>")
-            .AddBreakSpace()
-            .AddLine("<#E0E0E0>Skip without penalty when you:</color>")
-            .AddBreakSpace()
-            .AddKeyValue("•<indent=1em><#E0E0E0>Got Medal</color>", $"<#{ColorDefinitions.Author.CTToHexRGB()}>Author</color> or <#{ColorDefinitions.Gold.CTToHexRGB()}>Gold</color></indent>")
-            .AddBreakSpace()
-            .AddKeyValue("•<indent=1em><#E0E0E0>Used</color>", $"<#{ColorDefinitions.FreeSkip.CTToHexRGB()}>Free-Skip Token</color></indent>")
+            .AddKeyValue("<#FF7A7A>Skip Penalty</color>", $"<#FF4040>{TimeSpan.FromMilliseconds(PunishTimeInMilliseconds).ToFormattedString()}</color>")
             .AddBreakSpace()
             .AddSeperator("<#50E451>Commands</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7AFF7A>'/fs'</color>", "<#E0E0E0>Skip current level</color>")
+            .AddKeyValue("<#7AFF7A>/fs</color>", "<#E0E0E0>Skip level</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7AFF7A>'/ath broken'</color>", "<#E0E0E0>Skip unbeatable map</color>")
-            .AddBreakSpace()
-            .AddLine("<#a0a0a0><size=-4>Only use /ath broken for truly impossible maps!</size></color>");
+            .AddKeyValue("<#7AFF7A>/ath broken</color>", "<#E0E0E0>Skip unbeatable map</color>");
     }
 
     private void AddMinimalistWelcomeInfo(Message.Builder message)
@@ -522,7 +537,7 @@ public class AthCtx
         message
             .ClearLines()
             .AddLine($"<#64D2FF>{CurrentLevel.Name}</color> by <#FFD700>{CurrentLevel.Author}</color>");
-        if (!Plugin.Instance.Config.Minimalist.Value)
+        if (!Plugin.Instance.MyConfig.Minimalist.Value)
         {
             message
                 .AddBreakSpace()
@@ -531,13 +546,13 @@ public class AthCtx
                 .AddKeyValue("<#7FDBFF>Status</color>", $"<{statusColor}>{CurrentLevel.Status}</color>")
                 .AddBreakSpace()
                 .AddKeyValue("<#7FDBFF>Penalty</color>",
-                    $"{(CurrentLevel.LevelBeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "<#50E451>0 minutes</color>" : $"<#FF5A5A>{PunishTime / 60 / 1000} minutes</color>")}");
+                    $"{(CurrentLevel.LevelBeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "<#50E451>0 minutes</color>" : $"<#FF5A5A>{PunishTimeInMilliseconds / 60 / 1000} minutes</color>")}");
         }
 
         message
             .AddBreakSpace()
             .AddSeperator("<#B336A3>Stats</color>");
-        if (!Plugin.Instance.Config.Minimalist.Value)
+        if (!Plugin.Instance.MyConfig.Minimalist.Value)
         {
             message
                 .AddBreakSpace()

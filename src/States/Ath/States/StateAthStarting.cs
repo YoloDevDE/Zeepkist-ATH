@@ -8,20 +8,13 @@ using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthStarting : AthState
+public class StateAthStarting(IStateMachine stateMachine) : AthState
 {
     // Constructor
-    public StateAthStarting(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
-
-    private PlaylistService PlaylistService => PlaylistService.Instance;
-    private AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
 
     // Properties
     public override IStateMachine
-        StateMachine { get; }
+        StateMachine { get; } = stateMachine;
 
     // Public Methods
     public override void Enter()
@@ -36,7 +29,6 @@ public class StateAthStarting : AthState
         {
             // Sende Startmeldung
             ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
-
             // Starte neue Playlist mit Fehlerbehandlung
             bool playlistStarted = false;
             int retryCount = 3; // Maximal 3 Versuche
@@ -96,6 +88,6 @@ public class StateAthStarting : AthState
 
     private void OnRoundEnded()
     {
-        StateMachine.TransitionTo(new StateAthLoadingNewLevel(StateMachine));
+        StateMachine.TransitionTo(new StateAthLoadingLevel(StateMachine));
     }
 }

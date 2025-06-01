@@ -10,20 +10,15 @@ using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthOnARun : AthState
+public class StateAthOnARun(IStateMachine stateMachine) : AthState
 {
-    public StateAthOnARun(IStateMachine stateMachine)
-    {
-        StateMachine = stateMachine;
-    }
-
-    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
-    public override IStateMachine StateMachine { get; }
+    public override IStateMachine StateMachine { get; } = stateMachine;
 
     public override void Enter()
     {
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
+
         RacingApi.CrossedFinishLine += OnCrossedFinishLine;
         AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
     }
@@ -63,15 +58,13 @@ public class StateAthOnARun : AthState
 
         if (currentResult.Time <= currentLevel.AuthorTime)
         {
-            Messenger.Notify().LogCustomColors("Author Medal acquired!<br>[Respawn to continue]", Color.white, new Color(0.5f, 0f, 0.5f), 10f);
             StateMachine.TransitionTo(new StateAthWaitingForRespawn(StateMachine));
             return;
         }
 
         if (currentResult.Time <= currentLevel.GoldTime && !currentLevel.GoldSkipUnlocked)
         {
-            currentLevel.GoldSkipUnlocked = true;
-            Messenger.Notify().LogCustomColors("Gold Medal acquired!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 10f);
+            currentLevel.UnlockGoldSkip();
         }
 
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
@@ -93,10 +86,10 @@ public class StateAthOnARun : AthState
         }
 
         AthStateMachine.SetServerMessage(false);
-        if (!AthStateMachine.Ctx.TimeIsRunningLow && AthStateMachine.Ctx.GetRemainingTime().TotalMilliseconds <= AthStateMachine.Ctx.PunishTime)
+
+        if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
         {
-            AthStateMachine.Ctx.TimeIsRunningLow = true;
-            Messenger.Notify().LogCustomColors("Time is running low!<br>A 'Penalty-Skip' will end the run!", Color.white, Color.red, 10f);
+            Messenger.Notify().LogCustomColors("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", Color.white, Color.red, 10f);
         }
     }
 }

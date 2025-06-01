@@ -17,8 +17,8 @@ public interface IStateMachine
 
         if (CurrentState != null)
         {
-            Logger.LogDebug($"StateMachine: Disposing sub-state machine of {CurrentState.GetType().Name}");
-            CurrentState.SubStateMachine?.Dispose();
+            Logger.LogDebug($"StateMachine: Disposing sub-state machine of {CurrentState.GetType().Name} -> {CurrentState.SubStateMachine?.GetType().Name}[{CurrentState.SubStateMachine?.CurrentState.GetType().Name}]");
+            CurrentState.SubStateMachine?.StopGracefully();
 
             Logger.LogDebug($"StateMachine: Exiting state {CurrentState.GetType().Name}");
             CurrentState.Exit();
@@ -39,7 +39,7 @@ public interface IStateMachine
         }
     }
 
-    void Dispose()
+    private void StopGracefully()
     {
         try
         {
