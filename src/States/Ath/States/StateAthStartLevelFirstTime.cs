@@ -21,9 +21,9 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
     {
         try
         {
-            AthStateMachine.SetServerMessage(true);
             await PlaylistService.QueueNextRandomLevel();
             AthStateMachine.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
+            AthStateMachine.SetServerMessage(true);
         }
         catch (Exception e)
         {

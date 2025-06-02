@@ -1,12 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using AuthorTimeHunting.Util;
-using UnityEngine;
 
 namespace AuthorTimeHunting.Entities;
 
 public class Level
 {
+    public enum LevelStatus
+    {
+        AUTHOR = 0,
+        GOLD = 1,
+        FREE = 2,
+        FAILED = 3,
+        BROKEN = 4,
+        UNKOWN = 5
+    }
+
+    private readonly string _author;
+    private readonly string _name;
     private DateTime _endTime;
     private float _personalBestTime = -1f;
 
@@ -14,29 +24,68 @@ public class Level
     {
         // Initialize immutable properties
         LevelUid = level.UID;
-        Name = level.Name;
-        Author = level.Author;
+        _name = level.Name;
+        _author = level.Author;
         AuthorTime = level.TimeAuthor;
         GoldTime = level.TimeGold;
     }
 
     // Basic level information (immutable after creation)
     public string LevelUid { get; }
-    public string Name { get; }
-    public string Author { get; }
+
+    public string Name => $"<noparse>{_name}</noparse>";
+    public string Author => $"<noparse>{_author}</noparse>";
     public double AuthorTime { get; }
     public double GoldTime { get; }
 
     // Game state
-    public int Attempt { get; set; } = 1;
-    public int Crashes { get; set; } = 0;
-
-
-    public bool LevelBeaten => PersonalBestTime <= AuthorTime && PersonalBestTime > 0;
-    public bool LevelBroken { get; set; }
-    public bool LevelSkipped { get; set; }
-    public bool GoldSkipUnlocked { get; set; }
+    public int Attempt { get; set; }
+    public int Crashes { get; set; }
+    public bool Skipped { get; set; }
     public bool FreeSkipped { get; set; }
+    public bool LevelBroken { get; set; }
+
+    // Status als zentrale Eigenschaft
+    public LevelStatus Status
+    {
+        get
+        {
+            if (LevelBroken)
+            {
+                return LevelStatus.BROKEN;
+            }
+
+            if (PersonalBestTime <= AuthorTime && PersonalBestTime >= 0)
+            {
+                return LevelStatus.AUTHOR;
+            }
+
+            if (PersonalBestTime <= GoldTime && PersonalBestTime >= 0)
+            {
+                return LevelStatus.GOLD;
+            }
+
+            if (FreeSkipped)
+            {
+                return LevelStatus.FREE;
+            }
+
+            if (Skipped)
+            {
+                return LevelStatus.FAILED;
+            }
+
+            {
+                return LevelStatus.UNKOWN;
+            }
+        }
+    }
+
+    // Boolean Properties basierend auf Status
+    public bool AuthorTimeAcquired => Status == LevelStatus.AUTHOR;
+    public bool GoldMedalAcquired => Status is LevelStatus.GOLD or LevelStatus.AUTHOR;
+    public bool GoldSkipped => Status == LevelStatus.GOLD && Skipped;
+    public bool PenaltySkipped => Status == LevelStatus.FAILED && Skipped;
 
     public float PersonalBestTime
     {
@@ -50,12 +99,25 @@ public class Level
         }
     }
 
-    public TimeSpan TimeWasted => LevelBroken ? TimeSpan.Zero : LevelBeaten ? GetPlayDuration() - TimeSpan.FromMilliseconds(PersonalBestTime) : GetPlayDuration();
+    public TimeSpan TimeWasted => LevelBroken ? TimeSpan.Zero : AuthorTimeAcquired ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime) : GetPlayDuration();
 
+    public string StatusString
+    {
+        get
+        {
+            return Status switch
+            {
+                LevelStatus.AUTHOR => "Completed",
+                LevelStatus.GOLD => "Gold-Skipped",
+                LevelStatus.FREE => "Free-Skipped",
+                LevelStatus.BROKEN => "Broken",
+                LevelStatus.FAILED => "Failed",
+                _ => "Unknown"
+            };
+        }
+    }
 
-    public string Status =>
-        LevelBeaten ? "Completed" : LevelBroken ? "Lvl Broken" : GoldSkipUnlocked ? "Gold Skipped" : FreeSkipped ? "Free Skipped" : "Failed";
-
+    // Rest der Klasse bleibt gleich...
     public DateTime StartTime { get; set; }
 
     public DateTime EndTime
@@ -66,11 +128,6 @@ public class Level
 
     private List<DateTime> TimeStamps { get; } = [];
 
-    public void UnlockGoldSkip()
-    {
-        Messenger.Notify().LogCustomColors("Gold Medal acquired!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 10f);
-        GoldSkipUnlocked = true;
-    }
 
     public void AddTimeStamp()
     {
@@ -86,6 +143,7 @@ public class Level
     {
         StartTime = DateTime.Now;
         TimeStamps.Clear();
+        Attempt++;
     }
 
     public void Stop()
@@ -104,7 +162,7 @@ public class Level
             return TimeSpan.Zero;
         }
 
-        DateTime now = DateTime.Now; // Use consistent timestamp
+        DateTime now = DateTime.Now;
         TimeSpan result = TimeSpan.Zero;
 
         if (TimeStamps.Count == 1)
@@ -113,7 +171,6 @@ public class Level
             return duration > TimeSpan.Zero ? duration : TimeSpan.Zero;
         }
 
-        // Process pairs of timestamps (start/stop)
         for (int i = 0; i < TimeStamps.Count - 1; i++)
         {
             if (i % 2 == 1)
@@ -138,7 +195,6 @@ public class Level
 
         return result;
     }
-
 
     public override bool Equals(object obj)
     {

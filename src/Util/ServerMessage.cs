@@ -20,8 +20,7 @@ public class ServerMessage
 
     public ServerMessage(string alignment = "left")
     {
-        prefix = $"<size=\"20%\">" +
-                 $"<align=\"{alignment}\">";
+        prefix = $"<size=\"20%\"><align=\"{alignment}\">";
     }
 
     public override string ToString()
@@ -125,7 +124,7 @@ public class ServerMessage
         // Add blocks to the line with customization 
         public LineBuilder AddBlock(string text, Action<BlockBuilder> customizer)
         {
-            BlockBuilder blockBuilder = new BlockBuilder(text + " ");
+            BlockBuilder blockBuilder = new BlockBuilder($"{text} ");
             customizer(blockBuilder);
             lineContent.Append(blockBuilder.BuildInline());
             return this;

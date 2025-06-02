@@ -12,13 +12,10 @@ namespace AuthorTimeHunting.States.Ath;
 public class AthCtx
 {
     // Constants
-    private const int DEFAULT_DURATION_IN_MILLIS = 60 * 11 * 1000; // 1 hour in seconds
-    private const int DEFAULT_PUNISH_TIME_IN_MILLIS = 60 * 5 * 1000; // 5 minutes in seconds
+    private const int DEFAULT_DURATION_IN_MILLIS = 60 * 15 * 1000; // 1 hour in seconds
+    private const int DEFAULT_PENALTY_TIME_IN_MILLIS = 60 * 5 * 1000; // 5 minutes in seconds
     private const int RETRIES = 3;
     private bool _previousTimeRunningLowState;
-
-    // Fields
-    public int Skips = 0;
 
     public int Retries { get; set; } = RETRIES;
 
@@ -27,12 +24,9 @@ public class AthCtx
     /// </summary>
 
 
-    // Properties - Time related
-    public DateTime StartTime { get; } = DateTime.Now;
+    public int Duration => DEFAULT_DURATION_IN_MILLIS;
 
-    public int Duration { get; } = DEFAULT_DURATION_IN_MILLIS;
-
-    public int PunishTimeInMilliseconds { get; } = DEFAULT_PUNISH_TIME_IN_MILLIS;
+    public int PenaltyTimeInMilliseconds => DEFAULT_PENALTY_TIME_IN_MILLIS;
 
 
     public Level CurrentLevel { get; set; }
@@ -40,15 +34,34 @@ public class AthCtx
 
     public bool HasTimeRunningLowNotified { get; set; }
 
-    public bool IsTimeRunningLow => GetRemainingTime().TotalMilliseconds <= GetAccumulatedPunishTime();
-    public int AuthorMedals { get; set; } = 0;
-    public int GoldMedals { get; set; } = 0;
-    public int Punishments { set; get; } = 0;
-    public int FreeSkips { get; set; } = 1;
+    public bool IsTimeRunningLow => GetRemainingTime().TotalMilliseconds <= GetAccumulatedPenaltyTime();
+    public bool IsTimeAfterSkipRunningLow => GetRemainingTime().TotalMilliseconds <= GetAccumulatedPenaltyTime() + PenaltyTimeInMilliseconds;
 
-    public int GetAccumulatedPunishTime()
+    public int AuthorMedals
     {
-        return PunishTimeInMilliseconds * Punishments;
+        get { return Levels?.Count(level => level.Status == Level.LevelStatus.AUTHOR) ?? 0; }
+    }
+
+    public int GoldMedals
+    {
+        get { return Levels?.Count(level => level.Status == Level.LevelStatus.GOLD) ?? 0; }
+    }
+
+    public int Penalties
+    {
+        get { return Levels?.Count(level => level.Status == Level.LevelStatus.FAILED) ?? 0; }
+    }
+
+    public int Skips
+    {
+        get { return Levels?.Count(level => level.Skipped) ?? 0; }
+    }
+
+    public int AvaiableFreeSkips { get; set; } = 1;
+
+    public int GetAccumulatedPenaltyTime()
+    {
+        return PenaltyTimeInMilliseconds * Penalties;
     }
 
     public TimeSpan GetTotalLevelDuration()
@@ -68,7 +81,7 @@ public class AthCtx
 
     public TimeSpan GetRemainingTime()
     {
-        return TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + GetAccumulatedPunishTime()));
+        return TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + GetAccumulatedPenaltyTime()));
     }
 
     public TimeSpan GetRemainingTimeWithoutPunishments()
@@ -158,7 +171,7 @@ public class AthCtx
     public Level LevelThatWasVeryEasy()
     {
         return Levels
-            .Where(level => level.LevelBeaten)
+            .Where(level => level.AuthorTimeAcquired)
             .OrderBy(level => level.Attempt)
             .ThenBy(level => level.GetPlayDuration())
             .FirstOrDefault();
@@ -169,7 +182,7 @@ public class AthCtx
     /// </summary>
     public int CountLevelSkips()
     {
-        return Levels.Count(level => level.LevelSkipped);
+        return Levels.Count(level => level.PenaltySkipped);
     }
 
     /// <summary>
@@ -177,7 +190,7 @@ public class AthCtx
     /// </summary>
     public int CountOneShotATs()
     {
-        return Levels.Count(level => level.LevelBeaten && level.Attempt == 1);
+        return Levels.Count(level => level.AuthorTimeAcquired && level.Attempt == 1);
     }
 
     /// <summary>
@@ -185,7 +198,7 @@ public class AthCtx
     /// </summary>
     public double AverageAttemptsPerAt()
     {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten).ToList();
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.AuthorTimeAcquired).ToList();
         return !beatenLevels.Any() ? 0 : beatenLevels.Average(level => level.Attempt);
     }
 
@@ -194,7 +207,7 @@ public class AthCtx
     /// </summary>
     public TimeSpan AverageTimePerAt()
     {
-        IEnumerable<Level> beatenLevels = Levels.Where(level => level.LevelBeaten).ToList();
+        IEnumerable<Level> beatenLevels = Levels.Where(level => level.AuthorTimeAcquired).ToList();
         if (!beatenLevels.Any())
         {
             return TimeSpan.Zero;
@@ -210,7 +223,7 @@ public class AthCtx
     public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
     {
         return Levels
-            .Where(level => level.LevelBeaten)
+            .Where(level => level.AuthorTimeAcquired)
             .GroupBy(level => level.Author)
             .Where(group => group.Count() >= 2)
             .Select(group => (
@@ -268,7 +281,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Duration</color>", $"<#FFFFFF>{TimeSpan.FromMilliseconds(Duration).ToFormattedString()}</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#FF7A7A>Skip Penalty</color>", $"<#FF4040>{TimeSpan.FromMilliseconds(PunishTimeInMilliseconds).ToFormattedString()}</color>")
+            .AddKeyValue("<#FF7A7A>Skip Penalty</color>", $"<#FF4040>{TimeSpan.FromMilliseconds(PenaltyTimeInMilliseconds).ToFormattedString()}</color>")
             .AddBreakSpace()
             .AddSeperator("<#50E451>Commands</color>")
             .AddBreakSpace()
@@ -306,7 +319,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddKeyValue($"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color>", $"<#FFFFFF>{CurrentLevel.AuthorTime.GetFormattedTime()}</color>");
         // Show gold time if gold skip isn't unlocked yet
-        if (!CurrentLevel.GoldSkipUnlocked)
+        if (!CurrentLevel.GoldMedalAcquired)
         {
             message
                 .AddBreakSpace()
@@ -319,16 +332,16 @@ public class AthCtx
             result = currentResult.Time - CurrentLevel.AuthorTime;
             positiveResult = Math.Abs(result);
             diffDisplay = $"{StringUtils.GetSign(result)}{positiveResult.GetFormattedTime()}";
-            string diffColor = "#" + (result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB()); // Green if better, red if worse
+            string diffColor = $"#{(result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB())}"; // Green if better, red if worse
             message
                 .AddBreakSpace()
                 .AddKeyValue(
-                    $"{(CurrentLevel.LevelBeaten ? (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ") + "<#50E451>Beaten by</color>" : (CurrentLevel.GoldSkipUnlocked ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ") + $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}",
+                    $"{(CurrentLevel.AuthorTimeAcquired ? $"{(CurrentLevel.GoldMedalAcquired ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ")}<#50E451>Beaten by</color>" : $"{(CurrentLevel.GoldMedalAcquired ? "" : $"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color> ")}<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}",
                     $"<{diffColor}>{diffDisplay}</color>");
         }
 
         // Add gold time if gold skip is unlocked
-        if (CurrentLevel.GoldSkipUnlocked)
+        if (CurrentLevel.GoldMedalAcquired)
         {
             message
                 .AddBreakSpace()
@@ -357,7 +370,7 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        string diffColor = "#" + (result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB()); // Green if better, red if worse
+        string diffColor = $"#{(result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB())}"; // Green if better, red if worse
 
         Message.Builder message = new Message.Builder();
         message
@@ -367,7 +380,7 @@ public class AthCtx
             .AddSeperator("<#B336A3>Result</color>")
             .AddBreakSpace()
             .AddKeyValue($"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color>", $"<#FFFFFF>{CurrentLevel.AuthorTime.GetFormattedTime()}</color>");
-        if (!CurrentLevel.GoldSkipUnlocked)
+        if (!CurrentLevel.GoldMedalAcquired)
         {
             message
                 .AddBreakSpace()
@@ -375,7 +388,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("<#7FDBFF>Your Time</color>", $"<#FFFFFF>{resultDisplay}</color>")
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>AT Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>AT Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>");
+                .AddKeyValue($"{(CurrentLevel.AuthorTimeAcquired ? "<#50E451>AT Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>AT Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>");
         }
         else
         {
@@ -383,7 +396,7 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddKeyValue("<#7FDBFF>Your Time</color>", $"<#FFFFFF>{resultDisplay}</color>")
                 .AddBreakSpace()
-                .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
+                .AddKeyValue($"{(CurrentLevel.AuthorTimeAcquired ? "<#50E451>Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
                 .AddBreakSpace()
                 .AddKeyValue($"<#{ColorDefinitions.Gold.CTToHexRGB()}>Gold</color>", $"<#FFFFFF>{CurrentLevel.GoldTime.GetFormattedTime()}</color>");
         }
@@ -394,7 +407,7 @@ public class AthCtx
     /// <summary>
     ///     Formats the final summary message shown at the end of a run
     /// </summary>
-    public string MessageFinalResult()
+    public string MessageEnd()
     {
         Level youShouldHaveSkippedThis = LevelYouShouldHaveSkippedThis();
         Level easiestLevel = LevelThatWasVeryEasy();
@@ -462,7 +475,7 @@ public class AthCtx
             .AddBreakSpace()
             .AddLine($"<#64D2FF>{level.Name}</color> by <#FFD700>{level.Author}</color>")
             .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>Status</color>", $"<#FFFFFF>{level.Status}</color>")
+            .AddKeyValue("<#7FDBFF>Status</color>", $"<#FFFFFF>{level.StatusString}</color>")
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FF7A7A>{level.GetPlayDuration().ToFormattedString()}</color>")
             .AddBreakSpace()
@@ -527,11 +540,11 @@ public class AthCtx
             resultDisplay = currentResult.Time.GetFormattedTime();
         }
 
-        string diffColor = "#" + (result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB()); // Green if better, red if worse
-        string statusColor = CurrentLevel.LevelBeaten ? "#50E451" :
-            CurrentLevel.LevelBroken ? "#A0A0A0" :
-            CurrentLevel.GoldSkipUnlocked ? "#FFD600" :
-            CurrentLevel.FreeSkipped ? "#FFFFFF" : "#FF5A5A";
+        string diffColor = $"#{(result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB())}"; // Green if better, red if worse
+        string statusColor = CurrentLevel.AuthorTimeAcquired ? "#e600e6" :
+            CurrentLevel.LevelBroken ? "#999999" :
+            CurrentLevel.GoldMedalAcquired ? "#FFD600" :
+            CurrentLevel.FreeSkipped ? "#00ffff" : "#bf3939";
 
         Message.Builder message = new Message.Builder();
         message
@@ -543,10 +556,10 @@ public class AthCtx
                 .AddBreakSpace()
                 .AddSeperator("<#B336A3>Result</color>")
                 .AddBreakSpace()
-                .AddKeyValue("<#7FDBFF>Status</color>", $"<{statusColor}>{CurrentLevel.Status}</color>")
+                .AddKeyValue("<#7FDBFF>Status</color>", $"<{statusColor}>{CurrentLevel.StatusString}</color>")
                 .AddBreakSpace()
                 .AddKeyValue("<#7FDBFF>Penalty</color>",
-                    $"{(CurrentLevel.LevelBeaten || CurrentLevel.LevelBroken || CurrentLevel.GoldSkipUnlocked || CurrentLevel.FreeSkipped ? "<#50E451>0 minutes</color>" : $"<#FF5A5A>{PunishTimeInMilliseconds / 60 / 1000} minutes</color>")}");
+                    $"{(CurrentLevel.Status != Level.LevelStatus.FAILED ? "<#42b336>none</color>" : IsTimeOver() ? "<#0f0f0f>End of Run</color>" : $"<#FF5A5A>{PenaltyTimeInMilliseconds / 60 / 1000} minutes</color>")}");
         }
 
         message
@@ -563,7 +576,7 @@ public class AthCtx
 
         message
             .AddBreakSpace()
-            .AddKeyValue($"{(CurrentLevel.LevelBeaten ? "<#50E451>Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
+            .AddKeyValue($"{(CurrentLevel.AuthorTimeAcquired ? "<#50E451>Beaten by</color>" : $"<#{ColorDefinitions.YellowSplit.CTToHexRGB()}>Missed by</color>")}", $"<{diffColor}>{diffDisplay}</color>")
             .AddBreakSpace()
             .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{CurrentLevel.Attempt}</color>")
             .AddBreakSpace()
@@ -577,9 +590,9 @@ public class AthCtx
             .AddBreakSpace();
 
         // Use color based on remaining time
-        string timeLeftColor = GetRemainingTime().TotalSeconds > 300 ? "#50E451" : // Green if > 5 minutes
-            GetRemainingTime().TotalSeconds > 120 ? "#FFD600" : // Yellow if > 2 minutes
-            "#FF5A5A"; // Red if < 2 minutes
+        string timeLeftColor = GetRemainingTime().TotalSeconds > 300 ? "#42b336" : // Green if > 5 minutes
+            GetRemainingTime().TotalSeconds > 120 ? "#b3b300" : // Yellow if > 2 minutes
+            "#bf3939"; // Red if < 2 minutes
 
         message.AddKeyValue("<#7FDBFF>Time left</color>", $"<{timeLeftColor}>{TimeFormatter.FormatDuration((int)GetRemainingTime().TotalMilliseconds)}</color>");
         return message.Build().ToString();

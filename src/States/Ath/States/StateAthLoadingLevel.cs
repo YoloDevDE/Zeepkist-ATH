@@ -17,9 +17,8 @@ public class StateAthLoadingLevel(IStateMachine stateMachine) : AthState
 
     public override void Execute()
     {
-        AthStateMachine.SetServerMessage(true);
         // PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text =
-        //     $"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Level: <b>{AthStateMachine.Ctx.CurrentLevel.Status}</b>";
+        //     $"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>";
         // PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enableWordWrapping = true;
     }
 

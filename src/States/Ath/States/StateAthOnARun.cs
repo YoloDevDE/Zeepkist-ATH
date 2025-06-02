@@ -25,7 +25,7 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
 
     public override void Execute()
     {
-        AthStateMachine.SetServerMessage(false);
+        OnAthTimerTick();
         ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageOnARun());
     }
 
@@ -56,15 +56,15 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
 
         currentLevel.PersonalBestTime = currentResult.Time;
 
-        if (currentResult.Time <= currentLevel.AuthorTime)
+        if (currentLevel.Status == Level.LevelStatus.AUTHOR)
         {
             StateMachine.TransitionTo(new StateAthWaitingForRespawn(StateMachine));
             return;
         }
 
-        if (currentResult.Time <= currentLevel.GoldTime && !currentLevel.GoldSkipUnlocked)
+        if (currentResult.Time <= currentLevel.GoldTime && !currentLevel.GoldMedalAcquired)
         {
-            currentLevel.UnlockGoldSkip();
+            Messenger.Notify().LogCustomColors("Gold Medal acquired!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 10f);
         }
 
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));

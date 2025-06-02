@@ -38,48 +38,42 @@ public class AthStateMachine : IStateMachine
     {
         var colors = new
         {
-            State = paused ? "#ff8800" : "#00ff44",
-            TimeLeft = paused ? "#ff8800" : Ctx.IsTimeRunningLow ? "#ff4a4a" : "#ffffff",
-            CurrentLevel = paused ? "#ff8800" : "#ffffff",
+            State = paused ? "#999999" : "#42b336",
+            TimeLeft = paused ? "#999999" : Ctx.IsTimeRunningLow ? "#bf3939" : Ctx.IsTimeAfterSkipRunningLow ? "#b3b300" : "#42b336",
             Author = ColorDefinitions.Author.CTToHexRGB(),
-            Default = "#ffffff",
-            AuthorSkip = "#AF00AF",
+            Default = "#e6e6e6",
+            AuthorSkip = "#e600e6",
             GoldSkip = "#FFD600",
             FreeSkip = "#00ffff",
             EndRunSkip = "#0f0f0f",
-            PenaltySkip = "#FF0000",
-            Section = "#64D2FF"
+            PenaltySkip = "#bf3939",
+            Section = "#ffd4a6"
         };
 
-        string skipText = Ctx.CurrentLevel.LevelBeaten ? $"<{colors.AuthorSkip}>Author Skip" :
-            Ctx.CurrentLevel.GoldSkipUnlocked ? $"<{colors.GoldSkip}>Gold Skip" :
-            Ctx.FreeSkips > 0 ? $"<{colors.FreeSkip}>Free Skip ({Ctx.FreeSkips}x left)" :
+        string skipText = Ctx.CurrentLevel.AuthorTimeAcquired ? $"<{colors.AuthorSkip}>Author Skip" :
+            Ctx.CurrentLevel.GoldMedalAcquired ? $"<{colors.GoldSkip}>Gold Skip" :
+            Ctx.AvaiableFreeSkips > 0 ? $"<{colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)" :
             Ctx.IsTimeRunningLow ? $"<{colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\">" :
             $"<{colors.PenaltySkip}>Penalty Skip!";
 
-        string punishmentText = Ctx.Punishments == 0
+        string punishmentText = Ctx.Penalties == 0
             ? ""
-            : $"(<{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - " +
-              $"<#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PunishTimeInMilliseconds * Ctx.Punishments).ToFormattedString()}</color>)";
+            : $"(<{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - <#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds * Ctx.Penalties).ToFormattedString()}</color>)";
 
         // string message = $"/servermessage white 0 " +
         string message =
             $"<size=\"20%\"><align=\"left\"><b><#{colors.Author}><uppercase>Author-Time-Hunting</uppercase></color></b><br>" +
-
-            // === RUN STATUS ===
-            $"<{colors.Section}>=== Run Status ===<br>" +
-            $"<{colors.Default}>State         : <{colors.State}>{(paused ? "PAUSE" : "ACTIVE")}<br>" +
+            $"<{colors.Section}><b>=== Run Settings ===</b><br>" +
+            $"<{colors.Default}>Duration      : {TimeSpan.FromMilliseconds(Ctx.Duration).ToFormattedString()}<br>" +
+            $"<{colors.Default}>Skip Penalty  : <{colors.PenaltySkip}>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds).ToFormattedString()}</color><br>" +
+            $"<{colors.Section}><b>=== Current Run ===</b><br>" +
+            $"<{colors.Default}>State         : <{colors.State}>{(paused ? "PAUSED" : "ACTIVE")}<br>" +
             $"<{colors.Default}>Time Left     : <{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTime().TotalMilliseconds)}</color> {punishmentText}<br>" +
+            $"<{colors.Default}>AT/Gold/Skips : <{colors.AuthorSkip}>{Ctx.AuthorMedals}<{colors.Default}>/<{colors.GoldSkip}>{Ctx.GoldMedals}<{colors.Default}>/<{colors.PenaltySkip}>{Ctx.Penalties}<br>" +
+            $"<{colors.Section}><b>=== Current Level ===</b><br>" +
+            $"<{colors.Default}>Level Time    : <{colors.State}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds)}<br>" +
             $"<{colors.Default}>Skip Type     : {skipText}<br>" +
-
-            // === CURRENT LEVEL ===
-            $"<{colors.Section}>=== Current Level ===<br>" +
-            $"<{colors.Default}>Level Time    : <{colors.CurrentLevel}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds)}<br>" +
-            $"<{colors.Default}>Attempt       : {Ctx.CurrentLevel.Attempt}<br>" +
-
-            // === OVERALL STATS ===
-            $"<{colors.Section}>=== Overall Stats ===<br>" +
-            $"<{colors.Default}>AT/Gold/Skips : <{colors.AuthorSkip}>{Ctx.AuthorMedals}<{colors.Default}>/<{colors.GoldSkip}>{Ctx.GoldMedals}<{colors.Default}>/<{colors.PenaltySkip}>{Ctx.Skips - Ctx.GoldMedals}<br>";
+            $"<{colors.Default}>Attempt       : {Ctx.CurrentLevel.Attempt}<br>";
 
         // ChatApi.SendMessage(message);
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.serverMessageText.text = message;

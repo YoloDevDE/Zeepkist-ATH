@@ -11,7 +11,7 @@ public class Message
 
     public override string ToString()
     {
-        return "<#f0f0f0><br>" + string.Join("", Lines) + "</color>";
+        return $"<#f0f0f0><br>{string.Join("", Lines)}</color>";
     }
 
     public class Builder
@@ -47,13 +47,13 @@ public class Message
             if (plainHeadline.Length >= totalWidth)
             {
                 _message.Lines.Add(new string(separatorChar, totalWidth));
-                _message.Lines.Add("<br><align=\"center\"><b><font-weight=\"900\"><#ff8800>" + headline + "</color></font-weight></b></align><br><align=\"left\">");
+                _message.Lines.Add($"<br><align=\"center\"><b><font-weight=\"900\"><#ff8800>{headline}</color></font-weight></b></align><br><align=\"left\">");
                 _message.Lines.Add(new string(separatorChar, totalWidth));
             }
             else
             {
                 int padding = Math.Max((totalWidth - plainHeadline.Length) / 2 - 4, 0);
-                string centeredHeadline = new string(separatorChar, padding) + "<b><font-weight=\"900\"><#ff8800>{ " + headline + " }</color></font-weight></b>" + new string(separatorChar, padding);
+                string centeredHeadline = $"{new string(separatorChar, padding)}<b><font-weight=\"900\"><#ff8800>{{ {headline} }}</color></font-weight></b>{new string(separatorChar, padding)}";
 
                 if (centeredHeadline.Length < totalWidth)
                 {
