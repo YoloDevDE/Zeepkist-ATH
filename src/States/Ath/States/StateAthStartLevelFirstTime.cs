@@ -37,9 +37,7 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
         RacingApi.RoundStarted -= OnRoundStarted;
     }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 
     private void OnRoundStarted()
     {

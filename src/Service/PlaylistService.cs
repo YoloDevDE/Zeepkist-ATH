@@ -12,9 +12,7 @@ namespace AuthorTimeHunting.Service;
 
 public class PlaylistService
 {
-    private PlaylistService()
-    {
-    }
+    private PlaylistService() { }
 
     public static PlaylistService Instance { get; } = new PlaylistService();
     public OnlineZeeplevel CurrentBrokenZeeplevel { get; set; }
@@ -24,18 +22,11 @@ public class PlaylistService
 
     public OnlineZeeplevel GetCurrentZeepkistNetworkPlaylistLevel => ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
 
-    private int CurrentPlaylistIndex()
-    {
-        return Math.Max(0, CachedOnlineZeeplevels.Count - 2);
-    }
+    private int CurrentPlaylistIndex() => Math.Max(0, CachedOnlineZeeplevels.Count - 2);
 
-    private int NextPlaylistIndex()
-    {
-        return
-            CachedOnlineZeeplevels.Count == 0
-                ? 0
-                : (CurrentPlaylistIndex() + 1) % CachedOnlineZeeplevels.Count;
-    }
+    private int NextPlaylistIndex() => CachedOnlineZeeplevels.Count == 0
+        ? 0
+        : (CurrentPlaylistIndex() + 1) % CachedOnlineZeeplevels.Count;
 
 
     public async Task StartNewPlaylist()

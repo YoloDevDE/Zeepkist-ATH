@@ -59,10 +59,7 @@ public class AthCtx
 
     public int AvaiableFreeSkips { get; set; } = 1;
 
-    public int GetAccumulatedPenaltyTime()
-    {
-        return PenaltyTimeInMilliseconds * Penalties;
-    }
+    public int GetAccumulatedPenaltyTime() => PenaltyTimeInMilliseconds * Penalties;
 
     public TimeSpan GetTotalLevelDuration()
     {
@@ -79,15 +76,9 @@ public class AthCtx
         return TimeSpan.FromMilliseconds(Levels.Sum(level => level.GetPauseDuration().TotalMilliseconds));
     }
 
-    public TimeSpan GetRemainingTime()
-    {
-        return TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + GetAccumulatedPenaltyTime()));
-    }
+    public TimeSpan GetRemainingTime() => TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + GetAccumulatedPenaltyTime()));
 
-    public TimeSpan GetRemainingTimeWithoutPunishments()
-    {
-        return TimeSpan.FromMilliseconds(Duration - GetTotalLevelPlayDuration().TotalMilliseconds);
-    }
+    public TimeSpan GetRemainingTimeWithoutPunishments() => TimeSpan.FromMilliseconds(Duration - GetTotalLevelPlayDuration().TotalMilliseconds);
 
     public void ResetRetries()
     {
@@ -99,10 +90,7 @@ public class AthCtx
     /// <summary>
     ///     Checks if the time for the run is over
     /// </summary>
-    public bool IsTimeOver()
-    {
-        return GetRemainingTime() <= TimeSpan.Zero;
-    }
+    public bool IsTimeOver() => GetRemainingTime() <= TimeSpan.Zero;
 
     #endregion
 
@@ -143,9 +131,9 @@ public class AthCtx
     public Level LevelYouShouldHaveSkippedThis()
     {
         return Levels
-            .Where(level => level.GetPlayDuration().TotalMinutes >= 5 && !level.LevelBroken)
-            .OrderByDescending(level => level.GetPlayDuration())
-            .FirstOrDefault();
+               .Where(level => level.GetPlayDuration().TotalMinutes >= 5 && !level.LevelBroken)
+               .OrderByDescending(level => level.GetPlayDuration())
+               .FirstOrDefault();
     }
 
     public double AvgAuthorTime()
@@ -171,10 +159,10 @@ public class AthCtx
     public Level LevelThatWasVeryEasy()
     {
         return Levels
-            .Where(level => level.AuthorTimeAcquired)
-            .OrderBy(level => level.Attempt)
-            .ThenBy(level => level.GetPlayDuration())
-            .FirstOrDefault();
+               .Where(level => level.AuthorTimeAcquired)
+               .OrderBy(level => level.Attempt)
+               .ThenBy(level => level.GetPlayDuration())
+               .FirstOrDefault();
     }
 
     /// <summary>
@@ -223,14 +211,14 @@ public class AthCtx
     public (string Author, List<Level> Levels) YouLikedThisAuthorALot()
     {
         return Levels
-            .Where(level => level.AuthorTimeAcquired)
-            .GroupBy(level => level.Author)
-            .Where(group => group.Count() >= 2)
-            .Select(group => (
-                Author: group.Key,
-                Levels: group.ToList()
-            ))
-            .FirstOrDefault();
+               .Where(level => level.AuthorTimeAcquired)
+               .GroupBy(level => level.Author)
+               .Where(group => group.Count() >= 2)
+               .Select(group => (
+                   Author: group.Key,
+                   Levels: group.ToList()
+               ))
+               .FirstOrDefault();
     }
 
     #endregion
@@ -312,12 +300,12 @@ public class AthCtx
         double positiveResult = 0;
         string diffDisplay = " --:--.---";
         Message.Builder message = new Message.Builder()
-            .ClearLines()
-            .AddLine($"<#64D2FF>{CurrentLevel.Name}</color> by <#FFD700>{CurrentLevel.Author}</color>")
-            .AddBreakSpace()
-            .AddSeperator("<#B336A3>Medals</color>")
-            .AddBreakSpace()
-            .AddKeyValue($"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color>", $"<#FFFFFF>{CurrentLevel.AuthorTime.GetFormattedTime()}</color>");
+                                  .ClearLines()
+                                  .AddLine($"<#64D2FF>{CurrentLevel.Name}</color> by <#FFD700>{CurrentLevel.Author}</color>")
+                                  .AddBreakSpace()
+                                  .AddSeperator("<#B336A3>Medals</color>")
+                                  .AddBreakSpace()
+                                  .AddKeyValue($"<#{ColorDefinitions.Author.CTToHexRGB()}>AT</color>", $"<#FFFFFF>{CurrentLevel.AuthorTime.GetFormattedTime()}</color>");
         // Show gold time if gold skip isn't unlocked yet
         if (!CurrentLevel.GoldMedalAcquired)
         {
@@ -412,25 +400,25 @@ public class AthCtx
         Level youShouldHaveSkippedThis = LevelYouShouldHaveSkippedThis();
         Level easiestLevel = LevelThatWasVeryEasy();
         Message.Builder builder = new Message.Builder()
-            .ClearLines()
-            .AddLine("<#FFD700>Authortime Hunt finished! :party:</color>")
-            .AddBreakSpace()
-            .AddSeperator("<#B336A3>Result</color>")
-            .AddBreakSpace()
-            // Medal Stats
-            .AddKeyValue("<#64D2FF>Total ATs</color>", $"<#{ColorDefinitions.Author.CTToHexRGB()}>{AuthorMedals}</color>").AddBreakSpace()
-            .AddKeyValue("<#64D2FF>ATs Oneshotted!</color>", $"<#50E451>{CountOneShotATs()}</color>")
-            .AddBreakSpace()
-            // Attempt Stats
-            .AddKeyValue("<#64D2FF>Total Resets</color>", $"<#FFFFFF>{CountTotalAttempts()}</color>").AddBreakSpace()
-            .AddKeyValue("<#64D2FF>Total Skips</color>", $"<#FFFFFF>{CountLevelSkips()}</color>").AddBreakSpace()
-            .AddKeyValue("<#64D2FF>Attempts/AT</color>", $"<#FFFFFF>{AverageAttemptsPerAt():F2}</color>")
-            .AddBreakSpace()
-            // Time Stats  
-            .AddKeyValue("<#64D2FF>Avg AT</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>").AddBreakSpace()
-            .AddKeyValue("<#64D2FF>Time Wasted</color>", $"<#FF5A5A>{TimeWastedTotal().ToFormattedString()}</color>").AddBreakSpace()
-            .AddKeyValue("<#64D2FF>Time/AT</color>", $"<#FFFFFF>{AverageTimePerAt().ToFormattedString()}</color>")
-            .AddBreakSpace();
+                                  .ClearLines()
+                                  .AddLine("<#FFD700>Authortime Hunt finished! :party:</color>")
+                                  .AddBreakSpace()
+                                  .AddSeperator("<#B336A3>Result</color>")
+                                  .AddBreakSpace()
+                                  // Medal Stats
+                                  .AddKeyValue("<#64D2FF>Total ATs</color>", $"<#{ColorDefinitions.Author.CTToHexRGB()}>{AuthorMedals}</color>").AddBreakSpace()
+                                  .AddKeyValue("<#64D2FF>ATs Oneshotted!</color>", $"<#50E451>{CountOneShotATs()}</color>")
+                                  .AddBreakSpace()
+                                  // Attempt Stats
+                                  .AddKeyValue("<#64D2FF>Total Resets</color>", $"<#FFFFFF>{CountTotalAttempts()}</color>").AddBreakSpace()
+                                  .AddKeyValue("<#64D2FF>Total Skips</color>", $"<#FFFFFF>{CountLevelSkips()}</color>").AddBreakSpace()
+                                  .AddKeyValue("<#64D2FF>Attempts/AT</color>", $"<#FFFFFF>{AverageAttemptsPerAt():F2}</color>")
+                                  .AddBreakSpace()
+                                  // Time Stats  
+                                  .AddKeyValue("<#64D2FF>Avg AT</color>", $"<#FFFFFF>{AvgAuthorTime().GetFormattedTime()}</color>").AddBreakSpace()
+                                  .AddKeyValue("<#64D2FF>Time Wasted</color>", $"<#FF5A5A>{TimeWastedTotal().ToFormattedString()}</color>").AddBreakSpace()
+                                  .AddKeyValue("<#64D2FF>Time/AT</color>", $"<#FFFFFF>{AverageTimePerAt().ToFormattedString()}</color>")
+                                  .AddBreakSpace();
 
         try
         {
@@ -444,13 +432,13 @@ public class AthCtx
             if (easiestLevel != null)
             {
                 builder.AddSeperator("<#50E451>Easiest Level</color>")
-                    .AddBreakSpace()
-                    .AddLine($"<#64D2FF>{easiestLevel.Name}</color> by <#FFD700>{easiestLevel.Author}</color>")
-                    .AddBreakSpace()
-                    .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{easiestLevel.Attempt}</color>")
-                    .AddBreakSpace()
-                    .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FFFFFF>{easiestLevel.GetPlayDuration().ToFormattedString()}</color>")
-                    .AddBreakSpace();
+                       .AddBreakSpace()
+                       .AddLine($"<#64D2FF>{easiestLevel.Name}</color> by <#FFD700>{easiestLevel.Author}</color>")
+                       .AddBreakSpace()
+                       .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{easiestLevel.Attempt}</color>")
+                       .AddBreakSpace()
+                       .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FFFFFF>{easiestLevel.GetPlayDuration().ToFormattedString()}</color>")
+                       .AddBreakSpace();
             }
         }
         catch (Exception e)
@@ -472,29 +460,29 @@ public class AthCtx
     private void AddShouldHaveSkippedSection(Message.Builder builder, Level level)
     {
         builder.AddSeperator("<#FF5A5A>You should have skipped this :yannics:</color>")
-            .AddBreakSpace()
-            .AddLine($"<#64D2FF>{level.Name}</color> by <#FFD700>{level.Author}</color>")
-            .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>Status</color>", $"<#FFFFFF>{level.StatusString}</color>")
-            .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FF7A7A>{level.GetPlayDuration().ToFormattedString()}</color>")
-            .AddBreakSpace()
-            .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{level.Attempt}</color>")
-            .AddBreakSpace();
+               .AddBreakSpace()
+               .AddLine($"<#64D2FF>{level.Name}</color> by <#FFD700>{level.Author}</color>")
+               .AddBreakSpace()
+               .AddKeyValue("<#7FDBFF>Status</color>", $"<#FFFFFF>{level.StatusString}</color>")
+               .AddBreakSpace()
+               .AddKeyValue("<#7FDBFF>PlayDuration</color>", $"<#FF7A7A>{level.GetPlayDuration().ToFormattedString()}</color>")
+               .AddBreakSpace()
+               .AddKeyValue("<#7FDBFF>Attempts</color>", $"<#FFFFFF>{level.Attempt}</color>")
+               .AddBreakSpace();
     }
 
     private void AddLikedAuthorSection(Message.Builder builder, (string Author, List<Level> Levels) likedAuthor)
     {
         builder.AddSeperator("<#50E451>This Author haunted you</color>")
-            .AddBreakSpace()
-            .AddLine($"<#E0E0E0>And their name is...</color><br><#FFD700>'{likedAuthor.Author}' !</color>")
-            .AddBreakSpace()
-            .AddLine($"<#E0E0E0>You've beaten {likedAuthor.Levels.Count} of their levels:</color>")
-            .AddBreakSpace();
+               .AddBreakSpace()
+               .AddLine($"<#E0E0E0>And their name is...</color><br><#FFD700>'{likedAuthor.Author}' !</color>")
+               .AddBreakSpace()
+               .AddLine($"<#E0E0E0>You've beaten {likedAuthor.Levels.Count} of their levels:</color>")
+               .AddBreakSpace();
         foreach (Level level in likedAuthor.Levels)
         {
             builder.AddLine($"<#64D2FF>- {level.Name}</color>")
-                .AddBreakSpace();
+                   .AddBreakSpace();
         }
     }
 
@@ -541,10 +529,15 @@ public class AthCtx
         }
 
         string diffColor = $"#{(result <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB())}"; // Green if better, red if worse
-        string statusColor = CurrentLevel.AuthorTimeAcquired ? "#e600e6" :
-            CurrentLevel.LevelBroken ? "#999999" :
-            CurrentLevel.GoldMedalAcquired ? "#FFD600" :
-            CurrentLevel.FreeSkipped ? "#00ffff" : "#bf3939";
+        string statusColor = CurrentLevel.AuthorTimeAcquired
+            ? "#e600e6"
+            : CurrentLevel.LevelBroken
+                ? "#999999"
+                : CurrentLevel.GoldMedalAcquired
+                    ? "#FFD600"
+                    : CurrentLevel.FreeSkipped
+                        ? "#00ffff"
+                        : "#bf3939";
 
         Message.Builder message = new Message.Builder();
         message
@@ -590,9 +583,13 @@ public class AthCtx
             .AddBreakSpace();
 
         // Use color based on remaining time
-        string timeLeftColor = GetRemainingTime().TotalSeconds > 300 ? "#42b336" : // Green if > 5 minutes
-            GetRemainingTime().TotalSeconds > 120 ? "#b3b300" : // Yellow if > 2 minutes
-            "#bf3939"; // Red if < 2 minutes
+        string timeLeftColor = GetRemainingTime().TotalSeconds > 300
+            ? "#42b336"
+            : // Green if > 5 minutes
+            GetRemainingTime().TotalSeconds > 120
+                ? "#b3b300"
+                : // Yellow if > 2 minutes
+                "#bf3939"; // Red if < 2 minutes
 
         message.AddKeyValue("<#7FDBFF>Time left</color>", $"<{timeLeftColor}>{TimeFormatter.FormatDuration((int)GetRemainingTime().TotalMilliseconds)}</color>");
         return message.Build().ToString();

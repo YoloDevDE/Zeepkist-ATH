@@ -26,9 +26,7 @@ public class StateAthResolvingBrokenLevel(IStateMachine stateMachine) : AthState
         RacingApi.LevelLoaded -= OnLevelLoaded;
     }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 
     private void OnLevelLoaded()
     {

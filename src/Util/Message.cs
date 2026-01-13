@@ -9,10 +9,7 @@ public class Message
 {
     private List<string> Lines { get; } = new List<string>();
 
-    public override string ToString()
-    {
-        return $"<#f0f0f0><br>{string.Join("", Lines)}</color>";
-    }
+    public override string ToString() => $"<#f0f0f0><br>{string.Join("", Lines)}</color>";
 
     public class Builder
     {
@@ -88,9 +85,6 @@ public class Message
         }
 
 
-        public Message Build()
-        {
-            return _message;
-        }
+        public Message Build() => _message;
     }
 }

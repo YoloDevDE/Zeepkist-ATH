@@ -8,8 +8,7 @@ public class CommandRestart : ILocalChatCommand
     public string Prefix => "/";
     public string Command => "ath restart";
 
-    public string Description =>
-        "Restarts the Author-Time-Hunting.";
+    public string Description => "Restarts the Author-Time-Hunting.";
 
     public void Handle(string arguments)
     {

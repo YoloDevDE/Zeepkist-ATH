@@ -33,9 +33,7 @@ public class StateMasterOn : IState
         Messenger.Notify().Log("started");
     }
 
-    public void Execute()
-    {
-    }
+    public void Execute() { }
 
     public void Exit()
     {

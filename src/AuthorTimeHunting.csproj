@@ -3,19 +3,28 @@
     <!-- General Project Properties -->
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
-        <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>1.17.3</Version>
+        <Description>Zeepkist Gamemode for Authortime Hunting</Description>
+        <Version>1.17.4</Version>
+
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
+
         <PackageId>Author Time Hunting</PackageId>
+        <Authors>Hi Im Yolo</Authors>
+        <Title>Author Time Hunting</Title>
+
+        <ImplicitUsings>disable</ImplicitUsings>
+
         <RestoreAdditionalProjectSources>
             https://api.nuget.org/v3/index.json;
             https://nuget.bepinex.dev/v3/index.json;
             https://nuget.samboy.dev/v3/index.json
         </RestoreAdditionalProjectSources>
-        <Authors>Hi Im Yolo</Authors>
-        <Title>Author Time Hunting</Title>
-        <ImplicitUsings>disable</ImplicitUsings>
+
+        <!-- Required for file:line stack traces -->
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>portable</DebugType>
+        <Optimize Condition="'$(Configuration)'=='Debug'">false</Optimize>
     </PropertyGroup>
 
     <!-- Package References -->
@@ -25,10 +34,12 @@
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.5.1800"/>
-        <PackageReference Include="ZeepSDK" Version="1.45.0"/>
-        <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="all"/> <!-- Fody package -->
-        <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/> <!-- Costura package -->
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912"/>
+        <PackageReference Include="ZeepSDK" Version="2.1.1"/>
+
+        <!-- Costura / Fody (dependency embedding) -->
+        <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/>
+        <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
@@ -40,22 +51,31 @@
     </ItemGroup>
 
     <!-- Post-Build Scripts -->
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <!-- Delete the plugin directory if it exists -->
-        <RemoveDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
+    <Target Name="PostBuild" AfterTargets="Build">
+        <PropertyGroup>
+            <PluginDir>C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)</PluginDir>
+            <ZipPath>C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)-$(Version).zip</ZipPath>
+        </PropertyGroup>
 
-        <!-- Create the plugin directory -->
-        <MakeDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
+        <!-- Recreate plugin folder -->
+        <RemoveDir Directories="$(PluginDir)"/>
+        <MakeDir Directories="$(PluginDir)"/>
 
-        <!-- Copy DLL to the plugin directory -->
-        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\$(ProjectName)-$(Version).dll&quot;"/>
+        <!-- Copy DLL + PDB (symbols) so BepInEx can show file:line -->
+        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;$(PluginDir)\$(ProjectName).dll&quot;"/>
+        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).pdb&quot; &quot;$(PluginDir)\$(ProjectName).pdb&quot;"/>
 
-        <!-- Create a zip file from the directory -->
-        <Exec Command="powershell -Command &quot;Compress-Archive -Path &quot;&apos;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\*&apos;&quot; -DestinationPath &quot;&apos;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)-$(Version).zip&apos;&quot; -Force&quot;"/>
+        <!-- Zip it -->
+        <Exec Command="powershell -Command &quot;Compress-Archive -Path &quot;&apos;$(PluginDir)\*&apos;&quot; -DestinationPath &quot;&apos;$(ZipPath)&apos;&quot; -Force&quot;"/>
     </Target>
 
-    <!-- Enable debug logging -->
-    <PropertyGroup>
+    <!-- Enable debug logging symbols (compile-time) -->
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
         <DefineConstants>DEBUG;TRACE</DefineConstants>
     </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DefineConstants>TRACE</DefineConstants>
+    </PropertyGroup>
+
 </Project>

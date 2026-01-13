@@ -23,15 +23,9 @@ public class ServerMessage
         prefix = $"<size=\"20%\"><align=\"{alignment}\">";
     }
 
-    public override string ToString()
-    {
-        return $"{command}{prefix}{messageBuilder}{suffix}";
-    }
+    public override string ToString() => $"{command}{prefix}{messageBuilder}{suffix}";
 
-    public string GetMessage()
-    {
-        return $"{messageBuilder}";
-    }
+    public string GetMessage() => $"{messageBuilder}";
 
     // Add a line with one or more blocks and optional line-wide formatting
     public ServerMessage AddLine(Action<LineBuilder> line)
@@ -72,10 +66,7 @@ public class ServerMessage
         string otherMessageContent = otherMessage.messageBuilder.ToString();
 
         // Remove all leading <br> from otherMessage
-        while (otherMessageContent.StartsWith("<br>"))
-        {
-            otherMessageContent = otherMessageContent.Substring(4); // Remove one <br> (4 characters)
-        }
+        while (otherMessageContent.StartsWith("<br>")) otherMessageContent = otherMessageContent.Substring(4); // Remove one <br> (4 characters)
 
         // Append the cleaned otherMessage's content to the current message
         messageBuilder.Append(otherMessageContent);
@@ -347,45 +338,21 @@ public class ServerMessage
             return this;
         }
 
-        public BlockBuilder Bold()
-        {
-            return WrapWithTag("b");
-        }
+        public BlockBuilder Bold() => WrapWithTag("b");
 
-        public BlockBuilder Italic()
-        {
-            return WrapWithTag("i");
-        }
+        public BlockBuilder Italic() => WrapWithTag("i");
 
-        public BlockBuilder Underline()
-        {
-            return WrapWithTag("u");
-        }
+        public BlockBuilder Underline() => WrapWithTag("u");
 
-        public BlockBuilder Strikethrough()
-        {
-            return WrapWithTag("s");
-        }
+        public BlockBuilder Strikethrough() => WrapWithTag("s");
 
-        public BlockBuilder Superscript()
-        {
-            return WrapWithTag("sup");
-        }
+        public BlockBuilder Superscript() => WrapWithTag("sup");
 
-        public BlockBuilder Subscript()
-        {
-            return WrapWithTag("sub");
-        }
+        public BlockBuilder Subscript() => WrapWithTag("sub");
 
-        public BlockBuilder AllCaps()
-        {
-            return WrapWithTag("allcaps");
-        }
+        public BlockBuilder AllCaps() => WrapWithTag("allcaps");
 
-        public BlockBuilder SmallCaps()
-        {
-            return WrapWithTag("smallcaps");
-        }
+        public BlockBuilder SmallCaps() => WrapWithTag("smallcaps");
 
         // New Indent method (with support for pixels, percentages, or font units)
         public BlockBuilder Indent(string value)
@@ -431,9 +398,6 @@ public class ServerMessage
             return this;
         }
 
-        public string BuildInline()
-        {
-            return contentBuilder.ToString();
-        }
+        public string BuildInline() => contentBuilder.ToString();
     }
 }

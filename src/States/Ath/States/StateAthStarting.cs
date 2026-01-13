@@ -34,7 +34,6 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
             int retryCount = 3; // Maximal 3 Versuche
 
             while (!playlistStarted && retryCount > 0)
-            {
                 try
                 {
                     await PlaylistService.StartNewPlaylist();
@@ -54,7 +53,6 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
                     // Kurze Pause vor dem nächsten Versuch
                     await Task.Delay(500);
                 }
-            }
 
             // Versuche zum nächsten Level zu springen, auch wenn die Playlist nicht gestartet wurde
             try
@@ -82,9 +80,7 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
         RacingApi.RoundEnded -= OnRoundEnded;
     }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 
     private void OnRoundEnded()
     {

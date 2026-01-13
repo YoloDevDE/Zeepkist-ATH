@@ -39,7 +39,13 @@ public class AthStateMachine : IStateMachine
         var colors = new
         {
             State = paused ? "#999999" : "#42b336",
-            TimeLeft = paused ? "#999999" : Ctx.IsTimeRunningLow ? "#bf3939" : Ctx.IsTimeAfterSkipRunningLow ? "#b3b300" : "#42b336",
+            TimeLeft = paused
+                ? "#999999"
+                : Ctx.IsTimeRunningLow
+                    ? "#bf3939"
+                    : Ctx.IsTimeAfterSkipRunningLow
+                        ? "#b3b300"
+                        : "#42b336",
             Author = ColorDefinitions.Author.CTToHexRGB(),
             Default = "#e6e6e6",
             AuthorSkip = "#e600e6",
@@ -50,11 +56,15 @@ public class AthStateMachine : IStateMachine
             Section = "#ffd4a6"
         };
 
-        string skipText = Ctx.CurrentLevel.AuthorTimeAcquired ? $"<{colors.AuthorSkip}>Author Skip" :
-            Ctx.CurrentLevel.GoldMedalAcquired ? $"<{colors.GoldSkip}>Gold Skip" :
-            Ctx.AvaiableFreeSkips > 0 ? $"<{colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)" :
-            Ctx.IsTimeRunningLow ? $"<{colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\">" :
-            $"<{colors.PenaltySkip}>Penalty Skip!";
+        string skipText = Ctx.CurrentLevel.AuthorTimeAcquired
+            ? $"<{colors.AuthorSkip}>Author Skip"
+            : Ctx.CurrentLevel.GoldMedalAcquired
+                ? $"<{colors.GoldSkip}>Gold Skip"
+                : Ctx.AvaiableFreeSkips > 0
+                    ? $"<{colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)"
+                    : Ctx.IsTimeRunningLow
+                        ? $"<{colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\">"
+                        : $"<{colors.PenaltySkip}>Penalty Skip!";
 
         string punishmentText = Ctx.Penalties == 0
             ? ""

@@ -30,7 +30,5 @@ public class StateAthResolvingDuplicateLevel(IStateMachine stateMachine) : AthSt
     }
 
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 }

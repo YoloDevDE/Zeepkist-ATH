@@ -99,7 +99,12 @@ public class Level
         }
     }
 
-    public TimeSpan TimeWasted => LevelBroken ? TimeSpan.Zero : AuthorTimeAcquired ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime) : GetPlayDuration();
+    public TimeSpan TimeWasted =>
+        LevelBroken
+            ? TimeSpan.Zero
+            : AuthorTimeAcquired
+                ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime)
+                : GetPlayDuration();
 
     public string StatusString
     {
@@ -134,10 +139,7 @@ public class Level
         TimeStamps.Add(DateTime.Now);
     }
 
-    public TimeSpan GetTotalDuration()
-    {
-        return GetPlayDuration();
-    }
+    public TimeSpan GetTotalDuration() => GetPlayDuration();
 
     public void Start()
     {
@@ -206,13 +208,7 @@ public class Level
         return false;
     }
 
-    public override int GetHashCode()
-    {
-        return LevelUid.GetHashCode();
-    }
+    public override int GetHashCode() => LevelUid.GetHashCode();
 
-    public TimeSpan GetPauseDuration()
-    {
-        return GetTotalDuration() - GetPlayDuration();
-    }
+    public TimeSpan GetPauseDuration() => GetTotalDuration() - GetPlayDuration();
 }
