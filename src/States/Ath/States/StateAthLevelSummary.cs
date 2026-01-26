@@ -1,6 +1,4 @@
-﻿using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.Service;
-using AuthorTimeHunting.States.Ath.StateMachine;
+﻿using AuthorTimeHunting.Service;
 
 namespace AuthorTimeHunting.States.Ath.States;
 

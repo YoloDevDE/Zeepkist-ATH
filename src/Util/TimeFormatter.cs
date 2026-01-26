@@ -14,12 +14,6 @@ public abstract class TimeFormatter
 
         TimeSpan timeSpan = TimeSpan.FromMilliseconds(durationInMilliseconds);
 
-        // Round to nearest second
-        // int totalSeconds = (int)Math.Round(timeSpan.TotalSeconds);
-        // int hours = totalSeconds / 3600;
-        // int minutes = totalSeconds % 3600 / 60;
-        // int seconds = totalSeconds % 60;
-        // int totalSeconds = (int)Math.Round(timeSpan.TotalSeconds);
         int hours = TimeSpan.FromMilliseconds(durationInMilliseconds).Hours;
         int minutes = TimeSpan.FromMilliseconds(durationInMilliseconds).Minutes;
         int seconds = TimeSpan.FromMilliseconds(durationInMilliseconds).Seconds;

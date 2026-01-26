@@ -1,6 +1,5 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
@@ -33,8 +32,6 @@ public class StateMasterOn : IState
         Messenger.Notify().Log("started");
     }
 
-    public void Execute() { }
-
     public void Exit()
     {
         Messenger.Notify().Log("stopped");
@@ -47,6 +44,8 @@ public class StateMasterOn : IState
         CommandSkipBroken.CommandTrigger -= SkipBrokenLevel;
         SubStateMachine.StateMachineFinished -= Stop;
     }
+
+    public void Execute() { }
 
     private void OnRoundStarted()
     {

@@ -23,16 +23,16 @@ public class StateMasterOff : IState
         CommandRestart.CommandTrigger += StartChallenge;
     }
 
-    public void Execute()
-    {
-        // No implementation needed for Execute in this state
-    }
-
     public void Exit()
     {
         CommandStop.CommandTrigger -= StopChallenge;
         CommandStart.CommandTrigger -= StartChallenge;
         CommandRestart.CommandTrigger -= StartChallenge;
+    }
+
+    public void Execute()
+    {
+        // No implementation needed for Execute in this state
     }
 
     // Private Methods

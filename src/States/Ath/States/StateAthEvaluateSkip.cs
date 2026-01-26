@@ -1,6 +1,4 @@
-﻿using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.Util;
+﻿using AuthorTimeHunting.Util;
 using UnityEngine;
 
 namespace AuthorTimeHunting.States.Ath.States;

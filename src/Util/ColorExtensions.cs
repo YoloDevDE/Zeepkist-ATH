@@ -23,7 +23,7 @@ public static class ColorExtensions
     public static Color FreeSkip(this Color _) => Color.white;
     public static Color FreeSkip() => new Color().FreeSkip();
 
-
+    public static string ColorToHex(this Color _) => ColorUtility.ToHtmlStringRGB(_);
 
     public static Color HexToColor(string hex)
     {

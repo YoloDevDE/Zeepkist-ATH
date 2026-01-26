@@ -12,11 +12,11 @@ public class MasterStateMachine : IStateMachine
         FinalState = new StateMasterOff(this);
     }
 
-    public event Action StateMachineFinished;
-
     public IState FinalState { get; set; }
     public IState CurrentState { get; set; }
     public IState InitialState { get; set; }
+
+    public event Action StateMachineFinished;
 
     public void InvokeFinish()
     {

@@ -1,6 +1,5 @@
 ﻿using System;
-using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Level;
 using ZeepSDK.Racing;

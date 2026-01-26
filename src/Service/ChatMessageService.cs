@@ -2,7 +2,7 @@
 
 namespace AuthorTimeHunting.Service;
 
-public class ChatMessageService
+public static class ChatMessageService
 {
     public static void SendCustomMessage(string message)
     {

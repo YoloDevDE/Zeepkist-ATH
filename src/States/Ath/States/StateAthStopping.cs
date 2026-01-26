@@ -1,7 +1,5 @@
 ﻿using System;
-using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
-using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 

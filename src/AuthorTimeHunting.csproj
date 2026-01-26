@@ -50,6 +50,10 @@
         <Reference Include="Microsoft.CSharp"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Folder Include="States\Ath\StateMachine\"/>
+    </ItemGroup>
+
     <!-- Post-Build Scripts -->
     <Target Name="PostBuild" AfterTargets="Build">
         <PropertyGroup>

@@ -1,6 +1,4 @@
-﻿using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.Ath.StateMachine;
-using ZeepSDK.PhotoMode;
+﻿using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
