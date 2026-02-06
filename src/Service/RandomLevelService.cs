@@ -9,18 +9,14 @@ namespace AuthorTimeHunting.Service;
 
 public class RandomLevelService
 {
-    private static readonly Lazy<RandomLevelService> _lazyInstance =
-        new Lazy<RandomLevelService>(() => new RandomLevelService());
-
     private bool _isInitializing;
 
     private RandomLevelService()
     {
-        // Starte die Initialisierung im Hintergrund, aber warte nicht darauf
         _ = InitializeAsync();
     }
 
-    public static RandomLevelService Instance => _lazyInstance.Value;
+    public static RandomLevelService Instance { get; } = new RandomLevelService();
 
     private List<LevelItem> CachedRandomLevelItems { get; } = new List<LevelItem>();
     private List<LevelItem> FetchedLevelItems { get; } = new List<LevelItem>();
@@ -49,7 +45,6 @@ public class RandomLevelService
 
     public LevelItem GetRandomLevelItem()
     {
-        // Wenn keine Level im Cache sind, warte synchron auf die Initialisierung
         if (CachedRandomLevelItems.Count == 0)
         {
             PopulateCachedRandomLevelItemsSync();

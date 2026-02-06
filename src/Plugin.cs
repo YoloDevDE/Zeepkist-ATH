@@ -1,6 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Configs;
 using AuthorTimeHunting.Service;
-using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
@@ -11,10 +11,8 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-    private const string ConfigCategoryGeneral = "General";
-
     private Harmony _harmony;
-    private IStateMachine _masterStateMachine;
+    private StateMachine _modStateMachine;
 
     private Plugin()
     {
@@ -36,8 +34,6 @@ public class Plugin : BaseUnityPlugin
     {
         InitializeConfig();
         InitializeHarmony();
-        RegisterChatCommands();
-        InitializeStateMachine();
 
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
@@ -45,6 +41,13 @@ public class Plugin : BaseUnityPlugin
     private void Start()
     {
         InitializeServices();
+        RegisterChatCommands();
+        InitializeStateMachine();
+    }
+
+    private void Update()
+    {
+        _modStateMachine?.Update();
     }
 
     private void OnDestroy()
@@ -74,8 +77,8 @@ public class Plugin : BaseUnityPlugin
 
     private void InitializeStateMachine()
     {
-        _masterStateMachine = new MasterStateMachine();
-        _masterStateMachine.TransitionTo(_masterStateMachine.InitialState);
+        _modStateMachine = ModStateMachineConfigurator.ModStateMachine();
+        _modStateMachine.Start();
     }
 
     private void InitializeServices()

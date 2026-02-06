@@ -4,7 +4,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Gamemode for Authortime Hunting</Description>
-        <Version>1.17.4</Version>
+        <Version>1.17.5</Version>
 
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
@@ -35,7 +35,7 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912"/>
-        <PackageReference Include="ZeepSDK" Version="2.1.1"/>
+        <PackageReference Include="ZeepSDK" Version="2.2.0"/>
 
         <!-- Costura / Fody (dependency embedding) -->
         <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/>
@@ -48,10 +48,6 @@
 
     <ItemGroup>
         <Reference Include="Microsoft.CSharp"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="States\Ath\StateMachine\"/>
     </ItemGroup>
 
     <!-- Post-Build Scripts -->

@@ -1,6 +1,6 @@
 ﻿using BepInEx.Configuration;
 
-namespace AuthorTimeHunting;
+namespace AuthorTimeHunting.Configs;
 
 /// <summary>
 ///     Handles configuration settings for the plugin

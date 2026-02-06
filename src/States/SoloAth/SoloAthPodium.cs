@@ -1,0 +1,15 @@
+﻿using AuthorTimeHunting.Interfaces;
+using ZeepSDK.Chat;
+
+namespace AuthorTimeHunting.States.SoloAth;
+
+public class SoloAthPodium : IState
+{
+    public void Enter()
+    {
+        ChatApi.SendMessage(GetType().Name);
+    }
+
+    public void Exit() { }
+    public void Update() { }
+}

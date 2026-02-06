@@ -13,7 +13,6 @@ namespace AuthorTimeHunting.Service;
 public class GraphQLService
 {
     // The singleton instance
-    private static readonly Lazy<GraphQLService> _instance = new Lazy<GraphQLService>(() => new GraphQLService());
 
     private GraphQLHttpClient _graphQLClient;
 
@@ -24,12 +23,13 @@ public class GraphQLService
     }
 
     // Public method to get the singleton instance
-    public static GraphQLService Instance => _instance.Value;
+    public static GraphQLService Instance { get; } = new GraphQLService();
 
     private void InitializeGraphQLClient()
     {
         if (_graphQLClient == null)
         {
+            Logger.LogInfo("GraphQL client initialized.");
             _graphQLClient = new GraphQLHttpClient("https://graphql.zeepki.st/", new NewtonsoftJsonSerializer());
             Logger.LogInfo("GraphQL client initialized.");
         }
