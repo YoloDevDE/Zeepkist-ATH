@@ -1,8 +1,9 @@
 ﻿using Imui.Controls;
 using Imui.Core;
+using ZeepSDK.Chat;
 using ZeepSDK.UI;
 
-namespace AuthorTimeHunting.States.SoloAth;
+namespace AuthorTimeHunting.Util;
 
 public class MyToolbarDrawer : IZeepToolbarDrawer
 {
@@ -10,14 +11,11 @@ public class MyToolbarDrawer : IZeepToolbarDrawer
 
     public void DrawMenuItems(ImGui gui)
     {
-        if (gui.Menu("Open Settings"))
-        {
-            // Open settings window
-        }
+        if (gui.Menu("Start")) { }
 
-        if (gui.Menu("Toggle Feature"))
+        if (gui.Menu("Stop"))
         {
-            // Toggle a feature
+            ChatApi.SendMessage("/ath stop");
         }
     }
 }

@@ -29,6 +29,16 @@ public static class SpeechBubble
         Messenger.LogError(message, duration);
     }
 
+    public static void Custom(string message, float duration = 2.5f)
+    {
+        Custom(message, Color.black, duration);
+    }
+
+    public static void Custom(string message, Color backgroundColor, float duration = 2.5f)
+    {
+        Custom(message, backgroundColor, Color.white, duration);
+    }
+
     public static void Custom(string message, Color backgroundColor, Color textColor, float duration = 2.5f)
     {
         Messenger.LogCustomColors(message, backgroundColor, textColor, duration);

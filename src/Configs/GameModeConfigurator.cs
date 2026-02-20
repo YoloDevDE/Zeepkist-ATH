@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Enums;
+using AuthorTimeHunting.Guards;
 using AuthorTimeHunting.States.SoloAth;
-using ZeepkistClient;
+using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.Configs;
 
@@ -12,23 +13,63 @@ public abstract class GameModeConfigurator
         soloAthMode
             .SetInitial<SoloAthInit>();
         soloAthMode.Name = "SoloAthMode";
+
+        // ================= BOOT / START =================
+
         soloAthMode
             .From<SoloAthInit>()
-            .When(() => ZeepkistNetwork.CurrentLobby.GameState == (int)ZeepkistLobbyState.RACING)
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.RACING))
             .To<SoloAthStarting>()
             .Or()
             .When(() => true)
-            .To<SoloAthWaitingForLevelToLoadWhileStarting>()
-            ;
+            .To<SoloAthWaitingForLevelToLoadWhileStarting>();
+
+        soloAthMode
+            .From<SoloAthWaitingForLevelToLoadWhileStarting>()
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.RACING))
+            .To<SoloAthStarting>();
 
         soloAthMode
             .From<SoloAthStarting>()
-            .When(() => ZeepkistNetwork.CurrentLobby.GameState == (int)ZeepkistLobbyState.ENDING)
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.ENDING))
+            .To<SoloAthWaitingForFirstLevel>();
+
+        // ================= LEVEL LOOP =================
+
+        soloAthMode
+            .From<SoloAthWaitingForFirstLevel>()
+            .On<RoundStartedDelegate>(sub => RacingApi.RoundStarted += sub, unsub => RacingApi.RoundStarted -= unsub)
+            .To<SoloAthAttemptingOneLevel>();
+
+        soloAthMode
+            .From<SoloAthAttemptingOneLevel>()
+            .When(() => SoloAthContext.IsTimeReached)
+            .To<SoloAthEnding>()
+            .Or()
+            .When(GameGuards.AuthorTimeReached)
+            .To<SoloAthWaitingForRespawn>()
+            .Or()
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.ENDING))
+            .To<SoloAthRoundEnding>();
+
+
+        soloAthMode
+            .From<SoloAthWaitingForRespawn>()
+            .On<PlayerSpawnedDelegate>(sub => RacingApi.PlayerSpawned += sub, unsub => RacingApi.PlayerSpawned -= unsub)
+            .To<SoloAthSkippingLevel>()
+            .Or()
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.ENDING))
             .To<SoloAthRoundEnding>();
 
         soloAthMode
+            .From<SoloAthSkippingLevel>()
+            .When(() => true)
+            .To<SoloAthRoundEnding>();
+        // ================= ROUND / META =================
+
+        soloAthMode
             .From<SoloAthRoundEnding>()
-            .When(() => ZeepkistNetwork.CurrentLobby.GameState == (int)ZeepkistLobbyState.PODIUM)
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.PODIUM))
             .To<SoloAthPodium>();
 
         soloAthMode
@@ -38,8 +79,8 @@ public abstract class GameModeConfigurator
 
         soloAthMode
             .From<SoloAthLevelLoading>()
-            .When(() => ZeepkistNetwork.CurrentLobby.GameState == (int)ZeepkistLobbyState.RACING)
-            .To<SoloAthStarting>();
+            .When(() => GameGuards.IsLobbyIn(ZeepkistLobbyState.RACING))
+            .To<SoloAthAttemptingOneLevel>();
 
         return soloAthMode;
     }

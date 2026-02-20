@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace AuthorTimeHunting.Entities;
+namespace AuthorTimeHunting.Entities.GraphQL;
 
 public class ZRtm
 {

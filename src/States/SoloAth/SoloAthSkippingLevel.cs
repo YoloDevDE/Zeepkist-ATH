@@ -1,17 +1,19 @@
 ﻿using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepSDK.Chat;
 
 namespace AuthorTimeHunting.States.SoloAth;
 
-public class SoloAthWaitingForLevelToLoadWhileStarting : IState
+public class SoloAthSkippingLevel : IState
 {
-    public void Enter()
+    public async void Enter()
     {
         SpeechBubble.Custom(GetType().Name, Color.blue);
-        SpeechBubble.Warning("'Solo Ath' start after loading!");
-        ChatApi.SendMessage(GetType().Name);
+        await PlaylistService.Instance.QueueNextRandomLevel();
+        PlaylistService.Instance.SkipLevel();
+        ChatApi.SendMessage("Skipping Level...");
     }
 
     public void Exit() { }

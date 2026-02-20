@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace AuthorTimeHunting.States.SoloAth;
 
-public class SoloAthLevelLoading : IState
+public class SoloAthWaitingForFirstLevel : IState
 {
     public void Enter()
     {

@@ -1,6 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.States.Mod;
-using ZeepSDK.Multiplayer;
+using ZeepkistClient;
 
 namespace AuthorTimeHunting.Configs;
 
@@ -14,15 +14,15 @@ public static class ModStateMachineConfigurator
 
         modStateMachine
             .From<ModInit>()
-            .When(() => MultiplayerApi.IsPlayingOnline)
+            .When(() => ZeepkistNetwork.IsMasterClient)
             .To<ModReady>()
             .Or()
-            .When(() => !MultiplayerApi.IsPlayingOnline)
+            .When(() => !ZeepkistNetwork.IsMasterClient)
             .To<ModNotReady>();
 
         modStateMachine
             .From<ModNotReady>()
-            .When(() => MultiplayerApi.IsPlayingOnline)
+            .When(() => ZeepkistNetwork.IsMasterClient)
             .To<ModReady>();
 
         modStateMachine
@@ -33,7 +33,7 @@ public static class ModStateMachineConfigurator
             .On(sub => CommandRestart.CommandTrigger += sub, unsub => CommandRestart.CommandTrigger -= unsub)
             .To<ModRunning>()
             .Or()
-            .When(() => !MultiplayerApi.IsPlayingOnline)
+            .When(() => !ZeepkistNetwork.IsMasterClient)
             .To<ModNotReady>();
 
         modStateMachine
@@ -41,7 +41,7 @@ public static class ModStateMachineConfigurator
             .On(sub => CommandStop.CommandTrigger += sub, unsub => CommandStop.CommandTrigger -= unsub)
             .To<ModReady>()
             .Or()
-            .When(() => !MultiplayerApi.IsPlayingOnline)
+            .When(() => !ZeepkistNetwork.IsMasterClient)
             .To<ModNotReady>();
 
         return modStateMachine;

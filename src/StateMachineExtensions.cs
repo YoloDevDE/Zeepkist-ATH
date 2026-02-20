@@ -28,10 +28,16 @@ public static class StateMachineExtensions
             return this;
         }
 
-        // -------- EVENT --------
-        public EventBuilder<TFrom> On(
+        // -------- EVENT (Action) --------
+        public EventBuilder<TFrom, Action> On(
             Action<Action> subscribe,
-            Action<Action> unsubscribe) => new EventBuilder<TFrom>(_machine, subscribe, unsubscribe);
+            Action<Action> unsubscribe) => new EventBuilder<TFrom, Action>(_machine, subscribe, unsubscribe);
+
+        // -------- EVENT (ANY delegate) --------
+        public EventBuilder<TFrom, TDelegate> On<TDelegate>(
+            Action<TDelegate> subscribe,
+            Action<TDelegate> unsubscribe)
+            where TDelegate : Delegate => new EventBuilder<TFrom, TDelegate>(_machine, subscribe, unsubscribe);
 
         public TransitionChain<TFrom> To<TTo>()
             where TTo : IState, new()
@@ -50,24 +56,27 @@ public static class StateMachineExtensions
 
     // ================= EVENT BUILDER =================
 
-    public sealed class EventBuilder<TFrom> where TFrom : IState, new()
+    public sealed class EventBuilder<TFrom, TDelegate>
+        where TFrom : IState, new()
+        where TDelegate : Delegate
     {
         private readonly StateMachine _machine;
-        private readonly Action<Action> _subscribe;
-        private readonly Action<Action> _unsubscribe;
+        private readonly Action<TDelegate> _subscribe;
+        private readonly Action<TDelegate> _unsubscribe;
         [CanBeNull] private Func<bool> _guard;
 
         public EventBuilder(
             StateMachine machine,
-            Action<Action> subscribe,
-            Action<Action> unsubscribe)
+            Action<TDelegate> subscribe,
+            Action<TDelegate> unsubscribe)
         {
             _machine = machine;
             _subscribe = subscribe;
             _unsubscribe = unsubscribe;
         }
 
-        public EventBuilder<TFrom> When(Func<bool> guard)
+        // optional guard
+        public EventBuilder<TFrom, TDelegate> When(Func<bool> guard)
         {
             _guard = guard;
             return this;
@@ -76,13 +85,7 @@ public static class StateMachineExtensions
         public TransitionChain<TFrom> To<TTo>()
             where TTo : IState, new()
         {
-            _machine.AddEventTransition(
-                typeof(TFrom),
-                typeof(TTo),
-                _subscribe,
-                _unsubscribe,
-                _guard);
-
+            _machine.AddEventTransition(typeof(TFrom), typeof(TTo), _subscribe, _unsubscribe, _guard);
             return new TransitionChain<TFrom>(_machine);
         }
     }

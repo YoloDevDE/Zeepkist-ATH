@@ -14,6 +14,8 @@ public class Plugin : BaseUnityPlugin
     private Harmony _harmony;
     private StateMachine _modStateMachine;
 
+    private int gamestate = -1;
+
     private Plugin()
     {
         Util.Logger.Initialize(Logger);

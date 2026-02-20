@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Entities.GraphQL;
 using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.Service;

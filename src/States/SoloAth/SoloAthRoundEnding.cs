@@ -1,5 +1,6 @@
 ﻿using AuthorTimeHunting.Interfaces;
-using ZeepSDK.Chat;
+using AuthorTimeHunting.Util;
+using UnityEngine;
 
 namespace AuthorTimeHunting.States.SoloAth;
 
@@ -7,7 +8,7 @@ public class SoloAthRoundEnding : IState
 {
     public void Enter()
     {
-        ChatApi.SendMessage(GetType().Name);
+        SpeechBubble.Custom(GetType().Name, Color.blue);
     }
 
     public void Exit() { }

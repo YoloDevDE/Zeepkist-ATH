@@ -1,6 +1,6 @@
 ﻿using ZeepkistNetworking;
 
-namespace AuthorTimeHunting.Entities;
+namespace AuthorTimeHunting.Entities.GraphQL;
 
 public class LevelItem
 {
