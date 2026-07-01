@@ -13,7 +13,7 @@ public class PluginConfig
 
         Minimalist = config.Bind("General", "Minimalist", false, "Makes it a bit less text");
 
-        RandomPlaylist = config.Bind("General", "Random Playlist", true, "If enabled, the playlist will be random. If disabled, the current playlist will be used.");
+        RandomPlaylist = config.Bind("General", "RTM", true, "If enabled, the levels will be random. If disabled, the current playlist will be used.");
     }
 
     /// <summary>
