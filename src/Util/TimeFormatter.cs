@@ -26,8 +26,6 @@ public abstract class TimeFormatter
         int millis = timeSpan.Milliseconds;
 
         // Check if hours are present
-        return hours >= 1
-            ? $"{hours:D2}:{minutes:D2}:{seconds:D2}"
-            : $"{minutes:D2}:{seconds:D2}.{millis:D3}";
+        return hours >= 1 ? $"{hours:D2}:{minutes:D2}:{seconds:D2}" : $"{minutes:D2}:{seconds:D2}.{millis:D3}";
     }
 }

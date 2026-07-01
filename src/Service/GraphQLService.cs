@@ -82,13 +82,8 @@ public class GraphQLService
             // Convert all Nodes to LevelItems
             List<LevelItem> levelItems = response.Data.ZRtm.Nodes.Select(node => new LevelItem
             {
-                Name = node.Name,
-                ValidationTimeAuthor = node.ValidationTimeAuthor,
-                ValidationTimeGold = node.ValidationTimeGold,
-                FileAuthor = node.FileAuthor,
-                FileUid = node.FileUid,
-                AuthorId = ulong.Parse(node.AuthorId),
-                WorkshopId = ulong.Parse(node.WorkshopId)
+                Name = node.Name, ValidationTimeAuthor = node.ValidationTimeAuthor, ValidationTimeGold = node.ValidationTimeGold, FileAuthor = node.FileAuthor, FileUid = node.FileUid, AuthorId = ulong.Parse(node.AuthorId)
+                , WorkshopId = ulong.Parse(node.WorkshopId)
             }).ToList();
 
             Logger.LogInfo($"Successfully retrieved {levelItems.Count} random levels");

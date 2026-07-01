@@ -12,15 +12,8 @@ public class LevelItem
     public float ValidationTimeGold { get; set; }
     public ulong AuthorId { get; set; }
 
-    public OnlineZeeplevel ToOnlineZeepLevel()
+    public OnlineZeeplevel ToOnlineZeepLevel() => new OnlineZeeplevel
     {
-        return new OnlineZeeplevel
-        {
-            UID = FileUid,
-            WorkshopID = WorkshopId,
-            Name = Name,
-            Author = FileAuthor,
-            played = false
-        };
-    }
+        UID = FileUid, WorkshopID = WorkshopId, Name = Name, Author = FileAuthor, played = false
+    };
 }

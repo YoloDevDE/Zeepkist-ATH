@@ -13,9 +13,7 @@ public class StateAthProcessingLevel(IStateMachine stateMachine) : AthState
 {
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-    }
+    public override void Enter() { }
 
     public override async void Execute()
     {
@@ -53,13 +51,9 @@ public class StateAthProcessingLevel(IStateMachine stateMachine) : AthState
         }
     }
 
-    public override void Exit()
-    {
-    }
+    public override void Exit() { }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 
     private bool IsBrokenLevel(Level level)
     {
@@ -79,8 +73,5 @@ public class StateAthProcessingLevel(IStateMachine stateMachine) : AthState
         return true;
     }
 
-    private bool IsDuplicateLevel(Level level)
-    {
-        return AthStateMachine.Ctx.Levels.Contains(level);
-    }
+    private bool IsDuplicateLevel(Level level) => Plugin.Instance.MyConfig.RandomPlaylist.Value && AthStateMachine.Ctx.Levels.Contains(level);
 }

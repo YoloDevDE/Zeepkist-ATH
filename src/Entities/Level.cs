@@ -7,12 +7,12 @@ public class Level
 {
     public enum LevelStatus
     {
-        AUTHOR = 0,
-        GOLD = 1,
-        FREE = 2,
-        FAILED = 3,
-        BROKEN = 4,
-        UNKOWN = 5
+        AUTHOR = 0
+        , GOLD = 1
+        , FREE = 2
+        , FAILED = 3
+        , BROKEN = 4
+        , UNKOWN = 5
     }
 
     private readonly string _author;
@@ -99,7 +99,12 @@ public class Level
         }
     }
 
-    public TimeSpan TimeWasted => LevelBroken ? TimeSpan.Zero : AuthorTimeAcquired ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime) : GetPlayDuration();
+    public TimeSpan TimeWasted =>
+        LevelBroken
+            ? TimeSpan.Zero
+            : AuthorTimeAcquired
+                ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime)
+                : GetPlayDuration();
 
     public string StatusString
     {
@@ -107,12 +112,12 @@ public class Level
         {
             return Status switch
             {
-                LevelStatus.AUTHOR => "Completed",
-                LevelStatus.GOLD => "Gold-Skipped",
-                LevelStatus.FREE => "Free-Skipped",
-                LevelStatus.BROKEN => "Broken",
-                LevelStatus.FAILED => "Failed",
-                _ => "Unknown"
+                LevelStatus.AUTHOR => "Completed"
+                , LevelStatus.GOLD => "Gold-Skipped"
+                , LevelStatus.FREE => "Free-Skipped"
+                , LevelStatus.BROKEN => "Broken"
+                , LevelStatus.FAILED => "Failed"
+                , _ => "Unknown"
             };
         }
     }
@@ -134,10 +139,7 @@ public class Level
         TimeStamps.Add(DateTime.Now);
     }
 
-    public TimeSpan GetTotalDuration()
-    {
-        return GetPlayDuration();
-    }
+    public TimeSpan GetTotalDuration() => GetPlayDuration();
 
     public void Start()
     {
@@ -149,6 +151,7 @@ public class Level
     public void Stop()
     {
         EndTime = DateTime.Now;
+
         if (TimeStamps.Count % 2 == 1)
         {
             TimeStamps.Add(EndTime);
@@ -182,6 +185,7 @@ public class Level
             DateTime endTime = i + 1 < TimeStamps.Count ? TimeStamps[i + 1] : now;
 
             TimeSpan sessionDuration = endTime - startTime;
+
             if (sessionDuration > TimeSpan.Zero)
             {
                 result += sessionDuration;
@@ -206,13 +210,7 @@ public class Level
         return false;
     }
 
-    public override int GetHashCode()
-    {
-        return LevelUid.GetHashCode();
-    }
+    public override int GetHashCode() => LevelUid.GetHashCode();
 
-    public TimeSpan GetPauseDuration()
-    {
-        return GetTotalDuration() - GetPlayDuration();
-    }
+    public TimeSpan GetPauseDuration() => GetTotalDuration() - GetPlayDuration();
 }

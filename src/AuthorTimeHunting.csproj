@@ -4,7 +4,7 @@
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>1.17.3</Version>
+        <Version>1.17.5</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <PackageId>Author Time Hunting</PackageId>
@@ -25,10 +25,10 @@
         <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
-        <PackageReference Include="Zeepkist.GameLibs" Version="17.5.1800"/>
-        <PackageReference Include="ZeepSDK" Version="1.45.0"/>
-        <PackageReference Include="Fody" Version="6.9.2" PrivateAssets="all"/> <!-- Fody package -->
-        <PackageReference Include="Costura.Fody" Version="6.0.0" PrivateAssets="all"/> <!-- Costura package -->
+        <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all"/>
+        <PackageReference Include="ZeepSDK" Version="2.3.1" PrivateAssets="all"/>
+        <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/> <!-- Fody package -->
+        <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all"/> <!-- Costura package -->
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">

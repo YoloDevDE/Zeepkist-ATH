@@ -1,20 +1,26 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
+using TMPro;
+using ZeepkistClient;
+using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthStarting(IStateMachine stateMachine) : AthState
 {
+    private CancellationTokenSource _cts;
     // Constructor
 
     // Properties
-    public override IStateMachine
-        StateMachine { get; } = stateMachine;
+    public override IStateMachine StateMachine { get; } = stateMachine;
+
+    public static bool IsCountdownActive { get; private set; }
 
     // Public Methods
     public override void Enter()
@@ -29,12 +35,24 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
         {
             // Sende Startmeldung
             ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
+
+            if (!Plugin.Instance.MyConfig.RandomPlaylist.Value)
+            {
+                ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
+                await Task.Delay(2500);
+                MultiplayerApi.UpdateServerPlaylist();
+                await Task.Delay(500);
+                await RunCountdown();
+                PlaylistService.SkipLevel();
+                StateMachine.TransitionTo(new StateAthLoadingLevel(StateMachine));
+                return;
+            }
+
             // Starte neue Playlist mit Fehlerbehandlung
             bool playlistStarted = false;
             int retryCount = 3; // Maximal 3 Versuche
 
             while (!playlistStarted && retryCount > 0)
-            {
                 try
                 {
                     await PlaylistService.StartNewPlaylist();
@@ -54,7 +72,8 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
                     // Kurze Pause vor dem nächsten Versuch
                     await Task.Delay(500);
                 }
-            }
+
+            await RunCountdown();
 
             // Versuche zum nächsten Level zu springen, auch wenn die Playlist nicht gestartet wurde
             try
@@ -66,6 +85,8 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
                 Logger.LogError($"Failed to skip level: {ex.Message}");
                 Messenger.Notify().LogError("Error while skipping to the first level");
             }
+
+            StateMachine.TransitionTo(new StateAthLoadingLevel(StateMachine));
         }
         catch (Exception ex)
         {
@@ -79,12 +100,31 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
 
     public override void Exit()
     {
+        _cts?.Cancel();
         RacingApi.RoundEnded -= OnRoundEnded;
     }
 
-    public override void OnAthTimerTick()
+    private async Task RunCountdown()
     {
+        _cts = new CancellationTokenSource();
+        IsCountdownActive = true;
+        TMP_Text text = PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText;
+
+        for (int i = 5; i >= 1; i--)
+        {
+            if (_cts.Token.IsCancellationRequested)
+            {
+                break;
+            }
+
+            text.SetText($"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Starting in <b>{i}</b>...");
+            await Task.Delay(1000, _cts.Token).ContinueWith(_ => { });
+        }
+
+        IsCountdownActive = false;
     }
+
+    public override void OnAthTimerTick() { }
 
     private void OnRoundEnded()
     {

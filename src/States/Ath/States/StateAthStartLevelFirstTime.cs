@@ -21,7 +21,11 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
     {
         try
         {
-            await PlaylistService.QueueNextRandomLevel();
+            if (Plugin.Instance.MyConfig.RandomPlaylist.Value)
+            {
+                await PlaylistService.QueueNextRandomLevel();
+            }
+
             AthStateMachine.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
             AthStateMachine.SetServerMessage(true);
         }
@@ -37,9 +41,7 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
         RacingApi.RoundStarted -= OnRoundStarted;
     }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 
     private void OnRoundStarted()
     {

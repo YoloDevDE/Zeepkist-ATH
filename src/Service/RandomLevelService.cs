@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Util;
 
@@ -9,102 +7,32 @@ namespace AuthorTimeHunting.Service;
 
 public class RandomLevelService
 {
-    private static readonly Lazy<RandomLevelService> _lazyInstance =
-        new Lazy<RandomLevelService>(() => new RandomLevelService());
+    private static readonly Lazy<RandomLevelService> _lazyInstance = new Lazy<RandomLevelService>(() => new RandomLevelService());
 
-    private bool _isInitializing;
-
-    private RandomLevelService()
-    {
-        // Starte die Initialisierung im Hintergrund, aber warte nicht darauf
-        _ = InitializeAsync();
-    }
+    private RandomLevelService() { }
 
     public static RandomLevelService Instance => _lazyInstance.Value;
 
-    private List<LevelItem> CachedRandomLevelItems { get; } = new List<LevelItem>();
-    private List<LevelItem> FetchedLevelItems { get; } = new List<LevelItem>();
-
-    private async Task InitializeAsync()
-    {
-        if (_isInitializing)
-        {
-            return;
-        }
-
-        _isInitializing = true;
-        try
-        {
-            await PopulateCachedRandomLevelItems(5);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Error initializing RandomLevelService: {ex.Message}");
-        }
-        finally
-        {
-            _isInitializing = false;
-        }
-    }
+    private List<string> FetchedLevelUids { get; } = new List<string>();
 
     public LevelItem GetRandomLevelItem()
     {
-        // Wenn keine Level im Cache sind, warte synchron auf die Initialisierung
-        if (CachedRandomLevelItems.Count == 0)
+        LevelItem levelItem = LocalLevelCacheService.Instance.GetRandomLevelItem(FetchedLevelUids);
+
+        if (levelItem == null)
         {
-            PopulateCachedRandomLevelItemsSync();
+            Logger.LogError("RandomLevelService: Could not get a random level from local cache.");
+            return null;
         }
 
-        LevelItem levelItem;
-        do
-        {
-            levelItem = CachedRandomLevelItems[0];
-            CachedRandomLevelItems.RemoveAt(0);
-
-            if (CachedRandomLevelItems.Count <= 2)
-            {
-                // Starte das Auffüllen im Hintergrund
-                _ = PopulateCachedRandomLevelItems(100);
-            }
-        } while (FetchedLevelItems.Any(x => x.FileUid == levelItem.FileUid) || levelItem.ValidationTimeAuthor > levelItem.ValidationTimeGold);
-
-        FetchedLevelItems.Add(levelItem);
+        FetchedLevelUids.Add(levelItem.FileUid);
+        Logger.LogInfo($"RandomLevelService: Selected level '{levelItem.Name}' (UID: {levelItem.FileUid})");
         return levelItem;
     }
 
-    // Synchrone Methode als Fallback
-    private void PopulateCachedRandomLevelItemsSync()
+    public void Reset()
     {
-        try
-        {
-            Task<List<LevelItem>> task = GraphQLService.Instance.GetRandomLevelAsync(5);
-            task.Wait(); // Notwendiges Blocking in diesem Ausnahmefall
-
-            List<LevelItem> levelItems = task.Result;
-            levelItems = levelItems.Where(x => FetchedLevelItems.All(f => f.FileUid != x.FileUid)).ToList();
-            CachedRandomLevelItems.AddRange(levelItems);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Error in PopulateCachedRandomLevelItemsSync: {ex.Message}");
-        }
-    }
-
-    private async Task PopulateCachedRandomLevelItems(int amount = 2)
-    {
-        try
-        {
-            List<LevelItem> levelItems = await GraphQLService.Instance.GetRandomLevelAsync(amount);
-            levelItems = levelItems.Where(x => FetchedLevelItems.All(f => f.FileUid != x.FileUid)).ToList();
-
-            if (levelItems.Count > 0)
-            {
-                CachedRandomLevelItems.AddRange(levelItems);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Error in PopulateCachedRandomLevelItems: {ex.Message}");
-        }
+        FetchedLevelUids.Clear();
+        Logger.LogInfo("RandomLevelService: Session reset, played level list cleared.");
     }
 }

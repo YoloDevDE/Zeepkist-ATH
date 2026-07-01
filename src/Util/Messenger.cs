@@ -4,8 +4,5 @@ namespace AuthorTimeHunting.Util;
 
 public static class Messenger
 {
-    public static ITaggedMessenger Notify()
-    {
-        return MessengerApi.CreateTaggedMessenger("ATH");
-    }
+    public static ITaggedMessenger Notify() => MessengerApi.CreateTaggedMessenger("ATH");
 }

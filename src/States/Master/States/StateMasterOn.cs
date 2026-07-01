@@ -16,12 +16,15 @@ public class StateMasterOn : IState
         SubStateMachine = new AthStateMachine();
     }
 
+    public static bool IsActive { get; private set; }
+
     public AthStateMachine AthStateMachine => (AthStateMachine)SubStateMachine;
     public IStateMachine SubStateMachine { get; }
     public IStateMachine StateMachine { get; }
 
     public void Enter()
     {
+        IsActive = true;
         CommandStop.CommandTrigger += Stop;
         MultiplayerApi.DisconnectedFromGame += Stop;
         CommandStart.CommandTrigger += Start;
@@ -29,16 +32,17 @@ public class StateMasterOn : IState
         RacingApi.RoundStarted += OnRoundStarted;
         CommandSkipBroken.CommandTrigger += SkipBrokenLevel;
         SubStateMachine.StateMachineFinished += Stop;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = true;
         AthStateMachine.StartTimer();
         Messenger.Notify().Log("started");
     }
 
-    public void Execute()
-    {
-    }
+    public void Execute() { }
 
     public void Exit()
     {
+        IsActive = false;
         Messenger.Notify().Log("stopped");
         AthStateMachine.StopTimer();
         CommandStop.CommandTrigger -= Stop;
@@ -53,6 +57,7 @@ public class StateMasterOn : IState
     private void OnRoundStarted()
     {
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = true;
     }
 
 
@@ -78,7 +83,8 @@ public class StateMasterOn : IState
     private void Stop()
     {
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.text = "Thanks for playing ATH :)";
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = false;
+        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.SetText("Thanks for playing ATH :)");
         StateMachine.TransitionTo(new StateMasterOff(StateMachine));
     }
 }

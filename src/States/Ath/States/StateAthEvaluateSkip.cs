@@ -9,9 +9,7 @@ public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
 {
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-    }
+    public override void Enter() { }
 
     public override void Execute()
     {
@@ -46,13 +44,9 @@ public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
         StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
     }
 
-    public override void Exit()
-    {
-    }
+    public override void Exit() { }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 
     private static void HandleBrokenSkip(AthCtx ctx)
     {

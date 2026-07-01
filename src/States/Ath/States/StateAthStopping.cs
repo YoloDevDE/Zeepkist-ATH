@@ -12,9 +12,7 @@ public class StateAthStopping(IStateMachine stateMachine) : AthState
     // Properties
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-    }
+    public override void Enter() { }
 
     public override void Execute()
     {
@@ -24,6 +22,7 @@ public class StateAthStopping(IStateMachine stateMachine) : AthState
             AthStateMachine.Ctx.CurrentLevel.Stop();
             ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageEnd());
             AthStateMachine.SetServerMessage(true);
+
             if (!Plugin.Instance.MyConfig.SavePlaylistOnRunEnd.Value)
             {
                 return;
@@ -44,11 +43,7 @@ public class StateAthStopping(IStateMachine stateMachine) : AthState
     }
 
 
-    public override void Exit()
-    {
-    }
+    public override void Exit() { }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 }

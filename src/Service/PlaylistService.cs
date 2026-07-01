@@ -12,9 +12,7 @@ namespace AuthorTimeHunting.Service;
 
 public class PlaylistService
 {
-    private PlaylistService()
-    {
-    }
+    private PlaylistService() { }
 
     public static PlaylistService Instance { get; } = new PlaylistService();
     public OnlineZeeplevel CurrentBrokenZeeplevel { get; set; }
@@ -24,18 +22,9 @@ public class PlaylistService
 
     public OnlineZeeplevel GetCurrentZeepkistNetworkPlaylistLevel => ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
 
-    private int CurrentPlaylistIndex()
-    {
-        return Math.Max(0, CachedOnlineZeeplevels.Count - 2);
-    }
+    private int CurrentPlaylistIndex() => Math.Max(0, CachedOnlineZeeplevels.Count - 2);
 
-    private int NextPlaylistIndex()
-    {
-        return
-            CachedOnlineZeeplevels.Count == 0
-                ? 0
-                : (CurrentPlaylistIndex() + 1) % CachedOnlineZeeplevels.Count;
-    }
+    private int NextPlaylistIndex() => CachedOnlineZeeplevels.Count == 0 ? 0 : (CurrentPlaylistIndex() + 1) % CachedOnlineZeeplevels.Count;
 
 
     public async Task StartNewPlaylist()
@@ -97,6 +86,7 @@ public class PlaylistService
 
             // Update the server playlist
             Logger.LogInfo("PlaylistService: Sending updated playlist to server");
+
             if (CachedOnlineZeeplevels.Count > 0)
             {
                 MultiplayerApi.UpdateServerPlaylist();
@@ -151,11 +141,7 @@ public class PlaylistService
     {
         OnlineZeeplevel censoredLevel = new OnlineZeeplevel
         {
-            UID = onlineZeeplevel.UID,
-            WorkshopID = onlineZeeplevel.WorkshopID,
-            Name = "???",
-            Author = "???",
-            played = onlineZeeplevel.played
+            UID = onlineZeeplevel.UID, WorkshopID = onlineZeeplevel.WorkshopID, Name = "???", Author = "???", played = onlineZeeplevel.played
         };
         return censoredLevel;
     }
@@ -168,6 +154,7 @@ public class PlaylistService
         do
         {
             checkCount++;
+
             if (checkCount % 10 == 0) // Log every 10 checks (roughly every 1 second)
             {
                 Logger.LogDebug($"PlaylistService: Still waiting for GameState to change from 0 (Current Gamestate: {ZeepkistNetwork.CurrentLobby.GameState}) (waited {checkCount / 10} seconds)");

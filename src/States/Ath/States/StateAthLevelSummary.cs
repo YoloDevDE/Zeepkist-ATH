@@ -8,9 +8,7 @@ public class StateAthLevelSummary(IStateMachine stateMachine) : AthState
 {
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-    }
+    public override void Enter() { }
 
     public override void Execute()
     {
@@ -18,11 +16,7 @@ public class StateAthLevelSummary(IStateMachine stateMachine) : AthState
         StateMachine.TransitionTo(new StateAthLoadingLevel(StateMachine));
     }
 
-    public override void Exit()
-    {
-    }
+    public override void Exit() { }
 
-    public override void OnAthTimerTick()
-    {
-    }
+    public override void OnAthTimerTick() { }
 }

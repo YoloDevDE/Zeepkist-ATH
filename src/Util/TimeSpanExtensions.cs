@@ -7,6 +7,7 @@ public static class TimeSpanExtensions
     public static string ToFormattedString(this TimeSpan timeSpan)
     {
         string tmp = "";
+
         if (timeSpan.Days >= 1)
         {
             tmp += $"{timeSpan.Days}d ";

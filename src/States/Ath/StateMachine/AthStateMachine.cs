@@ -8,6 +8,9 @@ namespace AuthorTimeHunting.States.Ath.StateMachine;
 
 public class AthStateMachine : IStateMachine
 {
+    private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(500);
+    private string _lastServerMessage;
+    private DateTime _lastServerMessageTime = DateTime.MinValue;
     private bool _timerStarted;
 
     public AthStateMachine()
@@ -38,44 +41,51 @@ public class AthStateMachine : IStateMachine
     {
         var colors = new
         {
-            State = paused ? "#999999" : "#42b336",
-            TimeLeft = paused ? "#999999" : Ctx.IsTimeRunningLow ? "#bf3939" : Ctx.IsTimeAfterSkipRunningLow ? "#b3b300" : "#42b336",
-            Author = ColorDefinitions.Author.CTToHexRGB(),
-            Default = "#e6e6e6",
-            AuthorSkip = "#e600e6",
-            GoldSkip = "#FFD600",
-            FreeSkip = "#00ffff",
-            EndRunSkip = "#0f0f0f",
-            PenaltySkip = "#bf3939",
-            Section = "#ffd4a6"
+            State = paused ? "#999999" : "#42b336", TimeLeft = paused
+                ? "#999999"
+                : Ctx.IsTimeRunningLow
+                    ? "#bf3939"
+                    : Ctx.IsTimeAfterSkipRunningLow
+                        ? "#b3b300"
+                        : "#42b336"
+            , Author = ColorDefinitions.Author.CTToHexRGB(), Default = "#e6e6e6", AuthorSkip = "#e600e6", GoldSkip = "#FFD600", FreeSkip = "#00ffff", EndRunSkip = "#0f0f0f", PenaltySkip = "#bf3939", Section = "#ffd4a6"
         };
 
-        string skipText = Ctx.CurrentLevel.AuthorTimeAcquired ? $"<{colors.AuthorSkip}>Author Skip" :
-            Ctx.CurrentLevel.GoldMedalAcquired ? $"<{colors.GoldSkip}>Gold Skip" :
-            Ctx.AvaiableFreeSkips > 0 ? $"<{colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)" :
-            Ctx.IsTimeRunningLow ? $"<{colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\">" :
-            $"<{colors.PenaltySkip}>Penalty Skip!";
+        string skipText = Ctx.CurrentLevel.AuthorTimeAcquired
+            ? $"<color={colors.AuthorSkip}>Author Skip</color>"
+            : Ctx.CurrentLevel.GoldMedalAcquired
+                ? $"<color={colors.GoldSkip}>Gold Skip</color>"
+                : Ctx.AvaiableFreeSkips > 0
+                    ? $"<color={colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)</color>"
+                    : Ctx.IsTimeRunningLow
+                        ? $"<color={colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\"></color>"
+                        : $"<color={colors.PenaltySkip}>Penalty Skip!</color>";
 
         string punishmentText = Ctx.Penalties == 0
             ? ""
-            : $"(<{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - <#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds * Ctx.Penalties).ToFormattedString()}</color>)";
+            : $"(<color={colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - <color=#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds * Ctx.Penalties).ToFormattedString()}</color>)";
 
         // string message = $"/servermessage white 0 " +
-        string message =
-            $"<size=\"20%\"><align=\"left\"><b><#{colors.Author}><uppercase>Author-Time-Hunting</uppercase></color></b><br>" +
-            $"<{colors.Section}><b>=== Run Settings ===</b><br>" +
-            $"<{colors.Default}>Duration      : {TimeSpan.FromMilliseconds(Ctx.Duration).ToFormattedString()}<br>" +
-            $"<{colors.Default}>Skip Penalty  : <{colors.PenaltySkip}>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds).ToFormattedString()}</color><br>" +
-            $"<{colors.Section}><b>=== Current Run ===</b><br>" +
-            $"<{colors.Default}>State         : <{colors.State}>{(paused ? "PAUSED" : "ACTIVE")}<br>" +
-            $"<{colors.Default}>Time Left     : <{colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTime().TotalMilliseconds)}</color> {punishmentText}<br>" +
-            $"<{colors.Default}>AT/Gold/Skips : <{colors.AuthorSkip}>{Ctx.AuthorMedals}<{colors.Default}>/<{colors.GoldSkip}>{Ctx.GoldMedals}<{colors.Default}>/<{colors.PenaltySkip}>{Ctx.Penalties}<br>" +
-            $"<{colors.Section}><b>=== Current Level ===</b><br>" +
-            $"<{colors.Default}>Level Time    : <{colors.State}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds)}<br>" +
-            $"<{colors.Default}>Skip Type     : {skipText}<br>" +
-            $"<{colors.Default}>Attempt       : {Ctx.CurrentLevel.Attempt}<br>";
+        string message = $"<size=\"20%\"><align=left><b><color=#{colors.Author}><uppercase>Author-Time-Hunting</uppercase></color></b><br>" + $"<color={colors.Section}><b>=== Run Settings ===</b></color><br>" +
+                         $"<color={colors.Default}>Duration      : {TimeSpan.FromMilliseconds(Ctx.Duration).ToFormattedString()}</color><br>" +
+                         $"<color={colors.Default}>Skip Penalty  : <color={colors.PenaltySkip}>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds).ToFormattedString()}</color></color><br>" +
+                         $"<color={colors.Section}><b>=== Current Run ===</b></color><br>" + $"<color={colors.Default}>State         : <color={colors.State}>{(paused ? "PAUSED" : "ACTIVE")}</color></color><br>" +
+                         $"<color={colors.Default}>Time Left     : <color={colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTime().TotalMilliseconds)}</color> {punishmentText}</color><br>" +
+                         $"<color={colors.Default}>AT/Gold/Skips : <color={colors.AuthorSkip}>{Ctx.AuthorMedals}</color><color={colors.Default}>/</color><color={colors.GoldSkip}>{Ctx.GoldMedals}</color><color={colors.Default}>/</color><color={colors.PenaltySkip}>{Ctx.Penalties}</color></color><br>" +
+                         $"<color={colors.Section}><b>=== Current Level ===</b></color><br>" +
+                         $"<color={colors.Default}>Level Time    : <color={colors.State}>{TimeFormatter.FormatDuration((int)Ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds)}</color></color><br>" +
+                         $"<color={colors.Default}>Skip Type     : {skipText}</color><br>" + $"<color={colors.Default}>Attempt       : {Ctx.CurrentLevel.Attempt}</color><br>" + "</align></size>";
 
         // ChatApi.SendMessage(message);
+        DateTime now = DateTime.UtcNow;
+
+        if (message == _lastServerMessage && now - _lastServerMessageTime < ServerMessageThrottle)
+        {
+            return;
+        }
+
+        _lastServerMessage = message;
+        _lastServerMessageTime = now;
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.serverMessageText.text = message;
     }
 

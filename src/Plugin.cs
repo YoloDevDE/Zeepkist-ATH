@@ -82,7 +82,7 @@ public class Plugin : BaseUnityPlugin
     private void InitializeServices()
     {
         // Initialize singleton services
-        _ = GraphQLService.Instance;
+        _ = LocalLevelCacheService.Instance;
         _ = RandomLevelService.Instance;
         _ = PlaylistService.Instance;
     }
