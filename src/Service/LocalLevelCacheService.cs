@@ -198,9 +198,8 @@ public class LocalLevelCacheService
 
         if (available.Count == 0)
         {
-            Logger.LogWarning("LocalLevelCacheService: All levels have been played. Resetting exclusion list.");
-            TryNotifyWarning("ATH: All local levels played! Starting over.");
-            available = CachedLevelItems.ToList();
+            Logger.LogWarning("LocalLevelCacheService: All levels have been played. Playlist exhausted.");
+            return null;
         }
 
         int index = Random.Range(0, available.Count);

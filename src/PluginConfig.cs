@@ -9,11 +9,15 @@ public class PluginConfig
 {
     public PluginConfig(ConfigFile config)
     {
-        SavePlaylistOnRunEnd = config.Bind("General", "Save Playlist on Run End", false, "Literally what it says. what did you expect");
+        RandomPlaylist = config.Bind("Core Settings", "RTM", true, "If enabled, the levels will be random. If disabled, the current playlist will be used.");
 
-        Minimalist = config.Bind("General", "Minimalist", false, "Makes it a bit less text");
+        Duration = config.Bind("Core Settings", "Duration", 3600, "Total run duration in seconds. Default is 3600 (60 minutes).");
 
-        RandomPlaylist = config.Bind("General", "RTM", true, "If enabled, the levels will be random. If disabled, the current playlist will be used.");
+        PenaltyTime = config.Bind("Core Settings", "Penalty Time", 300, "Penalty time per failed level in seconds. Default is 300 (5 minutes).");
+
+        Minimalist = config.Bind("Misc", "Minimalist", false, "Makes it a bit less text");
+
+        SavePlaylistOnRunEnd = config.Bind("Misc", "Save Playlist on Run End", false, "Literally what it says. what did you expect");
     }
 
     /// <summary>
@@ -30,4 +34,14 @@ public class PluginConfig
     ///     When enabled, the playlist will be random
     /// </summary>
     public ConfigEntry<bool> RandomPlaylist { get; }
+
+    /// <summary>
+    ///     Total run duration in seconds
+    /// </summary>
+    public ConfigEntry<int> Duration { get; }
+
+    /// <summary>
+    ///     Penalty time per failed level in seconds
+    /// </summary>
+    public ConfigEntry<int> PenaltyTime { get; }
 }

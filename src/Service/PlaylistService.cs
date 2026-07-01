@@ -3,12 +3,19 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Util;
+using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
+using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.Service;
+
+public class PlaylistExhaustedException : Exception
+{
+    public PlaylistExhaustedException() : base("All cached levels from the local playlist have been played.") { }
+}
 
 public class PlaylistService
 {
@@ -21,6 +28,12 @@ public class PlaylistService
 
 
     public OnlineZeeplevel GetCurrentZeepkistNetworkPlaylistLevel => ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
+
+    /// <summary>
+    ///     Checks (without consuming) whether there is a valid different level available to skip to.
+    ///     Pass the current level's UID to also exclude it from the candidates.
+    /// </summary>
+    public bool HasValidNextLevel(string currentLevelUid = null) => RandomLevelService.Instance.HasValidNextLevel(currentLevelUid);
 
     private int CurrentPlaylistIndex() => Math.Max(0, CachedOnlineZeeplevels.Count - 2);
 
@@ -59,6 +72,13 @@ public class PlaylistService
 
             // Get a new random level and log details
             LevelItem levelItem = RandomLevelService.Instance.GetRandomLevelItem();
+
+            if (levelItem == null)
+            {
+                Logger.LogWarning("PlaylistService: All cached levels have been played. Stopping the run.");
+                throw new PlaylistExhaustedException();
+            }
+
             Logger.LogInfo($"PlaylistService: Adding new level to playlist: '{levelItem.Name}' (UID: {levelItem.FileUid})");
 
             // Convert to OnlineZeepLevel and add to cache
@@ -97,16 +117,7 @@ public class PlaylistService
         catch (Exception ex)
         {
             Logger.LogError($"PlaylistService: Error during playlist population: {ex.Message}\nStack trace: {ex.StackTrace}");
-
-            // Try to send a message to players if possible
-            try
-            {
-                ChatMessageService.SendCustomMessage("Error updating playlist. Please check the logs for details.");
-            }
-            catch
-            {
-                // Silently ignore if sending message fails
-            }
+            Messenger.Notify().LogCustomColors("RandomLevelService warning:<br>Could not fetch a new unique level.<br>Run will stop after this map.", Color.white, Color.red, 8f);
         }
     }
 

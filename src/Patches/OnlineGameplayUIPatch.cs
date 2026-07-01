@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using AuthorTimeHunting.States.Ath.States;
+using AuthorTimeHunting.Util;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -7,21 +8,37 @@ using UnityEngine;
 namespace AuthorTimeHunting.Patches;
 
 /// <summary>
-///     Keeps RoundOverText visible only during the ATH countdown.
+///     Keeps RoundOverText visible during the ATH countdown and while a medal text is active.
 ///     During GameState 0, the game calls EndRoundBuffer.SetActive(false) every frame,
 ///     which hides RoundOverText (its child). During GameState 1, the alpha is animated
-///     from 0. This patch overrides both behaviours only while the countdown is running.
+///     from 0. This patch overrides both behaviours while the countdown or a medal text is active.
+///     It also re-applies the queued medal text every frame so gold medal text is not lost
+///     when the EndRoundBuffer panel becomes visible after OnCrossedFinishLine.
 /// </summary>
 [HarmonyPatch(typeof(OnlineGameplayUI), "Update")]
 public static class OnlineGameplayUIPatch
 {
     private static FieldInfo _endRoundBufferField;
-    private static FieldInfo _roundOverTextField;
 
     [HarmonyPostfix]
     public static void Postfix(OnlineGameplayUI __instance)
     {
-        if (!StateAthStarting.IsCountdownActive)
+        bool isCountdownActive = StateAthStarting.IsCountdownActive;
+        bool isMedalTextActive = MedalTextHelper.IsMedalTextActive;
+
+        TMP_Text roundOverText = __instance.RoundOverText;
+
+        if (roundOverText == null)
+        {
+            return;
+        }
+
+        if (!isMedalTextActive)
+        {
+            MedalTextHelper.ResetUI(roundOverText);
+        }
+
+        if (!isCountdownActive && !isMedalTextActive)
         {
             return;
         }
@@ -32,11 +49,6 @@ public static class OnlineGameplayUIPatch
             _endRoundBufferField = typeof(OnlineGameplayUI).GetField("EndRoundBuffer", BindingFlags.NonPublic | BindingFlags.Instance);
         }
 
-        if (_roundOverTextField == null)
-        {
-            _roundOverTextField = typeof(OnlineGameplayUI).GetField("RoundOverText", BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
         // Force the EndRoundBuffer container active so RoundOverText is visible
         GameObject endRoundBuffer = _endRoundBufferField?.GetValue(__instance) as GameObject;
 
@@ -45,17 +57,21 @@ public static class OnlineGameplayUIPatch
             endRoundBuffer.SetActive(true);
         }
 
-        // Keep RoundOverText alpha at 1 (GameState 1 animates it from 0)
-        TMP_Text roundOverText = _roundOverTextField?.GetValue(__instance) as TMP_Text;
-
-        if (roundOverText != null)
+        if (isCountdownActive)
         {
+            // Keep alpha at 1 for ATH countdown (GameState 1 animates it from 0)
             Color c = roundOverText.color;
 
             if (c.a < 1f)
             {
                 roundOverText.color = new Color(c.r, c.g, c.b, 1f);
             }
+        }
+
+        if (isMedalTextActive)
+        {
+            // Re-apply medal text every frame and control alpha via helper-side fade profile
+            MedalTextHelper.ApplyToUI(roundOverText);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Level;
@@ -26,8 +27,14 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
                 await PlaylistService.QueueNextRandomLevel();
             }
 
+            AthStateMachine.Ctx.ConsecutiveDuplicateCount = 0;
             AthStateMachine.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
             AthStateMachine.SetServerMessage(true);
+        }
+        catch (PlaylistExhaustedException)
+        {
+            Logger.LogInfo("StateAthStartLevelFirstTime: All local playlist levels have been played. Stopping the run.");
+            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
         }
         catch (Exception e)
         {
@@ -45,6 +52,7 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
 
     private void OnRoundStarted()
     {
+        MedalTextHelper.ClearMedalText();
         StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
     }
 }

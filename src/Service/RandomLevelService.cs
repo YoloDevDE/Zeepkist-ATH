@@ -15,6 +15,23 @@ public class RandomLevelService
 
     private List<string> FetchedLevelUids { get; } = new List<string>();
 
+    /// <summary>
+    ///     Peeks at whether a valid next level exists (does not consume/mark it as fetched).
+    ///     Optionally also excludes a specific UID (e.g. the current level that would be a duplicate).
+    /// </summary>
+    public bool HasValidNextLevel(string excludedUid = null)
+    {
+        List<string> excluded = new List<string>(FetchedLevelUids);
+
+        if (!string.IsNullOrEmpty(excludedUid) && !excluded.Contains(excludedUid))
+        {
+            excluded.Add(excludedUid);
+        }
+
+        LevelItem peek = LocalLevelCacheService.Instance.GetRandomLevelItem(excluded);
+        return peek != null;
+    }
+
     public LevelItem GetRandomLevelItem()
     {
         LevelItem levelItem = LocalLevelCacheService.Instance.GetRandomLevelItem(FetchedLevelUids);

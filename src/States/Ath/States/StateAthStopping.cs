@@ -18,6 +18,7 @@ public class StateAthStopping(IStateMachine stateMachine) : AthState
     {
         try
         {
+            MedalTextHelper.ClearMedalText();
             StateMachine.InvokeFinish();
             AthStateMachine.Ctx.CurrentLevel.Stop();
             ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageEnd());

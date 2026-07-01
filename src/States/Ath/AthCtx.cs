@@ -19,18 +19,23 @@ public class AthCtx
 
     public int Retries { get; set; } = RETRIES;
 
+    public int ConsecutiveDuplicateCount { get; set; } = 0;
+
     /// <summary>
     ///     Initializes a new instance of AthCtx and starts fetching the first level
     /// </summary>
 
 
-    public int Duration => DEFAULT_DURATION_IN_MILLIS;
+    public int Duration => Plugin.Instance.MyConfig.Duration.Value * 1000;
 
-    public int PenaltyTimeInMilliseconds => DEFAULT_PENALTY_TIME_IN_MILLIS;
+    public int PenaltyTimeInMilliseconds => Plugin.Instance.MyConfig.PenaltyTime.Value * 1000;
 
 
     public Level CurrentLevel { get; set; }
     public List<Level> Levels { get; set; } = [];
+    public Level.LevelStatus LastRunMedalStatus { get; set; } = Level.LevelStatus.UNKOWN;
+    public bool LastRunMedalWasNew { get; set; }
+    public double LastRunTime { get; set; } = -1;
 
     public bool HasTimeRunningLowNotified { get; set; }
 
@@ -408,6 +413,36 @@ public class AthCtx
     }
 
     /// <summary>
+    ///     Formats the message shown when the gold medal is claimed
+    /// </summary>
+    public string MessageGoldMedalClaimed()
+    {
+        PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
+        string timeDisplay = currentResult != null ? currentResult.Time.GetFormattedTime() : "--:--.---";
+
+        Message.Builder message = new Message.Builder();
+        message.ClearLines().AddLine($"<#64D2FF>{CurrentLevel.Name}</color> by <#FFD700>{CurrentLevel.Author}</color>").AddBreakSpace().AddSeperator($"<#{ColorDefinitions.Gold.CTToHexRGB()}>New Medal Claimed</color>").AddBreakSpace()
+               .AddKeyValue($"<#{ColorDefinitions.Gold.CTToHexRGB()}>GOLD</color>", $"<#FFFFFF>{timeDisplay}</color>").AddBreakSpace().AddLine("<#AAAAAA>You can now skip this level without a time penalty!</color>");
+
+        return message.Build().ToString();
+    }
+
+    /// <summary>
+    ///     Formats the message shown when the author time medal is claimed
+    /// </summary>
+    public string MessageAuthorMedalClaimed()
+    {
+        PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer.CurrentResult;
+        string timeDisplay = currentResult != null ? currentResult.Time.GetFormattedTime() : "--:--.---";
+
+        Message.Builder message = new Message.Builder();
+        message.ClearLines().AddLine($"<#64D2FF>{CurrentLevel.Name}</color> by <#FFD700>{CurrentLevel.Author}</color>").AddBreakSpace().AddSeperator($"<#{ColorDefinitions.Author.CTToHexRGB()}>New Medal Claimed</color>").AddBreakSpace()
+               .AddKeyValue($"<#{ColorDefinitions.Author.CTToHexRGB()}>AUTHOR TIME</color>", $"<#FFFFFF>{timeDisplay}</color>").AddBreakSpace().AddLine("<#AAAAAA>Respawn to continue the hunt!</color>");
+
+        return message.Build().ToString();
+    }
+
+    /// <summary>
     ///     Formats the message shown when a level is broken
     /// </summary>
     public string MessageBrokenLevel(OnlineZeeplevel level)
@@ -416,6 +451,29 @@ public class AthCtx
         message.ClearLines().AddSeperator("<#FF0000>Broken Level</color>").AddBreakSpace().AddLine("<#FF5555>Oops! This level appears to be broken or unplayable.</color>").AddBreakSpace()
                .AddLine($"<#64D2FF>{level.Name}</color> by <#FFD700>{level.Author}</color>").AddBreakSpace().AddLine("<#FFFFFF>Automatic recovery in progress</color>").AddBreakSpace().AddLine($"<#AAAAAA>Retries left: <#FFFF00>{Retries}</color></color>")
                .AddBreakSpace().AddLine("<#AAAAAA>No time penalty will be applied for this broken level</color>");
+
+        return message.Build().ToString();
+    }
+
+    /// <summary>
+    ///     Formats the message shown when no valid next level can be found (playlist exhausted / same level)
+    /// </summary>
+    public string MessageNoValidNextLevel(string reason)
+    {
+        Message.Builder message = new Message.Builder();
+        message.ClearLines().AddSeperator("<#FF0000>Run Ended</color>").AddBreakSpace().AddLine("<#FF5555>No valid next level could be found.</color>").AddBreakSpace().AddLine($"<#FFFFFF>Reason: <#FFFF00>{reason}</color></color>").AddBreakSpace()
+               .AddLine("<#AAAAAA>The run has been stopped automatically.</color>");
+        return message.Build().ToString();
+    }
+
+    /// <summary>
+    ///     Formats the message shown when the duplicate level limit is reached
+    /// </summary>
+    public string MessageDuplicateLimitReached(int retries)
+    {
+        Message.Builder message = new Message.Builder();
+        message.ClearLines().AddSeperator("<#FF0000>Run Ended</color>").AddBreakSpace().AddLine("<#FF5555>The same level was duplicated too many times in a row.</color>").AddBreakSpace()
+               .AddLine($"<#FFFFFF>Retries attempted: <#FFFF00>{retries}</color></color>").AddBreakSpace().AddLine("<#AAAAAA>The run has been stopped automatically.</color>");
 
         return message.Build().ToString();
     }
