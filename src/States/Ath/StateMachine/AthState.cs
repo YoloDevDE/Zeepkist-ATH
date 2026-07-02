@@ -13,4 +13,10 @@ public abstract class AthState : IState
     public abstract void Exit();
 
     public abstract void OnAthTimerTick();
+    public virtual void OnRoundStarted() { }
+    public virtual void OnRoundEnded() { }
+    public virtual void OnPlayerSpawned() { }
+    public virtual void OnCrossedFinishLine(float time) { }
+    public virtual void OnLevelLoaded() { }
+    public virtual void OnPhotoModeEntered() { }
 }

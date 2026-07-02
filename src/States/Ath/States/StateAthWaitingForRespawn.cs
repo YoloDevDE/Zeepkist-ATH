@@ -4,7 +4,6 @@ using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
-using ZeepSDK.Racing;
 using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -18,8 +17,6 @@ public class StateAthWaitingForRespawn(IStateMachine stateMachine) : AthState
     public override void Enter()
     {
         _hasShownAuthorMedal = false;
-        RacingApi.PlayerSpawned += OnPlayerSpawned;
-        RacingApi.RoundEnded += OnRoundEnded;
     }
 
     public override void Execute()
@@ -53,18 +50,14 @@ public class StateAthWaitingForRespawn(IStateMachine stateMachine) : AthState
         AthStateMachine.SetServerMessage(true);
     }
 
-    public override void Exit()
-    {
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
-        RacingApi.RoundEnded -= OnRoundEnded;
-    }
+    public override void Exit() { }
 
     public override void OnAthTimerTick()
     {
         AthStateMachine.SetServerMessage(true);
     }
 
-    private void OnRoundEnded()
+    public override void OnRoundEnded()
     {
         MedalTextHelper.ClearMedalText();
         StateMachine.TransitionTo(new StateAthLevelSummary(StateMachine));
@@ -72,7 +65,7 @@ public class StateAthWaitingForRespawn(IStateMachine stateMachine) : AthState
 
 
     // Private Methods
-    private void OnPlayerSpawned()
+    public override void OnPlayerSpawned()
     {
         MedalTextHelper.ClearMedalText();
         string currentUid = AthStateMachine.Ctx.CurrentLevel?.LevelUid;

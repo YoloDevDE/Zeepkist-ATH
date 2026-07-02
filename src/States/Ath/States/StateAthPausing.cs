@@ -4,8 +4,6 @@ using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
-using ZeepSDK.PhotoMode;
-using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -22,10 +20,6 @@ public class StateAthPausing(IStateMachine stateMachine) : AthState
     public override void Enter()
     {
         _hasShownMedalRoundOverText = false;
-        RacingApi.RoundStarted += OnRoundStarted;
-        RacingApi.PlayerSpawned += OnPlayerSpawned;
-        PhotoModeApi.PhotoModeEntered += OnRoundStarted;
-        RacingApi.RoundEnded += OnRoundEnded;
     }
 
     public override void Execute()
@@ -47,15 +41,9 @@ public class StateAthPausing(IStateMachine stateMachine) : AthState
         AthStateMachine.SetServerMessage(true);
     }
 
-    public override void Exit()
-    {
-        RacingApi.RoundStarted -= OnRoundStarted;
-        RacingApi.PlayerSpawned -= OnPlayerSpawned;
-        PhotoModeApi.PhotoModeEntered -= OnRoundStarted;
-        RacingApi.RoundEnded -= OnRoundEnded;
-    }
+    public override void Exit() { }
 
-    private void OnRoundEnded()
+    public override void OnRoundEnded()
     {
         StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
     }
@@ -67,12 +55,17 @@ public class StateAthPausing(IStateMachine stateMachine) : AthState
     }
 
 
-    private void OnRoundStarted()
+    public override void OnRoundStarted()
     {
         StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
     }
 
-    private void OnPlayerSpawned()
+    public override void OnPhotoModeEntered()
+    {
+        OnRoundStarted();
+    }
+
+    public override void OnPlayerSpawned()
     {
         MedalTextHelper.ClearMedalText();
     }

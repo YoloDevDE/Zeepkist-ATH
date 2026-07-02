@@ -3,7 +3,6 @@ using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
-using ZeepSDK.Racing;
 using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -14,10 +13,7 @@ public class StateAthResolvingDuplicateLevel(IStateMachine stateMachine) : AthSt
 
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-        RacingApi.LevelLoaded += OnLevelLoaded;
-    }
+    public override void Enter() { }
 
     public override async void Execute()
     {
@@ -47,12 +43,9 @@ public class StateAthResolvingDuplicateLevel(IStateMachine stateMachine) : AthSt
         PlaylistService.SkipToLastLevel();
     }
 
-    public override void Exit()
-    {
-        RacingApi.LevelLoaded -= OnLevelLoaded;
-    }
+    public override void Exit() { }
 
-    private void OnLevelLoaded()
+    public override void OnLevelLoaded()
     {
         StateMachine.TransitionTo(new StateAthProcessingLevel(StateMachine));
     }

@@ -6,7 +6,6 @@ using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
-using ZeepSDK.Racing;
 using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -16,10 +15,7 @@ public class StateAthResolvingBrokenLevel(IStateMachine stateMachine) : AthState
     // Properties
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-        RacingApi.LevelLoaded += OnLevelLoaded;
-    }
+    public override void Enter() { }
 
     public override async void Execute()
     {
@@ -50,14 +46,11 @@ public class StateAthResolvingBrokenLevel(IStateMachine stateMachine) : AthState
     }
 
 
-    public override void Exit()
-    {
-        RacingApi.LevelLoaded -= OnLevelLoaded;
-    }
+    public override void Exit() { }
 
     public override void OnAthTimerTick() { }
 
-    private void OnLevelLoaded()
+    public override void OnLevelLoaded()
     {
         StateMachine.TransitionTo(new StateAthProcessingLevel(StateMachine));
     }

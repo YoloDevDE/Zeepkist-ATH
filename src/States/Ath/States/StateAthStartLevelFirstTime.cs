@@ -4,7 +4,6 @@ using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Level;
-using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -12,10 +11,7 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
 {
     public override IStateMachine StateMachine { get; } = stateMachine;
 
-    public override void Enter()
-    {
-        RacingApi.RoundStarted += OnRoundStarted;
-    }
+    public override void Enter() { }
 
 
     public override async void Execute()
@@ -43,14 +39,11 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
         }
     }
 
-    public override void Exit()
-    {
-        RacingApi.RoundStarted -= OnRoundStarted;
-    }
+    public override void Exit() { }
 
     public override void OnAthTimerTick() { }
 
-    private void OnRoundStarted()
+    public override void OnRoundStarted()
     {
         MedalTextHelper.ClearMedalText();
         StateMachine.TransitionTo(new StateAthOnARun(StateMachine));

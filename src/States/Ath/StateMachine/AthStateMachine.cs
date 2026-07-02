@@ -3,12 +3,15 @@ using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
 using Crosstales;
+using ZeepSDK.PhotoMode;
+using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
 
 public class AthStateMachine : IStateMachine
 {
     private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(500);
+    private bool _eventsSubscribed;
     private string _lastServerMessage;
     private DateTime _lastServerMessageTime = DateTime.MinValue;
     private bool _timerStarted;
@@ -19,6 +22,7 @@ public class AthStateMachine : IStateMachine
         Timer = new AthTimer();
         InitialState = new StateAthStarting(this);
         FinalState = new StateAthStopping(this);
+        _eventsSubscribed = false;
         _timerStarted = false;
     }
 
@@ -91,7 +95,73 @@ public class AthStateMachine : IStateMachine
 
     public void OnAthTimerTick()
     {
-        ((AthState)CurrentState).OnAthTimerTick();
+        (CurrentState as AthState)?.OnAthTimerTick();
+    }
+
+    private void OnRoundStarted()
+    {
+        (CurrentState as AthState)?.OnRoundStarted();
+    }
+
+    private void OnRoundEnded()
+    {
+        (CurrentState as AthState)?.OnRoundEnded();
+    }
+
+    private void OnPlayerSpawned()
+    {
+        (CurrentState as AthState)?.OnPlayerSpawned();
+    }
+
+    private void OnCrossedFinishLine(float time)
+    {
+        (CurrentState as AthState)?.OnCrossedFinishLine(time);
+    }
+
+    private void OnLevelLoaded()
+    {
+        (CurrentState as AthState)?.OnLevelLoaded();
+    }
+
+    private void OnPhotoModeEntered()
+    {
+        (CurrentState as AthState)?.OnPhotoModeEntered();
+    }
+
+    private void SubscribeEvents()
+    {
+        if (_eventsSubscribed)
+        {
+            return;
+        }
+
+        Timer.Tick += OnAthTimerTick;
+        RacingApi.RoundStarted += OnRoundStarted;
+        RacingApi.RoundEnded += OnRoundEnded;
+        RacingApi.PlayerSpawned += OnPlayerSpawned;
+        RacingApi.CrossedFinishLine += OnCrossedFinishLine;
+        RacingApi.LevelLoaded += OnLevelLoaded;
+        PhotoModeApi.PhotoModeEntered += OnPhotoModeEntered;
+
+        _eventsSubscribed = true;
+    }
+
+    private void UnsubscribeEvents()
+    {
+        if (!_eventsSubscribed)
+        {
+            return;
+        }
+
+        Timer.Tick -= OnAthTimerTick;
+        RacingApi.RoundStarted -= OnRoundStarted;
+        RacingApi.RoundEnded -= OnRoundEnded;
+        RacingApi.PlayerSpawned -= OnPlayerSpawned;
+        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
+        RacingApi.LevelLoaded -= OnLevelLoaded;
+        PhotoModeApi.PhotoModeEntered -= OnPhotoModeEntered;
+
+        _eventsSubscribed = false;
     }
 
     public void StartTimer()
@@ -102,15 +172,20 @@ public class AthStateMachine : IStateMachine
         }
 
         Timer.Start();
-        Timer.Tick += OnAthTimerTick;
+        SubscribeEvents();
         _timerStarted = true;
     }
 
     public void StopTimer()
     {
+        if (!_timerStarted)
+        {
+            return;
+        }
+
         Timer.Stop();
 
-        Timer.Tick -= OnAthTimerTick;
+        UnsubscribeEvents();
         _timerStarted = false;
     }
 }

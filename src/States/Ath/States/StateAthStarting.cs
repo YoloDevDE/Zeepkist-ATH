@@ -8,7 +8,6 @@ using AuthorTimeHunting.Util;
 using TMPro;
 using ZeepkistClient;
 using ZeepSDK.Multiplayer;
-using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -23,10 +22,7 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
     public static bool IsCountdownActive { get; private set; }
 
     // Public Methods
-    public override void Enter()
-    {
-        RacingApi.RoundEnded += OnRoundEnded;
-    }
+    public override void Enter() { }
 
 
     public override async void Execute()
@@ -101,7 +97,6 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
     public override void Exit()
     {
         _cts?.Cancel();
-        RacingApi.RoundEnded -= OnRoundEnded;
     }
 
     private async Task RunCountdown()
@@ -126,7 +121,7 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
 
     public override void OnAthTimerTick() { }
 
-    private void OnRoundEnded()
+    public override void OnRoundEnded()
     {
         StateMachine.TransitionTo(new StateAthLoadingLevel(StateMachine));
     }

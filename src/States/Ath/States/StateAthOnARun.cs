@@ -6,7 +6,6 @@ using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
-using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -16,10 +15,6 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
 
     public override void Enter()
     {
-        RacingApi.RoundStarted += OnRoundStarted;
-        RacingApi.RoundEnded += OnRoundEnded;
-
-        RacingApi.CrossedFinishLine += OnCrossedFinishLine;
         AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
     }
 
@@ -32,17 +27,14 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
     public override void Exit()
     {
         AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
-        RacingApi.RoundStarted -= OnRoundStarted;
-        RacingApi.RoundEnded -= OnRoundEnded;
-        RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
     }
 
-    private void OnRoundEnded()
+    public override void OnRoundEnded()
     {
         StateMachine.TransitionTo(new StateAthEvaluateSkip(StateMachine));
     }
 
-    private void OnCrossedFinishLine(float time)
+    public override void OnCrossedFinishLine(float time)
     {
         ZeepkistNetworkPlayer networkPlayer = ZeepkistNetwork.LocalPlayer;
         PlayerBase.Result currentResult = networkPlayer?.CurrentResult;
@@ -82,7 +74,7 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
         ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageCrossedFinishLine());
     }
 
-    private void OnRoundStarted()
+    public override void OnRoundStarted()
     {
         MedalTextHelper.ClearMedalText();
         AthStateMachine.Ctx.CurrentLevel.Attempt++;
