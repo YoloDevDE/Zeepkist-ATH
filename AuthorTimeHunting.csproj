@@ -3,6 +3,8 @@
     <!-- General Project Properties -->
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
+        <BaseOutputPath>src\bin</BaseOutputPath>
+        <BaseIntermediateOutputPath>src\obj</BaseIntermediateOutputPath>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
         <Version>1.17.7</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -26,7 +28,7 @@
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all"/>
-        <PackageReference Include="ZeepSDK" Version="2.3.2" PrivateAssets="all"/>
+        <PackageReference Include="ZeepSDK" Version="2.6.1" PrivateAssets="all" />
         <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/> <!-- Fody package -->
         <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all"/> <!-- Costura package -->
         <PackageReference Include="ZeepTourney" Version="0.0.5"/>
@@ -40,7 +42,10 @@
         <Reference Include="Microsoft.CSharp"/>
     </ItemGroup>
 
-    <!-- Post-Build Scripts -->
+    <ItemGroup>
+        <Compile Include="src\**\*.cs" />
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <!-- Delete the plugin directory if it exists -->
         <RemoveDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
