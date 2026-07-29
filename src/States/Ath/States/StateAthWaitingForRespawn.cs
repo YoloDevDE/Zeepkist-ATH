@@ -4,7 +4,6 @@ using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
-using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -65,18 +64,11 @@ public class StateAthWaitingForRespawn(IStateMachine stateMachine) : AthState
 
 
     // Private Methods
-    public override void OnPlayerSpawned()
+    public override async void OnPlayerSpawned()
     {
         MedalTextHelper.ClearMedalText();
         string currentUid = AthStateMachine.Ctx.CurrentLevel?.LevelUid;
 
-        if (!PlaylistService.HasValidNextLevel(currentUid))
-        {
-            Logger.LogWarning("StateAthWaitingForRespawn: No valid next level available after AT claim. Ending run.");
-            Messenger.Notify().LogCustomColors("RandomLevelService warning:<br>Could not fetch a new unique level.<br>Run will stop after this map.", Color.white, Color.red, 8f);
-            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
-            return;
-        }
 
         PlaylistService.SkipLevel();
     }

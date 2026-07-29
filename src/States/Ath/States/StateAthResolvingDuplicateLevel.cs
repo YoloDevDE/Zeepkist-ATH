@@ -1,8 +1,7 @@
 ﻿using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.Util;
-using UnityEngine;
+using ZeepkistNetworking;
 using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -31,16 +30,10 @@ public class StateAthResolvingDuplicateLevel(IStateMachine stateMachine) : AthSt
         // Get current level UID to check if the next candidate would just be the same level again
         string currentUid = AthStateMachine.Ctx.CurrentLevel?.LevelUid;
 
-        if (!PlaylistService.HasValidNextLevel(currentUid))
-        {
-            Logger.LogWarning("StateAthResolvingDuplicateLevel: No valid next level available (playlist exhausted or only the same level remains). Ending run.");
-            Messenger.Notify().LogCustomColors("RandomLevelService warning:<br>Could not fetch a new unique level.<br>Run will stop after this map.", Color.white, Color.red, 8f);
-            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
-            return;
-        }
 
-        await PlaylistService.QueueNextRandomLevel();
-        PlaylistService.SkipToLastLevel();
+        OnlineZeeplevel newLevel = await RandomLevelService.Instance.DrawRandomLevelAsync();
+        PlaylistService.AddLevelToCurrentPlaylist(newLevel);
+        PlaylistService.SkipToNextLevel();
     }
 
     public override void Exit() { }

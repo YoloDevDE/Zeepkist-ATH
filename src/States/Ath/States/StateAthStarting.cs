@@ -7,6 +7,7 @@ using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using TMPro;
 using ZeepkistClient;
+using ZeepkistNetworking;
 using ZeepSDK.Multiplayer;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -51,7 +52,8 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
             while (!playlistStarted && retryCount > 0)
                 try
                 {
-                    await PlaylistService.StartNewPlaylist();
+                    OnlineZeeplevel level = await RandomLevelService.Instance.DrawRandomLevelAsync();
+                    PlaylistService.StartNewPlaylist(level);
                     playlistStarted = true;
                 }
                 catch (Exception ex)
@@ -74,7 +76,7 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
             // Versuche zum nächsten Level zu springen, auch wenn die Playlist nicht gestartet wurde
             try
             {
-                PlaylistService.SkipLevel();
+                PlaylistService.SkipToFirstLevel();
             }
             catch (Exception ex)
             {

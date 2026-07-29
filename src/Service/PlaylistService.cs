@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using AuthorTimeHunting.Entities;
-using AuthorTimeHunting.Util;
-using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Chat;
@@ -12,169 +9,186 @@ using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.Service;
 
-public class PlaylistExhaustedException : Exception
-{
-    public PlaylistExhaustedException() : base("All cached levels from the local playlist have been played.") { }
-}
-
 public class PlaylistService
 {
+    private static List<OnlineZeeplevel> CurrentLobbyPlaylist => ZeepkistNetwork.CurrentLobby.Playlist;
+    private static int CurrentPlaylistIndex => ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex;
+
+    // A Playlist cant be empty
+    public void StartNewPlaylist(OnlineZeeplevel initialLevel)
+    {
+        CurrentLobbyPlaylist.Clear();
+        CurrentLobbyPlaylist.Add(initialLevel);
+        QueueServerPlaylistUpdate();
+    }
+
+    public void AddLevelToCurrentPlaylist(OnlineZeeplevel level)
+    {
+        PlaylistItem playlistItem = new PlaylistItem(level.UID, level.WorkshopID, level.Name, level.Author);
+        MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
+        Logger.LogInfo($"PlaylistService: Added level '{level.Name}' (UID: {level.UID}) to playlist. Playlist count is now {CurrentLobbyPlaylist.Count}.");
+        QueueServerPlaylistUpdate();
+    }
+
+    public void ReplaceLevelInCurrentPlaylist(OnlineZeeplevel oldLevel, OnlineZeeplevel newLevel)
+    {
+        int index = CurrentLobbyPlaylist.FindIndex(old => old.UID == oldLevel.UID);
+
+        if (index == -1)
+        {
+            Logger.LogWarning($"PlaylistService: Could not find level with UID {oldLevel.UID} in playlist");
+            return;
+        }
+
+        CurrentLobbyPlaylist[index] = newLevel;
+        Logger.LogInfo($"PlaylistService: Replaced level '{oldLevel.Name}' with '{newLevel.Name}' at index {index}");
+        QueueServerPlaylistUpdate();
+    }
+
+    #region Constructor
+
     private PlaylistService() { }
-
     public static PlaylistService Instance { get; } = new PlaylistService();
-    public OnlineZeeplevel CurrentBrokenZeeplevel { get; set; }
 
-    private List<OnlineZeeplevel> CachedOnlineZeeplevels { get; set; } = new List<OnlineZeeplevel>();
+    #endregion
 
+    #region ServerPlaylistUpdateQueue
 
-    public OnlineZeeplevel GetCurrentZeepkistNetworkPlaylistLevel => ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
+    // A playlist can only be pushed to the server once every 5 seconds. To respect that limit
+    // without blocking callers, server updates are queued and processed asynchronously by a
+    // single background task that keeps a minimum interval between consecutive updates.
+    private static readonly TimeSpan MinUpdateInterval = TimeSpan.FromSeconds(5);
+
+    private readonly Queue<Action> _updateQueue = new Queue<Action>();
+    private readonly object _queueLock = new object();
+    private Task _processingTask;
+    private DateTime _lastUpdate = DateTime.MinValue;
 
     /// <summary>
-    ///     Checks (without consuming) whether there is a valid different level available to skip to.
-    ///     Pass the current level's UID to also exclude it from the candidates.
+    ///     Queues a server playlist update. Returns immediately; the update is applied
+    ///     asynchronously while respecting the 5 second rate limit. The returned task
+    ///     completes once the whole queue (including this update) has been processed,
+    ///     so callers may optionally await it before continuing.
     /// </summary>
-    public bool HasValidNextLevel(string currentLevelUid = null) => RandomLevelService.Instance.HasValidNextLevel(currentLevelUid);
-
-    private int CurrentPlaylistIndex() => Math.Max(0, CachedOnlineZeeplevels.Count - 2);
-
-    private int NextPlaylistIndex() => CachedOnlineZeeplevels.Count == 0 ? 0 : (CurrentPlaylistIndex() + 1) % CachedOnlineZeeplevels.Count;
+    private Task QueueServerPlaylistUpdate() => Enqueue(MultiplayerApi.UpdateServerPlaylist);
 
 
-    public async Task StartNewPlaylist()
+    private Task Enqueue(Action update)
     {
-        CachedOnlineZeeplevels = new List<OnlineZeeplevel>();
-        await QueueNextRandomLevel();
+        lock (_queueLock)
+        {
+            _updateQueue.Enqueue(update);
+            Logger.LogInfo($"PlaylistService: Enqueued server playlist update. Queue length is now {_updateQueue.Count}.");
+
+            if (_processingTask == null || _processingTask.IsCompleted)
+            {
+                Logger.LogInfo("PlaylistService: Starting queue processing task.");
+                _processingTask = Task.Run(ProcessQueueAsync);
+            }
+            else
+            {
+                Logger.LogInfo("PlaylistService: Queue processing task already running, update appended.");
+            }
+
+            return _processingTask;
+        }
     }
+
+    private async Task ProcessQueueAsync()
+    {
+        Logger.LogInfo("PlaylistService: Queue processing loop started.");
+
+        while (true)
+        {
+            Action update;
+
+            lock (_queueLock)
+            {
+                if (_updateQueue.Count == 0)
+                {
+                    Logger.LogInfo("PlaylistService: Queue empty, stopping processing loop.");
+                    _processingTask = null;
+                    return;
+                }
+
+                update = _updateQueue.Dequeue();
+                Logger.LogInfo($"PlaylistService: Dequeued update. {_updateQueue.Count} update(s) remaining in queue.");
+            }
+
+            TimeSpan sinceLastUpdate = DateTime.UtcNow - _lastUpdate;
+
+            if (sinceLastUpdate < MinUpdateInterval)
+            {
+                TimeSpan waitTime = MinUpdateInterval - sinceLastUpdate;
+                Logger.LogInfo($"PlaylistService: Rate limit active, waiting {waitTime.TotalSeconds:F1}s before applying update.");
+                await Task.Delay(waitTime);
+            }
+
+            try
+            {
+                Logger.LogInfo("PlaylistService: Applying server playlist update now.");
+                update();
+                Logger.LogInfo("PlaylistService: Server playlist update applied successfully.");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"PlaylistService: Server playlist update failed: {ex.Message}");
+            }
+
+            _lastUpdate = DateTime.UtcNow;
+        }
+    }
+
+    #endregion
+
+
+    #region SkipLevelCommands
 
     public void SkipLevel()
     {
-        ChatApi.SendMessage("/fs");
+        SkipCommand();
+    }
+
+    public void SkipToNextLevel()
+    {
+        SkipCommand("next");
+    }
+
+    public void SkipToPrevLevel()
+    {
+        SkipCommand("prev");
     }
 
     public void SkipToLastLevel()
     {
-        ChatApi.SendMessage($"/fs {ZeepkistNetwork.CurrentLobby.Playlist.Count - 1}");
+        SkipCommand(CurrentLobbyPlaylist.Count - 1);
     }
 
-    public async Task QueueNextRandomLevel()
+    public void SkipToFirstLevel()
     {
-        Logger.LogInfo("PlaylistService: Starting playlist population");
-
-        try
-        {
-            // Wait until the GameState is not 0
-            Logger.LogDebug("PlaylistService: Waiting for GameState to change from 0 before updating playlist");
-            await WaitUntilGameStateNotZero();
-            Logger.LogInfo($"PlaylistService: GameState is now {ZeepkistNetwork.CurrentLobby.GameState}, proceeding with playlist update");
-
-            // Log the current state of the playlist
-            Logger.LogDebug($"PlaylistService: Current playlist has {CachedOnlineZeeplevels.Count} levels before adding new level");
-
-            // Get a new random level and log details
-            LevelItem levelItem = RandomLevelService.Instance.GetRandomLevelItem();
-
-            if (levelItem == null)
-            {
-                Logger.LogWarning("PlaylistService: All cached levels have been played. Stopping the run.");
-                throw new PlaylistExhaustedException();
-            }
-
-            Logger.LogInfo($"PlaylistService: Adding new level to playlist: '{levelItem.Name}' (UID: {levelItem.FileUid})");
-
-            // Convert to OnlineZeepLevel and add to cache
-            OnlineZeeplevel onlineLevel = levelItem.ToOnlineZeepLevel();
-            CachedOnlineZeeplevels.Add(onlineLevel);
-            Logger.LogDebug($"PlaylistService: Successfully added level to cached playlist at index {CachedOnlineZeeplevels.Count - 1}");
-
-            // Update the current and next playlist indices
-            int currentIndex = CurrentPlaylistIndex();
-            int nextIndex = NextPlaylistIndex();
-            Logger.LogDebug($"PlaylistService: Setting playlist indices - Current: {currentIndex}, Next: {nextIndex}");
-
-            ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = currentIndex;
-            ZeepkistNetwork.CurrentLobby.NextPlaylistIndex = nextIndex;
-            ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
-
-            // Update the playlist in the lobby
-            Logger.LogDebug($"PlaylistService: Updating lobby playlist with {CachedOnlineZeeplevels.Count} levels");
-            ZeepkistNetwork.CurrentLobby.Playlist.Clear();
-            ZeepkistNetwork.CurrentLobby.Playlist.AddRange(CachedOnlineZeeplevels);
-
-            // Apply censoring to the last level if needed
-            Logger.LogDebug("PlaylistService: Applying censoring to the last level in playlist");
-            ZeepkistNetwork.CurrentLobby.Playlist[^1] = GetCensoredLevel(CachedOnlineZeeplevels[^1]);
-
-            // Update the server playlist
-            Logger.LogInfo("PlaylistService: Sending updated playlist to server");
-
-            if (CachedOnlineZeeplevels.Count > 0)
-            {
-                MultiplayerApi.UpdateServerPlaylist();
-            }
-
-            Logger.LogInfo($"PlaylistService: Playlist population completed successfully. Playlist now contains {CachedOnlineZeeplevels.Count} levels");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"PlaylistService: Error during playlist population: {ex.Message}\nStack trace: {ex.StackTrace}");
-            Messenger.Notify().LogCustomColors("RandomLevelService warning:<br>Could not fetch a new unique level.<br>Run will stop after this map.", Color.white, Color.red, 8f);
-        }
+        SkipCommand(0);
     }
 
-    public async Task ReplaceBrokenLevel()
+    public void RestartCurrentLevel()
     {
-        try
-        {
-            Logger.LogInfo("PlaylistService: Attempting to remove last level from playlist");
-
-            if (CachedOnlineZeeplevels == null || CachedOnlineZeeplevels.Count == 0)
-            {
-                Logger.LogInfo("PlaylistService: Cannot remove level - playlist is empty");
-                return;
-            }
-
-            CurrentBrokenZeeplevel = ZeepkistNetwork.CurrentLobby.Playlist[ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex];
-            Logger.LogDebug($"PlaylistService: Removing level at index {CachedOnlineZeeplevels.Count - 1}");
-            CachedOnlineZeeplevels.RemoveAt(CachedOnlineZeeplevels.Count - 1);
-            Logger.LogInfo($"PlaylistService: Successfully removed level. Playlist now contains {CachedOnlineZeeplevels.Count} levels");
-
-            await QueueNextRandomLevel();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"PlaylistService: Error removing last level: {ex.Message}");
-            throw;
-        }
+        SkipCommand("restart");
     }
 
-
-    private OnlineZeeplevel GetCensoredLevel(OnlineZeeplevel onlineZeeplevel)
+    private static void SkipCommand(int command)
     {
-        OnlineZeeplevel censoredLevel = new OnlineZeeplevel
-        {
-            UID = onlineZeeplevel.UID, WorkshopID = onlineZeeplevel.WorkshopID, Name = "???", Author = "???", played = onlineZeeplevel.played
-        };
-        return censoredLevel;
+        ChatApi.SendMessage($"/fs {command}");
     }
 
-    private async Task WaitUntilGameStateNotZero()
+    private static void SkipCommand(string command = null)
     {
-        Logger.LogDebug($"PlaylistService: Current GameState is {ZeepkistNetwork.CurrentLobby.GameState}");
-        int checkCount = 0;
-
-        do
+        if (command == null)
         {
-            checkCount++;
+            ChatApi.SendMessage("/fs");
+            return;
+        }
 
-            if (checkCount % 10 == 0) // Log every 10 checks (roughly every 1 second)
-            {
-                Logger.LogDebug($"PlaylistService: Still waiting for GameState to change from 0 (Current Gamestate: {ZeepkistNetwork.CurrentLobby.GameState}) (waited {checkCount / 10} seconds)");
-            }
-
-            await Task.Delay(100); // Check every 100ms to be more responsive
-        } while (ZeepkistNetwork.CurrentLobby.GameState != 0);
-
-        Logger.LogInfo($"PlaylistService: GameState changed to {ZeepkistNetwork.CurrentLobby.GameState} after {checkCount} checks");
-        await Task.Delay(500); // Additional delay to ensure stability after state change
+        ChatApi.SendMessage($"/fs {command}");
     }
+
+    #endregion
 }

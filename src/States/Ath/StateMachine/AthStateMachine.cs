@@ -3,36 +3,48 @@ using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
 using Crosstales;
+using UnityEngine;
 using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
 
-public class AthStateMachine : IStateMachine
+public class AthStateMachine : MonoBehaviour, IStateMachine
 {
-    private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
+    private float _accumulatedDeltaTime;
     private bool _eventsSubscribed;
     private string _lastServerMessage;
     private DateTime _lastServerMessageTime = DateTime.MinValue;
     private bool _timerStarted;
 
-    public AthStateMachine()
+    public AthCtx Ctx { get; set; }
+
+    private void Awake()
     {
         Ctx = new AthCtx();
-        Timer = new AthTimer();
         InitialState = new StateAthStarting(this);
         FinalState = new StateAthStopping(this);
         _eventsSubscribed = false;
         _timerStarted = false;
+        _accumulatedDeltaTime = 0f;
     }
 
-    private AthTimer Timer { get; }
-    public AthCtx Ctx { get; set; }
+    private void Update()
+    {
+        if (!_timerStarted)
+        {
+            return;
+        }
+
+        _accumulatedDeltaTime += Time.deltaTime;
+        OnAthTimerTick();
+    }
 
 
     public IState CurrentState { get; set; }
-    public IState InitialState { get; }
-    public IState FinalState { get; }
+    public IState InitialState { get; private set; }
+    public IState FinalState { get; private set; }
     public event Action StateMachineFinished;
 
     public void InvokeFinish()
@@ -135,7 +147,6 @@ public class AthStateMachine : IStateMachine
             return;
         }
 
-        Timer.Tick += OnAthTimerTick;
         RacingApi.RoundStarted += OnRoundStarted;
         RacingApi.RoundEnded += OnRoundEnded;
         RacingApi.PlayerSpawned += OnPlayerSpawned;
@@ -153,7 +164,6 @@ public class AthStateMachine : IStateMachine
             return;
         }
 
-        Timer.Tick -= OnAthTimerTick;
         RacingApi.RoundStarted -= OnRoundStarted;
         RacingApi.RoundEnded -= OnRoundEnded;
         RacingApi.PlayerSpawned -= OnPlayerSpawned;
@@ -171,7 +181,7 @@ public class AthStateMachine : IStateMachine
             return;
         }
 
-        Timer.Start();
+        _accumulatedDeltaTime = 0f;
         SubscribeEvents();
         _timerStarted = true;
     }
@@ -183,9 +193,18 @@ public class AthStateMachine : IStateMachine
             return;
         }
 
-        Timer.Stop();
-
         UnsubscribeEvents();
+        _accumulatedDeltaTime = 0f;
         _timerStarted = false;
+    }
+
+    public void Dispose()
+    {
+        StopTimer();
+
+        if (gameObject != null)
+        {
+            Destroy(gameObject);
+        }
     }
 }

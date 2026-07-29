@@ -13,7 +13,6 @@ namespace AuthorTimeHunting.Service;
 public class GraphQLService
 {
     // The singleton instance
-    private static readonly Lazy<GraphQLService> _instance = new Lazy<GraphQLService>(() => new GraphQLService());
 
     private GraphQLHttpClient _graphQLClient;
 
@@ -24,31 +23,35 @@ public class GraphQLService
     }
 
     // Public method to get the singleton instance
-    public static GraphQLService Instance => _instance.Value;
+    public static GraphQLService Instance { get; } = new GraphQLService();
+
 
     private void InitializeGraphQLClient()
     {
+        string graphQlUrl = Plugin.Instance.MyConfig.GraphQlUrl.Value;
+        Logger.LogInfo($"Initializing GraphQL client at '{graphQlUrl}'");
+
         if (_graphQLClient == null)
         {
-            _graphQLClient = new GraphQLHttpClient("https://graphql.zeepki.st/", new NewtonsoftJsonSerializer());
+            _graphQLClient = new GraphQLHttpClient(graphQlUrl, new NewtonsoftJsonSerializer());
             Logger.LogInfo("GraphQL client initialized.");
         }
     }
 
 
     // Method to get a random level
-    public async Task<List<LevelItem>> GetRandomLevelAsync(int amount = 2, int maxAuthorTime = 180)
+    public async Task<List<LevelItem>> GetRandomLevelAsync(int amount = 100, int maxAuthorTime = 180)
     {
         try
         {
+            Logger.LogInfo($"Fetching {amount} random levels with max author time of {maxAuthorTime} seconds.");
             GraphQLRequest query = new GraphQLRequest
             {
                 Query = $$$"""
                            query GetRandomLevel {
                              zRtm(
                                pMaxAuthorTime: {{{maxAuthorTime}}}
-                               pMinFinishes: 1
-                               filter: {deleted: {equalTo: false}}
+                               filter: {deleted: {equalTo: false}, amountFinishes: {notEqualTo: 0}}
                                first: {{{amount}}}
                              ) {
                                nodes {
@@ -64,27 +67,55 @@ public class GraphQLService
                            }
                            """
             };
+            GraphQLResponse<Root> response = await _graphQLClient.SendQueryAsync<Root>(query).ConfigureAwait(false);
+            Logger.LogInfo($"Fetched {amount} random levels with max author time of {maxAuthorTime} seconds.");
 
-            GraphQLResponse<Root> response = await _graphQLClient.SendQueryAsync<Root>(query);
+            if (response.Errors != null && response.Errors.Any())
+            {
+                Logger.LogError($"GraphQL response contains errors: {string.Join(", ", response.Errors.Select(e => e.Message))}");
+                return null;
+            }
 
-            if (response?.Data?.ZRtm?.Nodes?.Count == 0)
+            if (response.Data?.ZRtm?.Nodes == null)
+            {
+                Logger.LogError("Invalid response structure: ZRtm or Nodes is null");
+                return null;
+            }
+
+            if (response.Data.ZRtm.Nodes.Count == 0)
             {
                 Logger.LogError("No level data found in response");
                 return null;
             }
 
-            if (!response?.Data?.ZRtm?.Nodes?.Any() ?? true)
-            {
-                Logger.LogError("Invalid response structure");
-                return null;
-            }
+            // Convert all Nodes to LevelItems safely
+            List<LevelItem> levelItems = new List<LevelItem>();
 
-            // Convert all Nodes to LevelItems
-            List<LevelItem> levelItems = response.Data.ZRtm.Nodes.Select(node => new LevelItem
+            foreach (Node node in response.Data.ZRtm.Nodes)
             {
-                Name = node.Name, ValidationTimeAuthor = node.ValidationTimeAuthor, ValidationTimeGold = node.ValidationTimeGold, FileAuthor = node.FileAuthor, FileUid = node.FileUid, AuthorId = ulong.Parse(node.AuthorId)
-                , WorkshopId = ulong.Parse(node.WorkshopId)
-            }).ToList();
+                if (node == null)
+                {
+                    continue;
+                }
+
+                ulong authorId = 0;
+                ulong workshopId = 0;
+
+                if (!string.IsNullOrEmpty(node.AuthorId))
+                {
+                    ulong.TryParse(node.AuthorId, out authorId);
+                }
+
+                if (!string.IsNullOrEmpty(node.WorkshopId))
+                {
+                    ulong.TryParse(node.WorkshopId, out workshopId);
+                }
+
+                levelItems.Add(new LevelItem
+                {
+                    Name = node.Name, ValidationTimeAuthor = node.ValidationTimeAuthor, ValidationTimeGold = node.ValidationTimeGold, FileAuthor = node.FileAuthor, FileUid = node.FileUid, AuthorId = authorId, WorkshopId = workshopId
+                });
+            }
 
             Logger.LogInfo($"Successfully retrieved {levelItems.Count} random levels");
             return levelItems;

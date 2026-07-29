@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
+using ZeepkistNetworking;
 using ZeepSDK.Level;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -18,19 +20,10 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
     {
         try
         {
-            if (Plugin.Instance.MyConfig.RandomPlaylist.Value)
-            {
-                await PlaylistService.QueueNextRandomLevel();
-            }
+            Logger.LogInfo($"Plugin.Instance.MyConfig.RandomPlaylist.Value : {Plugin.Instance.MyConfig.RandomPlaylist.Value}");
 
-            AthStateMachine.Ctx.ConsecutiveDuplicateCount = 0;
             AthStateMachine.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
             AthStateMachine.SetServerMessage(true);
-        }
-        catch (PlaylistExhaustedException)
-        {
-            Logger.LogInfo("StateAthStartLevelFirstTime: All local playlist levels have been played. Stopping the run.");
-            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
         }
         catch (Exception e)
         {
@@ -39,12 +32,24 @@ public class StateAthStartLevelFirstTime(IStateMachine stateMachine) : AthState
         }
     }
 
+    private async Task AddLevelAsync()
+    {
+        if (Plugin.Instance.MyConfig.RandomPlaylist.Value)
+        {
+            Logger.LogInfo("Adding Random Level");
+            OnlineZeeplevel level = await RandomLevelService.Instance.DrawRandomLevelAsync();
+            PlaylistService.AddLevelToCurrentPlaylist(level);
+        }
+    }
+
+
     public override void Exit() { }
 
     public override void OnAthTimerTick() { }
 
     public override void OnRoundStarted()
     {
+        _ = AddLevelAsync();
         MedalTextHelper.ClearMedalText();
         StateMachine.TransitionTo(new StateAthOnARun(StateMachine));
     }

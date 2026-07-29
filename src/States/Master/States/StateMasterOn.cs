@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
+using UnityEngine;
 using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
@@ -13,7 +14,7 @@ public class StateMasterOn : IState
     public StateMasterOn(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
-        SubStateMachine = new AthStateMachine();
+        SubStateMachine = CreateAthStateMachine();
     }
 
     public static bool IsActive { get; private set; }
@@ -22,6 +23,14 @@ public class StateMasterOn : IState
     public IStateMachine SubStateMachine { get; }
     public IStateMachine StateMachine { get; }
 
+
+    /***
+    MasterStateOff -- Mod is not running rn.
+    MasterStateOff -> MasterStateOn
+    MasterStateOn -> MasterStateOff
+    MasterStateOn -- Mod is running rn.
+
+    ***/
     public void Enter()
     {
         IsActive = true;
@@ -45,6 +54,7 @@ public class StateMasterOn : IState
         IsActive = false;
         Messenger.Notify().Log("stopped");
         AthStateMachine.StopTimer();
+        AthStateMachine.Dispose();
         CommandStop.CommandTrigger -= Stop;
         MultiplayerApi.DisconnectedFromGame -= Stop;
         CommandStart.CommandTrigger -= Start;
@@ -52,6 +62,14 @@ public class StateMasterOn : IState
         RacingApi.RoundStarted -= OnRoundStarted;
         CommandSkipBroken.CommandTrigger -= SkipBrokenLevel;
         SubStateMachine.StateMachineFinished -= Stop;
+    }
+
+    private static AthStateMachine CreateAthStateMachine()
+    {
+        GameObject stateMachineObject = new GameObject("AthStateMachine");
+        stateMachineObject.hideFlags = HideFlags.HideAndDontSave;
+        Object.DontDestroyOnLoad(stateMachineObject);
+        return stateMachineObject.AddComponent<AthStateMachine>();
     }
 
     private void OnRoundStarted()

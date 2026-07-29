@@ -1,55 +1,114 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Util;
+using ZeepkistNetworking;
 
 namespace AuthorTimeHunting.Service;
 
 public class RandomLevelService
 {
-    private static readonly Lazy<RandomLevelService> _lazyInstance = new Lazy<RandomLevelService>(() => new RandomLevelService());
+    private const int LevelBatchSize = 100;
 
     private RandomLevelService() { }
+    public static RandomLevelService Instance { get; } = new RandomLevelService();
 
-    public static RandomLevelService Instance => _lazyInstance.Value;
+    private HashSet<string> FetchedLevelUids { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-    private List<string> FetchedLevelUids { get; } = new List<string>();
+    private List<LevelItem> CachedLevels { get; } = new List<LevelItem>();
+    private List<LevelItem> PlayedLevels { get; } = new List<LevelItem>();
 
     /// <summary>
-    ///     Peeks at whether a valid next level exists (does not consume/mark it as fetched).
-    ///     Optionally also excludes a specific UID (e.g. the current level that would be a duplicate).
+    ///     Draws a random level from the cached playlist and returns it as an
+    ///     <see cref="OnlineZeeplevel" />. Acts as a black box: if the cached list is
+    ///     currently empty it fetches until levels are available, then always takes the
+    ///     first entry. On success the level is removed from the cached list and moved
+    ///     into the played list.
     /// </summary>
-    public bool HasValidNextLevel(string excludedUid = null)
+    public async Task<OnlineZeeplevel> DrawRandomLevelAsync()
     {
-        List<string> excluded = new List<string>(FetchedLevelUids);
-
-        if (!string.IsNullOrEmpty(excludedUid) && !excluded.Contains(excludedUid))
+        if (CachedLevels.Count == 0)
         {
-            excluded.Add(excludedUid);
+            List<LevelItem> fetched = await GetRandomLevelsAsync().ConfigureAwait(false);
+            CachedLevels.AddRange(fetched);
         }
 
-        LevelItem peek = LocalLevelCacheService.Instance.GetRandomLevelItem(excluded);
-        return peek != null;
-    }
-
-    public LevelItem GetRandomLevelItem()
-    {
-        LevelItem levelItem = LocalLevelCacheService.Instance.GetRandomLevelItem(FetchedLevelUids);
-
-        if (levelItem == null)
+        if (CachedLevels.Count == 0)
         {
-            Logger.LogError("RandomLevelService: Could not get a random level from local cache.");
-            return null;
+            throw new InvalidOperationException("RandomLevelService: No cached levels available after fetching.");
         }
 
-        FetchedLevelUids.Add(levelItem.FileUid);
-        Logger.LogInfo($"RandomLevelService: Selected level '{levelItem.Name}' (UID: {levelItem.FileUid})");
-        return levelItem;
+        LevelItem level = CachedLevels[0];
+        CachedLevels.RemoveAt(0);
+        PlayedLevels.Add(level);
+
+        Logger.LogInfo($"RandomLevelService: Drew level '{level.Name}' (UID: {level.FileUid}). Cached remaining: {CachedLevels.Count}, played: {PlayedLevels.Count}.");
+        return level.ToOnlineZeepLevel();
     }
 
-    public void Reset()
+    /// <summary>
+    ///     Fetches a batch of random levels, excluding levels that were already fetched during
+    ///     this program run. Tries GraphQL first and falls back to local playlists if GraphQL is
+    ///     unreachable or returns nothing. Throws if no levels can be provided at all.
+    ///     The tracking is in-memory only (not persistent).
+    /// </summary>
+    public async Task<List<LevelItem>> GetRandomLevelsAsync()
     {
-        FetchedLevelUids.Clear();
-        Logger.LogInfo("RandomLevelService: Session reset, played level list cleared.");
+        List<LevelItem> newLevels = await TryFetchFromGraphQlAsync().ConfigureAwait(false);
+
+        if (newLevels.Count == 0)
+        {
+            Logger.LogWarning("RandomLevelService: GraphQL unavailable or empty. Falling back to local playlists.");
+            newLevels = FetchFromLocalPlaylists();
+        }
+
+        if (newLevels.Count == 0)
+        {
+            throw new InvalidOperationException("RandomLevelService: No levels available from GraphQL or local playlists.");
+        }
+
+        Track(newLevels);
+        return newLevels;
+    }
+
+    private async Task<List<LevelItem>> TryFetchFromGraphQlAsync()
+    {
+        try
+        {
+            List<LevelItem> levels = await GraphQLService.Instance.GetRandomLevelAsync().ConfigureAwait(false);
+
+            if (levels == null || levels.Count == 0)
+            {
+                Logger.LogWarning("RandomLevelService: GraphQL returned no levels.");
+                return new List<LevelItem>();
+            }
+
+            List<LevelItem> newLevels = levels.Where(level => !string.IsNullOrEmpty(level?.FileUid) && !FetchedLevelUids.Contains(level.FileUid)).ToList();
+
+            Logger.LogInfo($"RandomLevelService: Fetched {newLevels.Count} new levels from GraphQL.");
+            return newLevels;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"RandomLevelService: GraphQL fetch failed: {ex.Message}");
+            return new List<LevelItem>();
+        }
+    }
+
+    private List<LevelItem> FetchFromLocalPlaylists()
+    {
+        List<LevelItem> localLevels = LocalLevelCacheService.Instance.GetRandomLevelItems(LevelBatchSize, FetchedLevelUids);
+        Logger.LogInfo($"RandomLevelService: Fetched {localLevels.Count} new levels from local playlists.");
+        return localLevels;
+    }
+
+    private void Track(IEnumerable<LevelItem> levels)
+    {
+        foreach (LevelItem level in levels)
+        {
+            FetchedLevelUids.Add(level.FileUid);
+        }
     }
 }

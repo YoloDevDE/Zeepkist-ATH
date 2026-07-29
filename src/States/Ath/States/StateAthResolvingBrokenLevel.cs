@@ -2,8 +2,6 @@
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.Util;
-using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using Logger = AuthorTimeHunting.Util.Logger;
@@ -33,16 +31,10 @@ public class StateAthResolvingBrokenLevel(IStateMachine stateMachine) : AthState
         // Check upfront whether there is any valid level to skip to
         string currentUid = AthStateMachine.Ctx.CurrentLevel?.LevelUid;
 
-        if (!PlaylistService.HasValidNextLevel(currentUid))
-        {
-            Logger.LogWarning("StateAthResolvingBrokenLevel: No valid next level available (playlist exhausted). Ending run.");
-            Messenger.Notify().LogCustomColors("RandomLevelService warning:<br>Could not fetch a new unique level.<br>Run will stop after this map.", Color.white, Color.red, 8f);
-            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
-            return;
-        }
 
-        await PlaylistService.QueueNextRandomLevel();
-        PlaylistService.SkipToLastLevel();
+        OnlineZeeplevel newLevel = await RandomLevelService.Instance.DrawRandomLevelAsync();
+        PlaylistService.ReplaceLevelInCurrentPlaylist(new OnlineZeeplevel { UID = currentUid }, newLevel);
+        PlaylistService.RestartCurrentLevel();
     }
 
 

@@ -13,13 +13,10 @@ namespace AuthorTimeHunting.Service;
 
 public class LocalLevelCacheService
 {
-    private static readonly Lazy<LocalLevelCacheService> _lazyInstance = new Lazy<LocalLevelCacheService>(() => new LocalLevelCacheService());
-
     private bool _initialized;
-
     private LocalLevelCacheService() { }
+    public static LocalLevelCacheService Instance { get; } = new LocalLevelCacheService();
 
-    public static LocalLevelCacheService Instance => _lazyInstance.Value;
 
     private List<LevelItem> CachedLevelItems { get; } = new List<LevelItem>();
 
@@ -204,6 +201,32 @@ public class LocalLevelCacheService
 
         int index = Random.Range(0, available.Count);
         return available[index];
+    }
+
+    /// <summary>
+    ///     Returns a shuffled batch of cached levels, excluding the given UIDs.
+    /// </summary>
+    public List<LevelItem> GetRandomLevelItems(int count, IEnumerable<string> excludedUids = null)
+    {
+        EnsureInitialized();
+
+        if (CachedLevelItems.Count == 0)
+        {
+            Logger.LogError("LocalLevelCacheService: No levels in cache.");
+            return new List<LevelItem>();
+        }
+
+        HashSet<string> excluded = excludedUids != null ? new HashSet<string>(excludedUids, StringComparer.OrdinalIgnoreCase) : new HashSet<string>();
+
+        List<LevelItem> available = CachedLevelItems.Where(l => !excluded.Contains(l.FileUid)).ToList();
+
+        if (available.Count == 0)
+        {
+            Logger.LogWarning("LocalLevelCacheService: All levels have been played. Playlist exhausted.");
+            return new List<LevelItem>();
+        }
+
+        return available.OrderBy(_ => Random.value).Take(count).ToList();
     }
 
     private static void TryNotifySuccess(string message)
