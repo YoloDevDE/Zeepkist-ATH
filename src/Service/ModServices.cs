@@ -25,6 +25,7 @@ public class ModServices
 
 	public LocalLevelCacheService LocalLevelCache { get; } = new();
 	public GraphQLService GraphQL { get; } = new();
+
 	/// <summary>Pre-fetches workshop levels so the podium does not wait for Steam.</summary>
 	public WorkshopDownloadService WorkshopDownloads { get; } = new();
 

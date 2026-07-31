@@ -101,7 +101,8 @@ RandomLevelService.DrawRandomLevelAsync()
 └─ 3. sonst: throw InvalidOperationException
 ```
 
-`RandomLevelService` existiert **pro Run**; `FetchedLevelUids` dedupliziert damit innerhalb eines Runs, nicht darüber hinaus.
+`RandomLevelService` existiert **pro Run**; `FetchedLevelUids` dedupliziert damit innerhalb eines Runs, nicht darüber
+hinaus.
 
 ### 2.5 Playlist-Manipulation
 
@@ -274,18 +275,18 @@ Frame liest.
 Nach einem Blick in [Zeepkist.GTR.Mod](https://github.com/donderjoekel/Zeepkist.GTR.Mod)
 (gleicher Autor wie ZeepSDK) übernommene Muster:
 
-| Commit | Was |
-|---|---|
-| `122a3bf` | Event-Dispatch isoliert Exceptions pro State (GTRs `PlayerLoopService`) |
-| `caf3fbe` | `IState`/`IStateMachine` → `StateBase`/`StateMachineBase`, alle Hooks virtuell |
+| Commit    | Was                                                                               |
+|-----------|-----------------------------------------------------------------------------------|
+| `122a3bf` | Event-Dispatch isoliert Exceptions pro State (GTRs `PlayerLoopService`)           |
+| `caf3fbe` | `IState`/`IStateMachine` → `StateBase`/`StateMachineBase`, alle Hooks virtuell    |
 | `8b29cc6` | Service-Singletons → konstruierte Instanzen, `ModServices` als Kompositionswurzel |
-| `a9d67b3` | `GameStateObserver`, Run-Start wartet auf ein laufendes Rennen |
-| `3eb62a5` | Testprojekt, 14 Tests auf `RunStatistics` |
-| `5ede3f2` | M10: Photo Mode startet die Uhr nicht mehr außerhalb eines Rennens |
+| `a9d67b3` | `GameStateObserver`, Run-Start wartet auf ein laufendes Rennen                    |
+| `3eb62a5` | Testprojekt, 14 Tests auf `RunStatistics`                                         |
+| `5ede3f2` | M10: Photo Mode startet die Uhr nicht mehr außerhalb eines Rennens                |
 
 **Die Basisklasse ging nur, weil `AthStateMachine` keine `MonoBehaviour` mehr ist.**
-C# hat keine Mehrfachvererbung — genau deshalb lag die Transition-Logik ursprünglich
-in Default-Interface-Membern. Der Frame-Loop steckt jetzt in einer eingebetteten
+C# hat keine Mehrfachvererbung — genau deshalb lag die Transition-Logik ursprünglich in Default-Interface-Membern. Der
+Frame-Loop steckt jetzt in einer eingebetteten
 `AthLoopBehaviour`, wie GTRs `PlayerLoopService` es macht.
 
 **Lebensdauern statt Singletons.** `LocalLevelCache`, `GraphQL` und `Playlist`
@@ -293,22 +294,20 @@ gehören der Session, `RandomLevelService` gehört einem Run. Damit ist `Reset()
 entfallen — es war das Pflaster auf genau dieser Verwechslung (H8).
 
 **Lobby-State, verifiziert am decompilten Client:** `0 = Racing`, `1 = Ending`,
-`2 = Podium`. **Kein Wert darüber.** Achtung: `GameState` ist ein nacktes `int`,
-dessen Standardwert 0 ist — eine Lobby, die ihr Paket noch nicht bekommen hat,
-meldet also „Racing", während die Map lädt. Das Spiel koppelt deshalb selbst mit
+`2 = Podium`. **Kein Wert darüber.** Achtung: `GameState` ist ein nacktes `int`, dessen Standardwert 0 ist — eine Lobby,
+die ihr Paket noch nicht bekommen hat, meldet also „Racing", während die Map lädt. Das Spiel koppelt deshalb selbst mit
 `GameMaster.loadNewLevel` (`NetworkedZeepkistGhost.cs:1049`). `GameStateObserver.IsRacing`
 prüft beides.
 
-**Nicht übernommen:** GTRs Generic Host mit DI-Container. 210 Dateien und 60+ Services
-tragen das; bei vier Services wäre es Gerüst ohne Gebäude. Ebenso wenig portiert:
+**Nicht übernommen:** GTRs Generic Host mit DI-Container. 210 Dateien und 60+ Services tragen das; bei vier Services
+wäre es Gerüst ohne Gebäude. Ebenso wenig portiert:
 die DSL vom `dev`-Branch (`GameModeConfigurator`) — das wäre ein Rewrite.
 
-**Testlücke, bewusst:** alles was an `Level.GetPlayDuration()` hängt, ist nur in den
-Leerfällen getestet. Spielzeit misst gegen `DateTime.Now`, ohne Clock-Seam lässt sich
-kein Level mit sechs Minuten Spielzeit fabrizieren.
+**Testlücke, bewusst:** alles was an `Level.GetPlayDuration()` hängt, ist nur in den Leerfällen getestet. Spielzeit
+misst gegen `DateTime.Now`, ohne Clock-Seam lässt sich kein Level mit sechs Minuten Spielzeit fabrizieren.
 
-**Offen:** M4 (Hex-Strings), M5, M9, M11, B6 (21 Branches), `.editorconfig`,
-Clock-Seam auf `Level`. Und: **nichts davon ist im laufenden Spiel getestet.**
+**Offen:** M4 (Hex-Strings), M5, M9, M11, B6 (21 Branches), `.editorconfig`, Clock-Seam auf `Level`. Und: **nichts davon
+ist im laufenden Spiel getestet.**
 
 ---
 

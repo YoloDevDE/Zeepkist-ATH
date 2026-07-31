@@ -143,7 +143,8 @@ public partial class WorkshopDownloadService
 		catch (Exception e)
 		{
 			_requested.Remove(workshopId);
-			Logger.LogError($"WorkshopDownloadService: Pre-download of '{levelName}' ({workshopId}) failed: {e.Message}");
+			Logger.LogError(
+				$"WorkshopDownloadService: Pre-download of '{levelName}' ({workshopId}) failed: {e.Message}");
 		}
 	}
 

@@ -1,10 +1,10 @@
 # docs/
 
-| Pfad | Inhalt |
-|---|---|
-| `IST-ZUSTAND.md` | Bestandsaufnahme 2026-07-30: was der Mod tut, Architektur, Befundliste |
-| `diagrams/*.puml` | 9 PlantUML-Quellen (siehe Tabelle in `IST-ZUSTAND.md` §3) |
-| `rendered/*.svg` | Generiert — nicht per Hand editieren |
+| Pfad              | Inhalt                                                                 |
+|-------------------|------------------------------------------------------------------------|
+| `IST-ZUSTAND.md`  | Bestandsaufnahme 2026-07-30: was der Mod tut, Architektur, Befundliste |
+| `diagrams/*.puml` | 9 PlantUML-Quellen (siehe Tabelle in `IST-ZUSTAND.md` §3)              |
+| `rendered/*.svg`  | Generiert — nicht per Hand editieren                                   |
 
 ## Diagramme neu rendern
 
@@ -18,5 +18,5 @@ cd docs/diagrams
 java -jar "$JAR" -tsvg -o ../rendered *.puml
 ```
 
-`-tpng` statt `-tsvg` für PNG. Syntaxfehler landen als Fehlertext *im* Bild —
-nach `grep -il "syntax error" ../rendered/*.svg` prüfen.
+`-tpng` statt `-tsvg` für PNG. Syntaxfehler landen als Fehlertext *im* Bild — nach
+`grep -il "syntax error" ../rendered/*.svg` prüfen.
