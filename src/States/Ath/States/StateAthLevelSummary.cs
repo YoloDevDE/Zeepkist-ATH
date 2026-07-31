@@ -12,7 +12,7 @@ public class StateAthLevelSummary(IStateMachine stateMachine) : AthState
 
     public override void Execute()
     {
-        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageLevelSummary());
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.LevelSummary());
         StateMachine.TransitionTo(new StateAthLoadingLevel(StateMachine));
     }
 

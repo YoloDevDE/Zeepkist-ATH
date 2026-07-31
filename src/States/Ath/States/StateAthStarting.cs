@@ -31,7 +31,7 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
         try
         {
             // Sende Startmeldung
-            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.Starting());
 
             // ATH owns the clock - the lobby round timer must not cut a level short.
             // This used to sit in the non-RTM branch only, so in the default (RTM)

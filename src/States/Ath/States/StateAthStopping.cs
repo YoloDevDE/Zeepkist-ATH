@@ -21,7 +21,7 @@ public class StateAthStopping(IStateMachine stateMachine) : AthState
             MedalTextHelper.ClearMedalText();
             // Null when the run is stopped before the first level was ever loaded.
             AthStateMachine.Ctx.CurrentLevel?.Stop();
-            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageEnd());
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.End());
             AthStateMachine.SetServerMessage(true);
             SavePlaylistIfConfigured();
         }

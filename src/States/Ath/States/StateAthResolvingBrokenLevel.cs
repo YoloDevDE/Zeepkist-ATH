@@ -39,7 +39,7 @@ public class StateAthResolvingBrokenLevel(IStateMachine stateMachine) : AthState
 
         try
         {
-            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageBrokenLevel(brokenLevel));
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.BrokenLevel(brokenLevel));
         }
         catch (Exception ex)
         {

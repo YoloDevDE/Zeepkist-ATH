@@ -21,7 +21,7 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
     public override void Execute()
     {
         OnAthTimerTick();
-        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageOnARun());
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.OnARun());
     }
 
     public override void Exit()
@@ -67,11 +67,11 @@ public class StateAthOnARun(IStateMachine stateMachine) : AthState
         {
             Messenger.Notify().LogCustomColors("Gold medal claimed!<br>You can now skip without penalty", Color.black, new Color(1f, 0.84f, 0f), 5f);
             MedalTextHelper.SetMedalText("New Medal Claimed: Gold");
-            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageGoldMedalClaimed());
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.GoldMedalClaimed());
         }
 
         StateMachine.TransitionTo(new StateAthPausing(StateMachine));
-        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageCrossedFinishLine());
+        ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.CrossedFinishLine());
     }
 
     public override void OnRoundStarted()

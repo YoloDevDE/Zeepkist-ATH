@@ -42,7 +42,7 @@ public class StateAthWaitingForRespawn(IStateMachine stateMachine) : AthState
                 MedalTextHelper.SetMedalText("<b><#50E451>NEW</color></b> medal: <b><#fd51ff>AUTHOR</color></b><br><#A7A7A7>(respawn to skip)</color>");
             }
 
-            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageAuthorMedalClaimed());
+            ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.AuthorMedalClaimed());
             _hasShownAuthorMedal = true;
         }
 
