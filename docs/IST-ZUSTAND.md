@@ -2,12 +2,12 @@
 
 **Stand:** 2026-07-31 · **Branch:** `2.0.0` · **Version in csproj:** `2.0.0`
 **Build:** Debug und Release → 0 Errors, 0 Warnings (verifiziert)
-**Umfang:** 45 `.cs`-Dateien, 3.756 Zeilen in `src/`
-**Tests:** keine
+**Umfang:** 52 `.cs`-Dateien, 4.364 Zeilen in `src/`
+**Tests:** 14 (`dotnet test tests/AuthorTimeHunting.Tests`)
 
 > Die Bestandsaufnahme wurde am 2026-07-30 erstellt. Abschnitt 4 ist seitdem
-> abgearbeitet worden — siehe **4.5 Erledigt**. Die Abschnitte 1–3 und 5
-> beschreiben weiterhin den aktuellen Aufbau.
+> abgearbeitet worden — siehe **4.5 Erledigt** und **4.6 Umbau nach GTR-Vorbild**.
+> Abschnitt 2 ist auf dem Stand nach dem Umbau.
 
 ---
 
@@ -47,29 +47,35 @@ you"*.
 ### 2.1 Zwei verschachtelte State Machines
 
 ```
-MasterStateMachine  (plain class, Lebenszyklus des Mods)
-├── StateMasterOff  — wartet auf /ath start
+MasterStateMachine  (StateMachineBase, Lebenszyklus des Mods)
+├── StateMasterOff  — wartet auf /ath start, wartet ggf. auf ein laufendes Rennen
 └── StateMasterOn   — Mod läuft
-    └── AthStateMachine  (MonoBehaviour auf DontDestroyOnLoad-GameObject)
+    └── AthStateMachine  (StateMachineBase, pro Run neu)
+        └── AthLoopBehaviour  (MonoBehaviour, liefert nur den Frame-Tick)
         └── 12 States  — der eigentliche Run
 ```
 
-Die Transition-Logik liegt als **C#-8-Default-Interface-Member** in `IStateMachine`
-(`TransitionTo`, `StopGracefully`, `Init`) statt in einer Basisklasse. Ungewöhnlich, aber funktioniert — kostet
-allerdings die Möglichkeit, Felder zu halten, weshalb
-`CurrentState` als schreibbare Property im Interface steht.
+Transition-Logik in `StateMachineBase`, States erben von `StateBase`. Alle Lifecycle- und Event-Hooks sind **virtuell
+mit leerer Standardimplementierung** — ein State schreibt nur auf, was ihn angeht.
+
+`AthStateMachine` ist **keine** `MonoBehaviour`: sie braucht einen Frame-Tick *und* die Basisklasse, und C# hat keine
+Mehrfachvererbung. Der Tick kommt deshalb aus einer eingebetteten `AthLoopBehaviour` (Muster von GTRs
+`PlayerLoopService`).
 
 ### 2.2 Event-Verteilung
 
 `AthStateMachine` abonniert `RacingApi` + `PhotoModeApi` **einmal** und leitet an
-`CurrentState as AthState` weiter. Sauber — Zustände registrieren keine eigenen Handler und können daher keine Leaks
-hinterlassen:
+`CurrentState as AthState` weiter. Zustände registrieren keine eigenen Handler und können daher keine Leaks
+hinterlassen. Jede Weiterleitung läuft durch `TryForward()`, das Exceptions des States abfängt — die Handler laufen in
+ZeepSDKs Event-Verteilung, an der auch andere Mods hängen. Der Tick zählt Fehlschläge und beendet den Run nach zehn in
+Folge:
 
 ```
 RacingApi.RoundStarted / RoundEnded / PlayerSpawned /
          CrossedFinishLine / LevelLoaded
 PhotoModeApi.PhotoModeEntered
-Update()  →  OnAthTimerTick()   (jeden Frame, nicht gethrottelt)
+AthLoopBehaviour.Update()  →  OnAthTimerTick()   (jeden Frame, nicht gethrottelt)
+GameStateObserver.Update()  →  IsRacing-Flanken (session-weit, auch wenn ATH aus ist)
 ```
 
 ### 2.3 Zeitmessung
@@ -95,12 +101,13 @@ RandomLevelService.DrawRandomLevelAsync()
 └─ 3. sonst: throw InvalidOperationException
 ```
 
-`FetchedLevelUids` dedupliziert über den ganzen Prozess-Lebenszyklus (in-memory).
+`RandomLevelService` existiert **pro Run**; `FetchedLevelUids` dedupliziert damit innerhalb eines Runs, nicht darüber hinaus.
 
 ### 2.5 Playlist-Manipulation
 
 `PlaylistService` mutiert `ZeepkistNetwork.CurrentLobby.Playlist` direkt und pusht über eine **Rate-Limit-Queue** (min.
-5 s Abstand, `Task.Run`-Worker) zum Server. Der Mod braucht daher **Host-Rechte** in der Lobby.
+5 s Abstand) zum Server. Die Queue ist asynchron, aber **nicht nebenläufig** — sie läuft auf Unitys Main-Thread, weil
+`MultiplayerApi.UpdateServerPlaylist` nur von dort aufgerufen werden darf. Der Mod braucht **Host-Rechte** in der Lobby.
 
 ### 2.6 Ausgabekanäle
 
