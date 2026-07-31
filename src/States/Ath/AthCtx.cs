@@ -12,19 +12,12 @@ namespace AuthorTimeHunting.States.Ath;
 public class AthCtx
 {
     // Constants
-    private const int DEFAULT_DURATION_IN_MILLIS = 60 * 15 * 1000; // 1 hour in seconds
-    private const int DEFAULT_PENALTY_TIME_IN_MILLIS = 60 * 5 * 1000; // 5 minutes in seconds
     private const int RETRIES = 3;
     private bool _previousTimeRunningLowState;
 
     public int Retries { get; set; } = RETRIES;
 
     public int ConsecutiveDuplicateCount { get; set; } = 0;
-
-    /// <summary>
-    ///     Initializes a new instance of AthCtx and starts fetching the first level
-    /// </summary>
-
 
     public int Duration => Plugin.Instance.MyConfig.Duration.Value * 1000;
 
@@ -57,28 +50,13 @@ public class AthCtx
         get { return Levels?.Count(level => level.Status == Level.LevelStatus.FAILED) ?? 0; }
     }
 
-    public int Skips
-    {
-        get { return Levels?.Count(level => level.Skipped) ?? 0; }
-    }
-
     public int AvaiableFreeSkips { get; set; } = 1;
 
     public int GetAccumulatedPenaltyTime() => PenaltyTimeInMilliseconds * Penalties;
 
-    public TimeSpan GetTotalLevelDuration()
-    {
-        return TimeSpan.FromMilliseconds(Levels.Sum(level => level.GetTotalDuration().TotalMilliseconds));
-    }
-
     public TimeSpan GetTotalLevelPlayDuration()
     {
         return TimeSpan.FromMilliseconds(Levels.Where(level => !level.LevelBroken).Sum(level => level.GetPlayDuration().TotalMilliseconds));
-    }
-
-    public TimeSpan GetTotalLevelPauseDuration()
-    {
-        return TimeSpan.FromMilliseconds(Levels.Sum(level => level.GetPauseDuration().TotalMilliseconds));
     }
 
     public TimeSpan GetRemainingTime() => TimeSpan.FromMilliseconds(Duration - (GetTotalLevelPlayDuration().TotalMilliseconds + GetAccumulatedPenaltyTime()));
