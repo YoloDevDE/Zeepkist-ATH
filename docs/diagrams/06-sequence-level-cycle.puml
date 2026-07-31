@@ -1,0 +1,88 @@
+@startuml 06-sequence-level-cycle
+title Sequenz — Level-Zyklus: laden, fahren, Medaille, Skip (IST)
+
+skinparam shadowing false
+autonumber "<b>[00]"
+
+actor Player
+participant "RacingApi\n(ZeepSDK)" as Racing
+participant "AthStateMachine" as ASM
+participant "AthCtx" as Ctx
+participant "Level" as Lvl
+participant "MedalTextHelper" as MTH
+participant "PlaylistService" as PS
+participant "ChatMessageService" as CMS
+
+== Level laden & validieren ==
+Racing -> ASM : LevelLoaded
+ASM -> ASM : StateAthLoadingLevel.OnLevelLoaded()
+ASM -> Ctx : IsTimeOver()?
+alt Zeit vorbei
+  ASM -> ASM : -> StateAthStopping
+else Zeit übrig
+  ASM -> ASM : -> StateAthProcessingLevel
+  ASM -> ASM : UID-Vergleich Playlist[idx] vs. geladenes Level
+  ASM -> ASM : Duplikat-Check (nur RTM)
+  ASM -> ASM : -> StateAthStartLevelFirstTime
+  ASM -> Ctx : InitializingNewLevel(LevelScriptableObject)
+  Ctx -> Lvl : new Level(...)  (AuthorTime / GoldTime)
+  Ctx -> Lvl : Start() — TimeStamps.Clear(), Attempt = 1
+  ASM -> ASM : SetServerMessage(paused = true)
+end
+
+== Runde startet ==
+Racing -> ASM : RoundStarted
+ASM -> ASM : StateAthStartLevelFirstTime.OnRoundStarted()
+ASM -> PS : _ = AddLevelAsync()  <b>fire & forget</b>\n(nur RTM: nächstes Level anhängen)
+ASM -> MTH : ClearMedalText()
+ASM -> ASM : -> StateAthOnARun
+ASM -> Lvl : AddTimeStamp()  <b>[Uhr läuft]</b>
+ASM -> CMS : MessageOnARun()
+
+== Reset (mehrfach) ==
+Racing -> ASM : RoundStarted
+ASM -> Lvl : Attempt++
+ASM -> CMS : MessageOnARun()
+
+== Zieleinlauf ==
+Player -> Racing : Ziel erreicht
+Racing -> ASM : CrossedFinishLine(time)
+ASM -> Lvl : PersonalBestTime = time  (nur Verbesserung)
+ASM -> Ctx : LastRunTime / LastRunMedalStatus /\nLastRunMedalWasNew setzen
+
+alt Status == AUTHOR
+  ASM -> ASM : -> StateAthWaitingForRespawn
+  ASM -> Lvl : Stop()  <b>[Uhr stoppt]</b>
+  ASM -> MTH : SetMedalProgressText(...)
+  ASM -> CMS : MessageAuthorMedalClaimed()
+  Player -> Racing : Respawn
+  Racing -> ASM : PlayerSpawned
+  ASM -> PS : SkipLevel()  -> "/fs"
+  Racing -> ASM : RoundEnded
+  ASM -> ASM : -> StateAthLevelSummary
+else GOLD zum ersten Mal
+  ASM -> MTH : SetMedalText("New Medal Claimed: Gold")
+  ASM -> CMS : MessageGoldMedalClaimed()
+  ASM -> ASM : -> StateAthPausing  <b>[Uhr stoppt]</b>
+  ASM -> CMS : MessageCrossedFinishLine()
+else keine Medaille
+  ASM -> ASM : -> StateAthPausing  <b>[Uhr stoppt]</b>
+  ASM -> CMS : MessageCrossedFinishLine()
+end
+
+== Skip / Rundenende ==
+Racing -> ASM : RoundEnded  (z. B. durch "/fs")
+ASM -> ASM : -> StateAthEvaluateSkip
+ASM -> Ctx : Skip-Typ bestimmen (Diagramm 07)
+ASM -> Lvl : Skipped = true, Stop()
+ASM -> ASM : -> StateAthLevelSummary
+ASM -> CMS : MessageLevelSummary()
+ASM -> ASM : -> StateAthLoadingLevel
+
+note over ASM
+  Zyklus wiederholt sich, bis
+  IsTimeOver() oder (Nicht-RTM)
+  die Playlist erschöpft ist.
+end note
+
+@enduml

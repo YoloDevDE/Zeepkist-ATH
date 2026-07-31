@@ -1,0 +1,63 @@
+@startuml 03-master-statemachine
+title MasterStateMachine — Lebenszyklus des Mods (IST)
+
+skinparam shadowing false
+hide empty description
+
+[*] --> StateMasterOff : Plugin.Awake()\nInitializeStateMachine()
+
+state StateMasterOff {
+  StateMasterOff : **Enter()**
+  StateMasterOff : abonniert /ath start, /ath stop, /ath restart
+  StateMasterOff : ---
+  StateMasterOff : /ath stop -> Warnung "already stopped"
+}
+
+state StateMasterOn {
+  StateMasterOn : **Enter()**
+  StateMasterOn : IsActive = true
+  StateMasterOn : abonniert /ath stop, /ath start, /ath restart, /ath broken
+  StateMasterOn : abonniert MultiplayerApi.DisconnectedFromGame
+  StateMasterOn : abonniert RacingApi.RoundStarted
+  StateMasterOn : abonniert SubStateMachine.StateMachineFinished -> Stop
+  StateMasterOn : TimeLeftText.enabled = false
+  StateMasterOn : RoundOverText.enabled = true
+  StateMasterOn : AthStateMachine.StartTimer()
+  StateMasterOn : ---
+  StateMasterOn : **Exit()**
+  StateMasterOn : StopTimer() + Dispose() (GameObject zerstören)
+  StateMasterOn : alle Events abmelden
+
+  state "AthStateMachine\n(SubStateMachine, MonoBehaviour)" as Sub <<sdlreceive>>
+  [*] --> Sub : IStateMachine.Init()
+  Sub --> [*] : StopGracefully()\n-> FinalState
+}
+
+StateMasterOff --> StateMasterOn : /ath start\n/ath restart
+StateMasterOn --> StateMasterOn : /ath restart\n(neue StateMasterOn-Instanz)
+StateMasterOn --> StateMasterOff : /ath stop
+StateMasterOn --> StateMasterOff : DisconnectedFromGame
+StateMasterOn --> StateMasterOff : StateMachineFinished\n(aus StateAthStopping)
+
+note right of StateMasterOn
+  <b>Bekanntes Problem (Re-Entrancy)</b>
+  StateAthStopping.Execute() ruft
+  InvokeFinish() **bevor** es fertig ist.
+  StateMasterOn.Stop() ist zu diesem
+  Zeitpunkt noch abonniert
+  -> TransitionTo(Off) läuft rekursiv
+  -> Exit() zweimal
+  -> "stopped" erscheint doppelt
+  -> Dispose() auf bereits zerstörtem
+     GameObject
+end note
+
+note bottom of StateMasterOff
+  InitialState und FinalState sind
+  **zwei verschiedene** StateMasterOff-
+  Instanzen. StopGracefully() vergleicht
+  per GetType().Name — funktioniert,
+  ist aber fragil.
+end note
+
+@enduml

@@ -1,0 +1,79 @@
+@startuml 08-level-sourcing
+title Aktivität — Levelbeschaffung & Thread-Kontext (IST)
+
+skinparam shadowing false
+
+|#EAF4FF|Unity Main Thread|
+start
+:AthState.Execute()\n(z. B. StateAthStarting / ResolvingBroken);
+:await RandomLevelService\n  .DrawRandomLevelAsync();
+
+|#FFF0F0|Thread-Pool (ConfigureAwait(false))|
+if (CachedLevels.Count == 0?) then (ja)
+  :GetRandomLevelsAsync();
+  :TryFetchFromGraphQlAsync()\n.ConfigureAwait(false);
+  :GraphQLService.GetRandomLevelAsync\n  amount = 100 (hardcodiert)\n  maxAuthorTime = 180 s (hardcodiert)\n  filter: !deleted, amountFinishes != 0;
+
+  if (Antwort enthält Levels?) then (ja)
+    :nach FetchedLevelUids filtern\n(Run-übergreifende Dedupe);
+  else (nein / Exception)
+    #FFCDD2:FetchFromLocalPlaylists();
+    #FFCDD2:LocalLevelCacheService\n  .EnsureInitialized();
+    #FFCDD2:PlaylistApi.GetPlaylists()\n<b>Unity-API</b>;
+    #FFCDD2:Fallback: %APPDATA%\\Zeepkist\\Playlists\n*.zeeplist per JsonConvert lesen;
+    #FFCDD2:Messenger.Notify().LogSuccess(...)\n<b>Unity-UI</b>;
+    #FFCDD2:available.OrderBy(_ => Random.value)\n<b>UnityEngine.Random — nicht thread-safe</b>;
+    note right
+      <b>Kernproblem:</b>
+      ConfigureAwait(false) in
+      DrawRandomLevelAsync und
+      GetRandomLevelsAsync gibt den
+      Unity-SynchronizationContext auf.
+      Der komplette Local-Fallback läuft
+      damit auf einem Worker-Thread und
+      ruft dort Unity-APIs auf.
+    end note
+  endif
+
+  if (immer noch leer?) then (ja)
+    #FFCDD2:throw InvalidOperationException;
+    detach
+  endif
+
+  :Track(newLevels)\nFetchedLevelUids += UIDs;
+  :CachedLevels.AddRange(fetched);
+endif
+
+:LevelItem = CachedLevels[0]\nCachedLevels.RemoveAt(0)\nPlayedLevels.Add(item);
+note right
+  Trotz des Namens
+  "DrawRandomLevelAsync" wird
+  immer Element 0 genommen.
+  Die Zufälligkeit stammt aus
+  der Reihenfolge der Quelle.
+end note
+:ToOnlineZeepLevel();
+
+|#EAF4FF|Unity Main Thread|
+:PlaylistService.StartNewPlaylist /\nAddLevelToCurrentPlaylist /\nReplaceLevelInCurrentPlaylist;
+:CurrentLobby.Playlist direkt mutieren;
+:QueueServerPlaylistUpdate();
+
+|#F4EAFF|PlaylistService-Queue (Task.Run)|
+:Queue.Dequeue();
+if (weniger als 5 s seit letztem Update?) then (ja)
+  :await Task.Delay(Restzeit);
+endif
+:MultiplayerApi.UpdateServerPlaylist()\n<b>Unity-API auf Worker-Thread</b>;
+note right
+  Die Queue respektiert das
+  5-Sekunden-Serverlimit korrekt,
+  führt das Update aber ebenfalls
+  außerhalb des Main Threads aus.
+end note
+
+|#EAF4FF|Unity Main Thread|
+:ChatApi.SendMessage("/fs ...");
+stop
+
+@enduml

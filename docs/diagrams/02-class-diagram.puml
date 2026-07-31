@@ -1,0 +1,250 @@
+@startuml 02-class-diagram
+title Author Time Hunting 2.0.0 — Klassendiagramm Kern (IST)
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+' ---------------- Interfaces ----------------
+package Interfaces #EAF4FF {
+  interface IState {
+    +IStateMachine StateMachine
+    +IStateMachine SubStateMachine = null
+    +Enter()
+    +Execute()
+    +Exit()
+  }
+
+  interface IStateMachine {
+    +IState CurrentState
+    +IState InitialState
+    +IState FinalState
+    +event Action StateMachineFinished
+    --default impls--
+    +TransitionTo(IState)
+    -StopGracefully()
+    +Init()
+    +StateMachineFinishedNotify()
+    {abstract} +InvokeFinish()
+  }
+}
+
+note right of IStateMachine
+  C# 8 Default Interface Members:
+  Transition-Logik liegt im Interface,
+  nicht in einer Basisklasse.
+end note
+
+' ---------------- Master ----------------
+package "States.Master" #FFF4E0 {
+  class MasterStateMachine implements IStateMachine
+  class StateMasterOff implements IState
+  class StateMasterOn implements IState {
+    +{static} bool IsActive
+    +AthStateMachine AthStateMachine
+    -Restart()
+    -SkipBrokenLevel()
+    -Stop()
+  }
+}
+
+' ---------------- Ath ----------------
+package "States.Ath" #FFE9D6 {
+  class AthStateMachine <<MonoBehaviour>> implements IStateMachine {
+    +AthCtx Ctx
+    -bool _timerStarted
+    -bool _eventsSubscribed
+    +SetServerMessage(bool paused)
+    +StartTimer() / StopTimer() / Dispose()
+    -Awake() / Update()
+    -- Event-Fan-out --
+    -OnRoundStarted() / OnRoundEnded()
+    -OnPlayerSpawned() / OnCrossedFinishLine(float)
+    -OnLevelLoaded() / OnPhotoModeEntered()
+  }
+
+  abstract class AthState implements IState {
+    +AthStateMachine AthStateMachine
+    +PlaylistService PlaylistService
+    {abstract} +OnAthTimerTick()
+    +OnRoundStarted() / OnRoundEnded()
+    +OnPlayerSpawned() / OnCrossedFinishLine(float)
+    +OnLevelLoaded() / OnPhotoModeEntered()
+  }
+
+  class AthCtx <<God Object 548 LoC>> {
+    -- Run-Konfiguration (live aus Config!) --
+    +int Duration
+    +int PenaltyTimeInMilliseconds
+    -- Laufender Zustand --
+    +Level CurrentLevel
+    +List<Level> Levels
+    +int AvaiableFreeSkips = 1
+    +int Retries = 3
+    +int ConsecutiveDuplicateCount
+    +LevelStatus LastRunMedalStatus
+    +bool LastRunMedalWasNew
+    +double LastRunTime
+    -- Abgeleitete Zähler --
+    +int AuthorMedals / GoldMedals
+    +int Penalties / Skips
+    +bool IsTimeRunningLow
+    +bool IsTimeAfterSkipRunningLow
+    -- Zeitrechnung --
+    +GetRemainingTime()
+    +GetTotalLevelPlayDuration()
+    +GetAccumulatedPenaltyTime()
+    +IsTimeOver()
+    -- Statistik --
+    +CountOneShotATs() / AverageAttemptsPerAt()
+    +AvgAuthorTime() / TimeWastedTotal()
+    +LevelYouShouldHaveSkippedThis()
+    +LevelThatWasVeryEasy()
+    +YouLikedThisAuthorALot()
+    -- View / Formatierung (12 Methoden) --
+    +MessageStarting() / MessageOnARun()
+    +MessageCrossedFinishLine() / MessageLevelSummary()
+    +MessageEnd() / MessageBrokenLevel()
+    +MessageGoldMedalClaimed() / MessageAuthorMedalClaimed()
+    +MessageDuplicateLimitReached() / MessageNoValidNextLevel()
+  }
+
+  class StateAthStarting
+  class StateAthLoadingLevel
+  class StateAthProcessingLevel
+  class StateAthResolvingBrokenLevel
+  class StateAthResolvingDuplicateLevel
+  class StateAthStartLevelFirstTime
+  class StateAthOnARun
+  class StateAthPausing
+  class StateAthWaitingForRespawn
+  class StateAthEvaluateSkip
+  class StateAthLevelSummary
+  class StateAthStopping
+}
+
+AthState <|-- StateAthStarting
+AthState <|-- StateAthLoadingLevel
+AthState <|-- StateAthProcessingLevel
+AthState <|-- StateAthResolvingBrokenLevel
+AthState <|-- StateAthResolvingDuplicateLevel
+AthState <|-- StateAthStartLevelFirstTime
+AthState <|-- StateAthOnARun
+AthState <|-- StateAthPausing
+AthState <|-- StateAthWaitingForRespawn
+AthState <|-- StateAthEvaluateSkip
+AthState <|-- StateAthLevelSummary
+AthState <|-- StateAthStopping
+
+MasterStateMachine "1" *-- "1" StateMasterOff
+MasterStateMachine "1" *-- "1" StateMasterOn
+StateMasterOn "1" *-- "1" AthStateMachine : SubStateMachine
+AthStateMachine "1" *-- "1" AthCtx
+AthStateMachine "1" o-- "1" AthState : CurrentState
+
+' ---------------- Entities ----------------
+package Entities #E8F8F5 {
+  class Level {
+    +string LevelUid
+    +string Name / Author
+    +double AuthorTime / GoldTime
+    +float PersonalBestTime
+    +int Attempt / Crashes
+    +bool Skipped / FreeSkipped / LevelBroken
+    +LevelStatus Status  <<berechnet>>
+    +bool AuthorTimeAcquired / GoldMedalAcquired
+    +TimeSpan TimeWasted
+    -List<DateTime> TimeStamps
+    +Start() / Stop() / AddTimeStamp()
+    +GetPlayDuration()
+    +GetTotalDuration()  <<== GetPlayDuration>>
+    +GetPauseDuration()  <<immer 0>>
+  }
+
+  enum LevelStatus {
+    AUTHOR
+    GOLD
+    FREE
+    FAILED
+    BROKEN
+    UNKOWN
+  }
+
+  class LevelItem {
+    +string Name / FileUid / FileAuthor
+    +ulong WorkshopId / AuthorId
+    +float ValidationTimeAuthor  <<nie gelesen>>
+    +float ValidationTimeGold    <<nie gelesen>>
+    +ToOnlineZeepLevel()
+  }
+
+  class Root
+  class ZRtm
+  class Node
+}
+
+Level +-- LevelStatus
+AthCtx "1" o-- "*" Level
+Root *-- ZRtm
+ZRtm *-- "*" Node
+
+' ---------------- Services ----------------
+package Service #F4EAFF {
+  class PlaylistService <<Singleton>> {
+    +StartNewPlaylist(OnlineZeeplevel)
+    +AddLevelToCurrentPlaylist(OnlineZeeplevel)
+    +ReplaceLevelInCurrentPlaylist(old, new)
+    +SkipLevel() / SkipToNextLevel()
+    +SkipToFirstLevel() / SkipToLastLevel()
+    +RestartCurrentLevel()
+    -- 5s Rate-Limit-Queue --
+    -Queue<Action> _updateQueue
+    -ProcessQueueAsync()
+  }
+  class RandomLevelService <<Singleton>> {
+    -HashSet<string> FetchedLevelUids
+    -List<LevelItem> CachedLevels
+    -List<LevelItem> PlayedLevels
+    +DrawRandomLevelAsync()
+    +GetRandomLevelsAsync()
+  }
+  class GraphQLService <<Singleton>> {
+    +GetRandomLevelAsync(amount=100, maxAuthorTime=180)
+  }
+  class LocalLevelCacheService <<Singleton>> {
+    -List<LevelItem> CachedLevelItems
+    +EnsureInitialized()
+    +GetRandomLevelItems(count, excluded)
+  }
+  class ChatMessageService {
+    +{static} SendCustomMessage(string)
+  }
+}
+
+RandomLevelService --> GraphQLService : 1. Versuch
+RandomLevelService --> LocalLevelCacheService : 2. Fallback
+RandomLevelService ..> LevelItem
+GraphQLService ..> Root
+AthState --> PlaylistService
+AthCtx ..> Level : InitializingNewLevel()
+
+' ---------------- Util / Patch ----------------
+package Util #F7F7F7 {
+  class MedalTextHelper <<static>> {
+    +{static} bool IsMedalTextActive
+    +{static} string PendingText
+    +SetMedalText(string)
+    +SetMedalProgressText(Level, runTime, isNew)
+    +ClearMedalText()
+    +ApplyToUI(TMP_Text) / ResetUI(TMP_Text)
+  }
+  class OnlineGameplayUIPatch <<HarmonyPatch>> {
+    +{static} Postfix(OnlineGameplayUI)
+  }
+}
+
+OnlineGameplayUIPatch --> MedalTextHelper
+OnlineGameplayUIPatch ..> StateAthStarting : IsCountdownActive
+MedalTextHelper ..> Level
+
+@enduml
