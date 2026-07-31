@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -115,7 +116,7 @@ public class PanelBuilder
 	}
 
 	/// <summary>Adds the block only when <paramref name="condition" /> holds.</summary>
-	public PanelBuilder When(bool condition, System.Action<PanelBuilder> add)
+	public PanelBuilder When(bool condition, Action<PanelBuilder> add)
 	{
 		if (condition)
 		{

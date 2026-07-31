@@ -22,7 +22,6 @@ public static class PanelChatRenderer
 		}
 
 		foreach (PanelBlock block in panel.Blocks)
-		{
 			switch (block.Kind)
 			{
 				case PanelBlockKind.Heading:
@@ -38,7 +37,6 @@ public static class PanelChatRenderer
 						Colour(Escape(block.Value), block.ValueColour)).AddBreakSpace();
 					break;
 			}
-		}
 
 		return message.Build().ToString();
 	}

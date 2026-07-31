@@ -1,6 +1,7 @@
 using System;
 using Imui.Controls;
 using Imui.Core;
+using Imui.Rendering;
 using UnityEngine;
 using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
@@ -16,9 +17,12 @@ namespace AuthorTimeHunting.UI;
 public class AthPanelDrawer : IZeepGUIDrawer
 {
 	private const string WindowTitle = "ATH";
-	private const float WindowWidth = 380f;
-	private const float LabelWidth = 150f;
-	private const float TitleBarAllowance = 34f;
+
+	/// <summary>Share of the screen width, before the clamp below.</summary>
+	private const float WidthFraction = 0.26f;
+
+	private const float MinWidth = 320f;
+	private const float MaxWidth = 520f;
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton;
 
@@ -68,7 +72,12 @@ public class AthPanelDrawer : IZeepGUIDrawer
 
 	private void Draw(ImGui gui, PanelView panel)
 	{
-		ImRect rect = ImWindowPlacement.GetRect(gui, WindowTitle.AsSpan(), WindowWidth, EstimateHeight(gui, panel),
+		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float height = UiMetrics.ClampHeight(gui, EstimateHeight(gui, panel));
+
+		// Auto-sized rather than player-sized: every panel has a different number of rows, so
+		// the height has to be recomputed each time one is shown.
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, height,
 			ImWindowAnchor.BottomRight);
 
 		bool open = true;
@@ -80,15 +89,22 @@ public class AthPanelDrawer : IZeepGUIDrawer
 
 		try
 		{
-			if (!string.IsNullOrEmpty(panel.Title))
-			{
-				Text(gui, panel.Title, panel.TitleColour, NextRow(gui));
-				gui.AddSpacing();
-			}
+			// The end-of-run report is long enough to outgrow a short screen.
+			gui.BeginScrollable();
 
-			foreach (PanelBlock block in panel.Blocks)
+			try
 			{
-				DrawBlock(gui, block);
+				if (!string.IsNullOrEmpty(panel.Title))
+				{
+					Text(gui, panel.Title, panel.TitleColour, NextRow(gui));
+					gui.AddSpacing();
+				}
+
+				foreach (PanelBlock block in panel.Blocks) DrawBlock(gui, block);
+			}
+			finally
+			{
+				gui.EndScrollable();
 			}
 		}
 		finally
@@ -112,7 +128,7 @@ public class AthPanelDrawer : IZeepGUIDrawer
 
 			case PanelBlockKind.Row:
 				ImRect line = NextRow(gui);
-				ImRect labelRect = line.TakeLeft(LabelWidth, out ImRect valueRect);
+				ImRect labelRect = line.TakeLeft(UiMetrics.LabelWidth(line.W), out ImRect valueRect);
 				Text(gui, block.Label, block.LabelColour, labelRect);
 				Text(gui, block.Value, block.ValueColour, valueRect);
 				break;
@@ -126,7 +142,9 @@ public class AthPanelDrawer : IZeepGUIDrawer
 
 	private static void Text(ImGui gui, string text, Color32 colour, ImRect rect)
 	{
-		gui.Text(text.AsSpan(), colour, rect);
+		// Ellipsis, not overflow: level and author names are arbitrary length and must not
+		// paint over the value column next to them.
+		gui.Text(text.AsSpan(), colour, rect, false, ImTextOverflow.Ellipsis);
 	}
 
 	private static float EstimateHeight(ImGui gui, PanelView panel)
@@ -135,16 +153,13 @@ public class AthPanelDrawer : IZeepGUIDrawer
 		int headings = 0;
 
 		foreach (PanelBlock block in panel.Blocks)
-		{
 			if (block.Kind == PanelBlockKind.Heading)
 			{
 				headings++;
 			}
-		}
 
 		return gui.GetRowsHeightWithSpacing(rows)
 		       + (headings + 1) * gui.Style.Layout.Spacing
-		       + gui.Style.Window.ContentPadding.Vertical
-		       + TitleBarAllowance;
+		       + UiMetrics.WindowChrome(gui);
 	}
 }

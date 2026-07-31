@@ -65,7 +65,8 @@ public class RunHudView
 		{
 			// Show what the budget would have been without penalties, so the cost of
 			// skipping stays visible instead of silently vanishing into one number.
-			string clean = TimeFormatter.FormatDuration((int)ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds);
+			string clean =
+				TimeFormatter.FormatDuration((int)ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds);
 			string lost = TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds * ctx.Penalties).ToFormattedString();
 			timeLeft = $"{timeLeft}   ({clean} - {lost})";
 		}

@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
 using Imui.Core;
+using Imui.Rendering;
 using UnityEngine;
 using ZeepSDK.Chat;
 using ZeepSDK.UI;
@@ -20,10 +21,12 @@ namespace AuthorTimeHunting.UI;
 public class AthWindow : IZeepGUIDrawer
 {
 	private const string WindowTitle = "Author Time Hunting";
-	private const float WindowWidth = 340f;
-	private const float LabelWidth = 140f;
-	private const float TitleBarAllowance = 34f;
-	private const float ButtonHeight = 26f;
+
+	/// <summary>Share of the screen width, before the clamp below.</summary>
+	private const float WidthFraction = 0.22f;
+
+	private const float MinWidth = 300f;
+	private const float MaxWidth = 460f;
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton;
 
@@ -83,8 +86,10 @@ public class AthWindow : IZeepGUIDrawer
 		AthStateMachine run = ActiveRun;
 		RunHudView view = run == null ? null : RunHudView.From(run.Ctx, run.Ctx.IsPaused);
 
-		ImRect rect = ImWindowPlacement.GetRect(gui, WindowTitle.AsSpan(), WindowWidth, EstimateHeight(gui, view),
-			ImWindowAnchor.TopLeft);
+		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float height = UiMetrics.ClampHeight(gui, EstimateHeight(gui, view));
+
+		ImRect rect = ImWindowPlacement.Place(gui, WindowTitle.AsSpan(), width, height, ImWindowAnchor.TopLeft);
 
 		bool open = true;
 
@@ -95,16 +100,27 @@ public class AthWindow : IZeepGUIDrawer
 
 		try
 		{
-			if (view == null)
+			// The height above is what the content wants; the screen, or the player's own
+			// resize, may give it less. Scrolling is what makes the difference survivable.
+			gui.BeginScrollable();
+
+			try
 			{
-				DrawIdle(gui, run != null);
+				if (view == null)
+				{
+					DrawIdle(gui, run != null);
+				}
+				else
+				{
+					DrawSection(gui, "Run Settings", view.Settings);
+					DrawSection(gui, "Current Run", view.Run);
+					DrawSection(gui, "Current Level", view.Level);
+					DrawRunControls(gui, run);
+				}
 			}
-			else
+			finally
 			{
-				DrawSection(gui, "Run Settings", view.Settings);
-				DrawSection(gui, "Current Run", view.Run);
-				DrawSection(gui, "Current Level", view.Level);
-				DrawRunControls(gui, run);
+				gui.EndScrollable();
 			}
 		}
 		finally
@@ -144,8 +160,7 @@ public class AthWindow : IZeepGUIDrawer
 	{
 		Text(gui, "Controls", HudPalette.Section, NextRow(gui));
 
-		ImRect first = NextButtonRow(gui);
-		ImRect skipRect = first.TakeLeft(first.W / 2f - 2f, out ImRect brokenRect);
+		ImRect skipRect = SplitRow(gui, NextButtonRow(gui), out ImRect brokenRect);
 
 		if (gui.Button("Skip".AsSpan(), skipRect))
 		{
@@ -158,8 +173,7 @@ public class AthWindow : IZeepGUIDrawer
 			CommandSkipBroken.Raise();
 		}
 
-		ImRect second = NextButtonRow(gui);
-		ImRect pauseRect = second.TakeLeft(second.W / 2f - 2f, out ImRect restartRect);
+		ImRect pauseRect = SplitRow(gui, NextButtonRow(gui), out ImRect restartRect);
 
 		if (gui.Button((run.Ctx.IsPaused ? "Resume" : "Pause").AsSpan(), pauseRect))
 		{
@@ -196,13 +210,21 @@ public class AthWindow : IZeepGUIDrawer
 		foreach (RunHudView.HudRow row in rows)
 		{
 			ImRect line = NextRow(gui);
-			ImRect labelRect = line.TakeLeft(LabelWidth, out ImRect valueRect);
+			ImRect labelRect = line.TakeLeft(UiMetrics.LabelWidth(line.W), out ImRect valueRect);
 
 			Text(gui, row.Label, HudPalette.Muted, labelRect);
 			Text(gui, row.Value, row.ValueColour, valueRect);
 		}
 
 		gui.AddSpacing();
+	}
+
+	/// <summary>Splits a row into two equal halves with the theme's own gap between them.</summary>
+	private static ImRect SplitRow(ImGui gui, ImRect row, out ImRect right)
+	{
+		float gap = gui.Style.Layout.InnerSpacing;
+
+		return row.TakeLeft((row.W - gap) * 0.5f, gap, out right);
 	}
 
 	private static ImRect NextRow(ImGui gui)
@@ -212,23 +234,25 @@ public class AthWindow : IZeepGUIDrawer
 
 	private static ImRect NextButtonRow(ImGui gui)
 	{
-		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), ButtonHeight);
+		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
 	}
 
 	private static void Text(ImGui gui, string text, Color32 colour, ImRect rect)
 	{
-		gui.Text(text.AsSpan(), colour, rect);
+		// Ellipsis, not overflow: a long level name must not paint over the next column.
+		gui.Text(text.AsSpan(), colour, rect, false, ImTextOverflow.Ellipsis);
 	}
 
 	private static float EstimateHeight(ImGui gui, RunHudView view)
 	{
 		float spacing = gui.Style.Layout.Spacing;
-		float chrome = gui.Style.Window.ContentPadding.Vertical + TitleBarAllowance;
+		float buttonHeight = UiMetrics.ButtonHeight(gui);
+		float chrome = UiMetrics.WindowChrome(gui);
 
 		if (view == null)
 		{
 			// One line of status plus a single button.
-			return gui.GetRowsHeightWithSpacing(1) + ButtonHeight + 3 * spacing + chrome;
+			return gui.GetRowsHeightWithSpacing(1) + buttonHeight + 3 * spacing + chrome;
 		}
 
 		// Three sections with a heading each, then the "Controls" heading and three
@@ -237,7 +261,7 @@ public class AthWindow : IZeepGUIDrawer
 		int rows = sections + 1 + view.Settings.Count + view.Run.Count + view.Level.Count;
 
 		return gui.GetRowsHeightWithSpacing(rows)
-		       + 3 * (ButtonHeight + spacing)
+		       + 3 * (buttonHeight + spacing)
 		       + sections * spacing
 		       + chrome;
 	}

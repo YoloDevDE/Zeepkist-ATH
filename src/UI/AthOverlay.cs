@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Imui.Controls;
 using Imui.Core;
+using Imui.Rendering;
 using UnityEngine;
 using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
@@ -18,14 +19,31 @@ namespace AuthorTimeHunting.UI;
 ///     re-applying the text every frame. Drawing it ourselves removes all of that: the mod no
 ///     longer patches the game at all.
 ///     Unlike AthWindow this draws straight onto the canvas with no window chrome, because a
-///     banner is not something you drag around.
+///     banner is not something you drag around. That also means nothing clips it for us, so
+///     every size here is measured off the current screen rather than assumed.
 /// </summary>
 public class AthOverlay : IZeepGUIDrawer
 {
-	private const float BannerTopMargin = 120f;
-	private const float BannerWidth = 520f;
-	private const float ToastWidth = 360f;
-	private const float ToastMargin = 16f;
+	/// <summary>Distance from the top of the screen, as a share of its height.</summary>
+	private const float BannerTopFraction = 0.12f;
+
+	private const float BannerWidthFraction = 0.45f;
+	private const float BannerMinWidth = 360f;
+	private const float BannerMaxWidth = 760f;
+
+	/// <summary>The headline is drawn this much larger than body text - it is a banner, not a line.</summary>
+	private const float HeadlineScale = 1.5f;
+
+	private const float ToastWidthFraction = 0.24f;
+	private const float ToastMinWidth = 260f;
+	private const float ToastMaxWidth = 420f;
+
+	/// <summary>
+	///     Older notifications are dropped past this. The stack is capped again at draw time
+	///     against the actual screen height; this is just so the list cannot grow unbounded.
+	/// </summary>
+	private const int MaxToasts = 8;
+
 	private const float FadeInSeconds = 0.12f;
 
 	private readonly List<Toast> _toasts = new();
@@ -69,6 +87,12 @@ public class AthOverlay : IZeepGUIDrawer
 		}
 
 		_toasts.Add(new Toast(text, colour, Time.unscaledTime + seconds));
+
+		if (_toasts.Count > MaxToasts)
+		{
+			_toasts.RemoveRange(0, _toasts.Count - MaxToasts);
+		}
+
 		Logger.LogInfo($"AthOverlay: {text}");
 	}
 
@@ -100,16 +124,21 @@ public class AthOverlay : IZeepGUIDrawer
 		float alpha = FadeInSeconds <= 0f ? 1f : Mathf.Clamp01(age / FadeInSeconds);
 
 		ImRect screen = gui.Canvas.SafeScreenRect;
+		float bodySize = gui.Style.Layout.TextSize;
 		float rowHeight = gui.GetRowHeight();
-		int rows = 1 + (banner.Lines?.Count ?? 0);
+		float headlineHeight = rowHeight * HeadlineScale;
 
-		ImRect area = new(screen.Left + (screen.W - BannerWidth) * 0.5f,
-			screen.Top - BannerTopMargin - rows * rowHeight,
-			BannerWidth,
-			rows * rowHeight);
+		float width = UiMetrics.Width(gui, BannerWidthFraction, BannerMinWidth, BannerMaxWidth);
+		int lines = banner.Lines?.Count ?? 0;
+		float height = Mathf.Min(headlineHeight + lines * rowHeight, screen.H);
 
-		ImRect line = area.TakeTop(rowHeight, out ImRect rest);
-		Text(gui, banner.Headline, Fade(HudPalette.Author, alpha), line);
+		ImRect area = new(screen.Left + (screen.W - width) * 0.5f,
+			screen.Top - screen.H * BannerTopFraction - height,
+			width,
+			height);
+
+		ImRect line = area.TakeTop(headlineHeight, out ImRect rest);
+		Centred(gui, banner.Headline, Fade(HudPalette.Author, alpha), line, bodySize * HeadlineScale);
 
 		if (banner.Lines == null)
 		{
@@ -119,7 +148,7 @@ public class AthOverlay : IZeepGUIDrawer
 		foreach (OverlayLine overlayLine in banner.Lines)
 		{
 			line = rest.TakeTop(rowHeight, out rest);
-			Text(gui, overlayLine.Text, Fade(overlayLine.Colour, alpha), line);
+			Centred(gui, overlayLine.Text, Fade(overlayLine.Colour, alpha), line, bodySize);
 		}
 	}
 
@@ -135,14 +164,20 @@ public class AthOverlay : IZeepGUIDrawer
 
 		ImRect screen = gui.Canvas.SafeScreenRect;
 		float rowHeight = gui.GetRowHeight();
-		float y = screen.Bottom + ToastMargin;
+		float margin = UiMetrics.Margin(gui);
+		float width = UiMetrics.Width(gui, ToastWidthFraction, ToastMinWidth, ToastMaxWidth);
+
+		// Never let the stack climb past the screen: on a short canvas the oldest ones go.
+		int visible = Mathf.Clamp(Mathf.FloorToInt((screen.H - margin * 2f) / rowHeight), 1, _toasts.Count);
+		int first = _toasts.Count - visible;
+		float y = screen.Bottom + margin;
 
 		// Oldest at the bottom, so a new one appears above rather than shoving the rest.
-		for (int i = 0; i < _toasts.Count; i++)
+		for (int i = 0; i < visible; i++)
 		{
-			Toast toast = _toasts[i];
-			ImRect rect = new(screen.Left + ToastMargin, y + i * rowHeight, ToastWidth, rowHeight);
-			Text(gui, toast.Text, toast.Colour, rect);
+			Toast toast = _toasts[first + i];
+			ImRect rect = new(screen.Left + margin, y + i * rowHeight, width, rowHeight);
+			gui.Text(toast.Text.AsSpan(), toast.Colour, rect, false, ImTextOverflow.Ellipsis);
 		}
 	}
 
@@ -151,9 +186,12 @@ public class AthOverlay : IZeepGUIDrawer
 		return new Color32(colour.r, colour.g, colour.b, (byte)(255 * Mathf.Clamp01(alpha)));
 	}
 
-	private static void Text(ImGui gui, string text, Color32 colour, ImRect rect)
+	private static void Centred(ImGui gui, string text, Color32 colour, ImRect rect, float size)
 	{
-		gui.Text(text.AsSpan(), colour, rect);
+		// Centred both ways: the rect is a slice of the screen, so left-aligned text would
+		// start at an arbitrary offset that moves with the resolution.
+		ImTextSettings settings = new(size, 0.5f, 0.5f, false, ImTextOverflow.Ellipsis);
+		gui.Text(text.AsSpan(), in settings, colour, rect);
 	}
 
 	private readonly struct Toast
