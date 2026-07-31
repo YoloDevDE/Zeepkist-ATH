@@ -39,6 +39,7 @@ public class Plugin : BaseUnityPlugin
 		_services = new ModServices();
 		UIApi.AddZeepGUIDrawer(_services.Control);
 		UIApi.AddZeepGUIDrawer(_services.LevelStats);
+		UIApi.AddZeepGUIDrawer(_services.Results);
 		UIApi.AddZeepGUIDrawer(_services.Overlay);
 		CommandAth.CommandTrigger += _services.ToggleUi;
 		InitializeHarmony();
@@ -56,6 +57,7 @@ public class Plugin : BaseUnityPlugin
 			CommandAth.CommandTrigger -= _services.ToggleUi;
 			UIApi.RemoveZeepGUIDrawer(_services.Control);
 			UIApi.RemoveZeepGUIDrawer(_services.LevelStats);
+			UIApi.RemoveZeepGUIDrawer(_services.Results);
 			UIApi.RemoveZeepGUIDrawer(_services.Overlay);
 		}
 

@@ -58,6 +58,12 @@ public class ModServices
 	/// </summary>
 	public RaceTimeDisplay RaceTime { get; } = new();
 
+	/// <summary>
+	///     The end-of-run report. Session-scoped and holding a snapshot, because the run it
+	///     reports on is torn down the moment it stops.
+	/// </summary>
+	public ResultsScreen Results { get; } = new();
+
 	/// <summary>Centre-screen banners and notifications. Session-scoped like the window.</summary>
 	public AthOverlay Overlay { get; } = new();
 
