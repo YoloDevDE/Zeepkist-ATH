@@ -21,7 +21,7 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 			int retries = AthStateMachine.Ctx.ConsecutiveDuplicateCount;
 			Logger.LogWarning(
 				$"StateAthResolvingDuplicateLevel: Duplicate limit reached after {retries} retries. Ending run.");
-			ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.DuplicateLimitReached(retries));
+			AthStateMachine.Show(AthStateMachine.Ctx.Messages.DuplicateLimitReached(retries));
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 			return;
 		}

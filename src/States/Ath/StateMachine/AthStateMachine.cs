@@ -33,6 +33,7 @@ public partial class AthStateMachine : StateMachineBase
 
 	private AthLoopBehaviour _behaviour;
 	private readonly AthHudDrawer _hudDrawer;
+	private readonly AthPanelDrawer _panelDrawer;
 	private int _consecutiveTickFailures;
 	private bool _eventsSubscribed;
 	private string _lastServerMessage;
@@ -59,7 +60,9 @@ public partial class AthStateMachine : StateMachineBase
 		_behaviour.Bind(this);
 
 		_hudDrawer = new AthHudDrawer();
+		_panelDrawer = new AthPanelDrawer();
 		UIApi.AddZeepGUIDrawer(_hudDrawer);
+		UIApi.AddZeepGUIDrawer(_panelDrawer);
 	}
 
 	public AthCtx Ctx { get; }
@@ -177,6 +180,26 @@ public partial class AthStateMachine : StateMachineBase
 				$"AthStateMachine: {eventName} failed in {state.GetType().Name}: {e.Message}\n{e.StackTrace}");
 			return false;
 		}
+	}
+
+	/// <summary>
+	///     Shows one of the run's panels. The in-game window and the chat message are two
+	///     renderings of the same PanelView, so the wording never diverges.
+	/// </summary>
+	public void Show(PanelView panel)
+	{
+		if (panel == null)
+		{
+			return;
+		}
+
+		if (Plugin.Instance.MyConfig.InGameHud.Value)
+		{
+			_panelDrawer.Show(panel);
+			return;
+		}
+
+		ChatMessageService.SendCustomMessage(PanelChatRenderer.Render(panel));
 	}
 
 	public void OnAthTimerTick()
@@ -306,7 +329,9 @@ public partial class AthStateMachine : StateMachineBase
 	{
 		StopTimer();
 		UIApi.RemoveZeepGUIDrawer(_hudDrawer);
+		UIApi.RemoveZeepGUIDrawer(_panelDrawer);
 		_hudDrawer.Current = null;
+		_panelDrawer.Clear();
 
 		// Unity's overloaded == reports a destroyed object as null, so this covers both
 		// "already disposed" and "the GameObject went away underneath us".

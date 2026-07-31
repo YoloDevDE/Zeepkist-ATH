@@ -38,8 +38,10 @@ public class Level
 	// Basic level information (immutable after creation)
 	public string LevelUid { get; }
 
-	public string Name => $"<noparse>{field}</noparse>";
-	public string Author => $"<noparse>{field}</noparse>";
+	// Raw, unformatted. The <noparse> wrapping these used to carry belongs to the chat
+	// renderer - an in-game window would have shown the tags literally.
+	public string Name { get; }
+	public string Author { get; }
 	public double AuthorTime { get; }
 	public double GoldTime { get; }
 

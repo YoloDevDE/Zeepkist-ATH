@@ -43,7 +43,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 					"<b><#50E451>NEW</color></b> medal: <b><#fd51ff>AUTHOR</color></b><br><#A7A7A7>(respawn to skip)</color>");
 			}
 
-			ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.Messages.AuthorMedalClaimed());
+			AthStateMachine.Show(AthStateMachine.Ctx.Messages.AuthorMedalClaimed());
 			_hasShownAuthorMedal = true;
 		}
 
