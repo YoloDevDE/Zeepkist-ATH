@@ -1,4 +1,5 @@
 ﻿using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -10,8 +11,7 @@ public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(state
 		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null
 			? $"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>"
 			: "Good Luck Have Fun!";
-		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.SetText(
-			$"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>{levelInfo}");
+		Overlay.ShowBanner(MedalBanner.Message(levelInfo));
 	}
 
 	public override void OnLevelLoaded()

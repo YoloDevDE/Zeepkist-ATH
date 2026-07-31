@@ -1,6 +1,7 @@
 ﻿using System;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
@@ -52,7 +53,7 @@ public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthSta
 		{
 			// async void - nothing above us can catch this.
 			Logger.LogError($"StateAthResolvingBrokenLevel: Could not draw a replacement level: {ex.Message}");
-			Messenger.Notify().LogError("Could not find a replacement for the broken level");
+			Overlay.Notify("Could not find a replacement for the broken level", HudPalette.Danger);
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}

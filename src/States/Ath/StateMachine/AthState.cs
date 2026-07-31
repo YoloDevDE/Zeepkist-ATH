@@ -1,4 +1,5 @@
 ﻿using AuthorTimeHunting.Service;
+using AuthorTimeHunting.UI;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
 
@@ -22,6 +23,9 @@ public abstract class AthState : StateBase
 
 	/// <summary>Shorthand for the session's playlist service.</summary>
 	public PlaylistService PlaylistService => AthStateMachine.Services.Playlist;
+
+	/// <summary>Shorthand for the centre-screen overlay.</summary>
+	public AthOverlay Overlay => AthStateMachine.Services.Overlay;
 
 	/// <summary>Shorthand for this run's level pool.</summary>
 	public RandomLevelService RandomLevels => AthStateMachine.RandomLevels;

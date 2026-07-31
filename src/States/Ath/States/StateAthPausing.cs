@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
@@ -9,7 +10,7 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-	private bool _hasShownMedalRoundOverText;
+	private bool _hasShownMedal;
 	// Constructor
 
 
@@ -18,12 +19,12 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 	// Public Methods
 	public override void Enter()
 	{
-		_hasShownMedalRoundOverText = false;
+		_hasShownMedal = false;
 	}
 
 	public override void Execute()
 	{
-		if (!_hasShownMedalRoundOverText)
+		if (!_hasShownMedal)
 		{
 			PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer?.CurrentResult;
 			double lastRunTime = AthStateMachine.Ctx.LastRunTime > 0
@@ -34,9 +35,9 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 
 			if (currentResult != null && hasMedalToShow && lastRunTime >= 0)
 			{
-				MedalTextHelper.SetMedalProgressText(AthStateMachine.Ctx.CurrentLevel, lastRunTime,
-					AthStateMachine.Ctx.LastRunMedalWasNew);
-				_hasShownMedalRoundOverText = true;
+				Overlay.ShowBanner(MedalBanner.ForRun(AthStateMachine.Ctx.CurrentLevel, lastRunTime,
+					AthStateMachine.Ctx.LastRunMedalWasNew));
+				_hasShownMedal = true;
 			}
 		}
 
@@ -83,6 +84,6 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 
 	public override void OnPlayerSpawned()
 	{
-		MedalTextHelper.ClearMedalText();
+		Overlay.ClearBanner();
 	}
 }

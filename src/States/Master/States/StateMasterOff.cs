@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Master.States;
@@ -24,6 +25,7 @@ public class StateMasterOff : StateBase
 	}
 
 	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
+	private AthOverlay Overlay => Master.Services.Overlay;
 
 	public override void Enter()
 	{
@@ -46,7 +48,7 @@ public class StateMasterOff : StateBase
 	{
 		if (!GameStateObserver.IsInOnlineLobby)
 		{
-			Messenger.Notify().LogWarning("ATH only runs in an online lobby");
+			Overlay.Notify("ATH only runs in an online lobby", HudPalette.Warning);
 			return;
 		}
 
@@ -56,7 +58,7 @@ public class StateMasterOff : StateBase
 		if (!GameStateObserver.IsRacing)
 		{
 			_startPending = true;
-			Messenger.Notify().Log("ATH starts as soon as the level is loaded");
+			Overlay.Notify("ATH starts as soon as the level is loaded", HudPalette.Default);
 			Logger.LogInfo($"StateMasterOff: Start requested while {DescribeWait()}, waiting for the race to start.");
 			return;
 		}
@@ -91,12 +93,12 @@ public class StateMasterOff : StateBase
 	///     there the transition would die halfway through, leaving
 	///     MasterStateMachine.CurrentState inconsistent. Refuse before the transition starts.
 	/// </summary>
-	private static bool IsHudReady()
+	private bool IsHudReady()
 	{
 		if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null ||
 		    PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)
 		{
-			Messenger.Notify().LogWarning("Online HUD not ready yet, try again in a moment");
+			Overlay.Notify("Online HUD not ready yet, try again in a moment", HudPalette.Warning);
 			return false;
 		}
 
@@ -115,10 +117,10 @@ public class StateMasterOff : StateBase
 		if (_startPending)
 		{
 			_startPending = false;
-			Messenger.Notify().Log("pending start cancelled");
+			Overlay.Notify("Pending start cancelled", HudPalette.Default);
 			return;
 		}
 
-		Messenger.Notify().LogWarning("already stopped");
+		Overlay.Notify("ATH is not running", HudPalette.Warning);
 	}
 }

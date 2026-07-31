@@ -3,8 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
-using TMPro;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using ZeepSDK.Multiplayer;
@@ -17,8 +17,6 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 	// Constructor
 
 	// Properties
-
-	public static bool IsCountdownActive { get; private set; }
 
 	// Public Methods
 
@@ -63,7 +61,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 
 					if (retryCount <= 0)
 					{
-						Messenger.Notify().LogError("Failed to start playlist after multiple attempts");
+						Overlay.Notify("Failed to start playlist after multiple attempts", HudPalette.Danger);
 						// Weiter zum nächsten Schritt trotz Fehler
 					}
 
@@ -81,7 +79,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			catch (Exception ex)
 			{
 				Logger.LogError($"Failed to skip level: {ex.Message}");
-				Messenger.Notify().LogError("Error while skipping to the first level");
+				Overlay.Notify("Error while skipping to the first level", HudPalette.Danger);
 			}
 
 			StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
@@ -89,7 +87,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		catch (Exception ex)
 		{
 			Logger.LogError($"Execute failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-			Messenger.Notify().LogError("Something went wrong while starting the hunt");
+			Overlay.Notify("Something went wrong while starting the hunt", HudPalette.Danger);
 
 			// Optional: Transition zu einem Fehler-State oder Reset-State
 			// StateMachine.TransitionTo(new StateAthError(AthStateMachine));
@@ -104,15 +102,12 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 	private async Task RunCountdown()
 	{
 		_cts = new CancellationTokenSource();
-		IsCountdownActive = true;
-		TMP_Text text = PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText;
 
 		try
 		{
 			for (int i = 5; i >= 1; i--)
 			{
-				text.SetText(
-					$"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Starting in <b>{i}</b>...");
+				Overlay.ShowBanner(MedalBanner.Message($"Starting in {i}..."));
 				// Used to be .ContinueWith(_ => { }), which swallowed not just the
 				// cancellation but every other exception along with it.
 				await Task.Delay(1000, _cts.Token);
@@ -125,7 +120,6 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		}
 		finally
 		{
-			IsCountdownActive = false;
 			// Null first: Exit() may still call Cancel(), and that throws on a disposed source.
 			CancellationTokenSource cts = _cts;
 			_cts = null;

@@ -1,5 +1,6 @@
 ﻿using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
@@ -22,8 +23,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 		if (!_hasShownAuthorMedal)
 		{
-			Messenger.Notify().LogCustomColors("Author time claimed!<br>[Respawn to continue]", Color.white,
-				new Color(0.5f, 0f, 0.5f), 5f);
+			Overlay.Notify("Author time claimed!<br>[Respawn to continue]", HudPalette.Default, 5f);
 
 			double lastRunTime = AthStateMachine.Ctx.LastRunTime;
 
@@ -34,13 +34,12 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 			if (lastRunTime >= 0)
 			{
-				MedalTextHelper.SetMedalProgressText(AthStateMachine.Ctx.CurrentLevel, lastRunTime,
-					AthStateMachine.Ctx.LastRunMedalWasNew);
+				Overlay.ShowBanner(MedalBanner.ForRun(AthStateMachine.Ctx.CurrentLevel, lastRunTime,
+					AthStateMachine.Ctx.LastRunMedalWasNew));
 			}
 			else
 			{
-				MedalTextHelper.SetMedalText(
-					"<b><#50E451>NEW</color></b> medal: <b><#fd51ff>AUTHOR</color></b><br><#A7A7A7>(respawn to skip)</color>");
+				Overlay.ShowBanner(MedalBanner.Message("NEW medal: AUTHOR  (respawn to skip)", 6f));
 			}
 
 			AthStateMachine.Show(AthStateMachine.Ctx.Messages.AuthorMedalClaimed());
@@ -57,7 +56,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 	public override void OnRoundEnded()
 	{
-		MedalTextHelper.ClearMedalText();
+		Overlay.ClearBanner();
 		StateMachine.TransitionTo(new StateAthLevelSummary(AthStateMachine));
 	}
 
@@ -65,7 +64,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 	// Private Methods
 	public override void OnPlayerSpawned()
 	{
-		MedalTextHelper.ClearMedalText();
+		Overlay.ClearBanner();
 		PlaylistService.SkipLevel();
 	}
 }

@@ -38,6 +38,7 @@ public class Plugin : BaseUnityPlugin
 		InitializeConfig();
 		_services = new ModServices();
 		UIApi.AddZeepGUIDrawer(_services.Window);
+		UIApi.AddZeepGUIDrawer(_services.Overlay);
 		CommandAth.CommandTrigger += _services.Window.Toggle;
 		InitializeHarmony();
 		RegisterChatCommands();
@@ -53,6 +54,7 @@ public class Plugin : BaseUnityPlugin
 		{
 			CommandAth.CommandTrigger -= _services.Window.Toggle;
 			UIApi.RemoveZeepGUIDrawer(_services.Window);
+			UIApi.RemoveZeepGUIDrawer(_services.Overlay);
 		}
 
 		_services?.GameState.Dispose();

@@ -45,6 +45,9 @@ public class ModServices
 	/// </summary>
 	public AthWindow Window { get; } = new();
 
+	/// <summary>Centre-screen banners and notifications. Session-scoped like the window.</summary>
+	public AthOverlay Overlay { get; } = new();
+
 	/// <summary>
 	///     Builds the level pool for one run. Lives here because the pool's two sources are
 	///     session-scoped even though the pool itself is not.

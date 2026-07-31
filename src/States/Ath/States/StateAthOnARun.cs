@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
@@ -66,9 +67,8 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (runMedalStatus == Level.LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
 		{
-			Messenger.Notify().LogCustomColors("Gold medal claimed!<br>You can now skip without penalty", Color.black,
-				new Color(1f, 0.84f, 0f), 5f);
-			MedalTextHelper.SetMedalText("New Medal Claimed: Gold");
+			Overlay.Notify("Gold medal claimed!<br>You can now skip without penalty", HudPalette.Default, 5f);
+			Overlay.ShowBanner(MedalBanner.Message("New Medal Claimed: Gold", 5f));
 			AthStateMachine.Show(AthStateMachine.Ctx.Messages.GoldMedalClaimed());
 		}
 
@@ -78,7 +78,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 	public override void OnRoundStarted()
 	{
-		MedalTextHelper.ClearMedalText();
+		Overlay.ClearBanner();
 		AthStateMachine.Ctx.CurrentLevel.Attempt++;
 		Execute();
 	}
@@ -95,8 +95,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
 		{
-			Messenger.Notify().LogCustomColors("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!",
-				Color.white, Color.red, 10f);
+			Overlay.Notify("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", HudPalette.Default, 10f);
 		}
 	}
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepkistNetworking;
 using ZeepSDK.Level;
@@ -49,7 +50,7 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 		catch (Exception e)
 		{
 			Logger.LogError($"StateAthStartLevelFirstTime: Could not pre-load the next level: {e.Message}");
-			Messenger.Notify().LogWarning("Could not load the next level - the playlist may run out");
+			Overlay.Notify("Could not load the next level - the playlist may run out", HudPalette.Warning);
 		}
 	}
 
@@ -57,7 +58,7 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 	public override void OnRoundStarted()
 	{
 		_ = AddLevelAsync();
-		MedalTextHelper.ClearMedalText();
+		Overlay.ClearBanner();
 		StateMachine.TransitionTo(new StateAthOnARun(AthStateMachine));
 	}
 }

@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.States.Master.StateMachine;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;
@@ -54,16 +55,15 @@ public class StateMasterOn : StateBase
 		CommandSkipBroken.CommandTrigger += SkipBrokenLevel;
 		SubStateMachine.StateMachineFinished += Stop;
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
-		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = true;
 		Master.Services.Window.ActiveRun = AthStateMachine;
 		AthStateMachine.StartTimer();
-		Messenger.Notify().Log("started");
+		Master.Services.Overlay.Notify("Hunt started", HudPalette.Positive);
 	}
 
 	public override void Exit()
 	{
 		IsActive = false;
-		Messenger.Notify().Log("stopped");
+		Master.Services.Overlay.Notify("Hunt stopped", HudPalette.Default);
 		Master.Services.Window.ActiveRun = null;
 		AthStateMachine.StopTimer();
 		AthStateMachine.Dispose();
@@ -78,8 +78,8 @@ public class StateMasterOn : StateBase
 
 	private void OnRoundStarted()
 	{
+		// ATH shows its own clock, so the lobby's time display stays off for the run.
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
-		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = true;
 	}
 
 
@@ -101,7 +101,7 @@ public class StateMasterOn : StateBase
 		// No race condition between the check and the transition: IsRacing is derived from
 		// game state that only changes between frames, and nothing here yields.
 		Logger.LogInfo("StateMasterOn: Restart requested outside a running race, deferring the new run.");
-		Messenger.Notify().Log("ATH restarts as soon as the level is loaded");
+		Master.Services.Overlay.Notify("ATH restarts as soon as the level is loaded", HudPalette.Default);
 		StateMachine.TransitionTo(new StateMasterOff(Master, true));
 	}
 
@@ -116,7 +116,7 @@ public class StateMasterOn : StateBase
 
 	private void Start()
 	{
-		Messenger.Notify().LogWarning("already started");
+		Master.Services.Overlay.Notify("ATH is already running", HudPalette.Warning);
 	}
 
 	private void Stop()
@@ -144,7 +144,5 @@ public class StateMasterOn : StateBase
 		}
 
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
-		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = false;
-		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.SetText("Thanks for playing ATH :)");
 	}
 }
