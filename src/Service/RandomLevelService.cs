@@ -31,7 +31,11 @@ public class RandomLevelService
     {
         if (CachedLevels.Count == 0)
         {
-            List<LevelItem> fetched = await GetRandomLevelsAsync().ConfigureAwait(false);
+            // No ConfigureAwait(false) anywhere in this chain: the local fallback below
+            // calls PlaylistApi, Messenger and UnityEngine.Random, all of which are
+            // main-thread only. Giving up Unity's SynchronizationContext here put the
+            // whole fallback on a thread pool thread.
+            List<LevelItem> fetched = await GetRandomLevelsAsync();
             CachedLevels.AddRange(fetched);
         }
 
@@ -56,7 +60,7 @@ public class RandomLevelService
     /// </summary>
     public async Task<List<LevelItem>> GetRandomLevelsAsync()
     {
-        List<LevelItem> newLevels = await TryFetchFromGraphQlAsync().ConfigureAwait(false);
+        List<LevelItem> newLevels = await TryFetchFromGraphQlAsync();
 
         if (newLevels.Count == 0)
         {
@@ -77,7 +81,10 @@ public class RandomLevelService
     {
         try
         {
-            List<LevelItem> levels = await GraphQLService.Instance.GetRandomLevelAsync().ConfigureAwait(false);
+            // GraphQLService keeps its ConfigureAwait(false) on the HTTP call itself -
+            // everything after it in that method is pure parsing. This await is the one
+            // that has to bring us back to the main thread.
+            List<LevelItem> levels = await GraphQLService.Instance.GetRandomLevelAsync();
 
             if (levels == null || levels.Count == 0)
             {

@@ -55,8 +55,12 @@ public class PlaylistService
     #region ServerPlaylistUpdateQueue
 
     // A playlist can only be pushed to the server once every 5 seconds. To respect that limit
-    // without blocking callers, server updates are queued and processed asynchronously by a
-    // single background task that keeps a minimum interval between consecutive updates.
+    // without blocking callers, server updates are queued and drained by a single async loop
+    // that keeps a minimum interval between consecutive updates.
+    //
+    // The loop is asynchronous but NOT concurrent: it runs on Unity's main thread throughout,
+    // because MultiplayerApi.UpdateServerPlaylist may only be called from there. _queueLock
+    // is therefore uncontended today and kept purely as a guard for future callers.
     private static readonly TimeSpan MinUpdateInterval = TimeSpan.FromSeconds(5);
 
     private readonly Queue<Action> _updateQueue = new Queue<Action>();
@@ -83,7 +87,7 @@ public class PlaylistService
             if (_processingTask == null || _processingTask.IsCompleted)
             {
                 Logger.LogInfo("PlaylistService: Starting queue processing task.");
-                _processingTask = Task.Run(ProcessQueueAsync);
+                _processingTask = ProcessQueueAsync();
             }
             else
             {
@@ -96,6 +100,11 @@ public class PlaylistService
 
     private async Task ProcessQueueAsync()
     {
+        // Yield before touching the queue: Enqueue starts this loop from inside its lock,
+        // and the update below must not run synchronously in there. The continuation
+        // comes back on Unity's SynchronizationContext - see the comment at update().
+        await Task.Yield();
+
         Logger.LogInfo("PlaylistService: Queue processing loop started.");
 
         while (true)
@@ -126,6 +135,9 @@ public class PlaylistService
 
             try
             {
+                // MultiplayerApi.UpdateServerPlaylist touches lobby state and has to run on
+                // Unity's main thread. This loop used to be started via Task.Run, which put
+                // every single update on a thread pool thread instead.
                 Logger.LogInfo("PlaylistService: Applying server playlist update now.");
                 update();
                 Logger.LogInfo("PlaylistService: Server playlist update applied successfully.");
