@@ -136,10 +136,30 @@ public class Level
 	private List<DateTime> TimeStamps { get; } = [];
 
 
-	public void AddTimeStamp()
+	/// <summary>
+	///     Stops counting play time. Idempotent: an interval is only closed when one is open.
+	///     Play time is stored as pairs of timestamps, so pausing is simply closing the open
+	///     pair - the model was built for exactly this.
+	/// </summary>
+	public void PauseTiming()
 	{
-		TimeStamps.Add(DateTime.Now);
+		if (TimeStamps.Count % 2 == 1)
+		{
+			TimeStamps.Add(DateTime.Now);
+		}
 	}
+
+	/// <summary>Starts counting again. Idempotent, same reasoning as PauseTiming.</summary>
+	public void ResumeTiming()
+	{
+		if (TimeStamps.Count % 2 == 0)
+		{
+			TimeStamps.Add(DateTime.Now);
+		}
+	}
+
+	/// <summary>True while play time is being counted.</summary>
+	public bool IsTiming => TimeStamps.Count % 2 == 1;
 
 	public void Start()
 	{

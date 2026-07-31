@@ -5,6 +5,7 @@ using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
+using ZeepSDK.UI;
 
 namespace AuthorTimeHunting;
 
@@ -36,6 +37,8 @@ public class Plugin : BaseUnityPlugin
 	{
 		InitializeConfig();
 		_services = new ModServices();
+		UIApi.AddZeepGUIDrawer(_services.Window);
+		CommandAth.CommandTrigger += _services.Window.Toggle;
 		InitializeHarmony();
 		RegisterChatCommands();
 		InitializeStateMachine();
@@ -46,6 +49,12 @@ public class Plugin : BaseUnityPlugin
 
 	private void OnDestroy()
 	{
+		if (_services != null)
+		{
+			CommandAth.CommandTrigger -= _services.Window.Toggle;
+			UIApi.RemoveZeepGUIDrawer(_services.Window);
+		}
+
 		_services?.GameState.Dispose();
 		_services?.WorkshopDownloads.Dispose();
 		_harmony?.UnpatchSelf();
@@ -69,6 +78,7 @@ public class Plugin : BaseUnityPlugin
 		ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
 		ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
 		ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
+		ChatCommandApi.RegisterLocalChatCommand<CommandAth>();
 	}
 
 	private void InitializeStateMachine()

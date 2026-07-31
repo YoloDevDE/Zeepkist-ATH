@@ -32,7 +32,6 @@ public partial class AthStateMachine : StateMachineBase
 	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
 
 	private AthLoopBehaviour _behaviour;
-	private readonly AthHudDrawer _hudDrawer;
 	private readonly AthPanelDrawer _panelDrawer;
 	private int _consecutiveTickFailures;
 	private bool _eventsSubscribed;
@@ -59,9 +58,7 @@ public partial class AthStateMachine : StateMachineBase
 		_behaviour = host.AddComponent<AthLoopBehaviour>();
 		_behaviour.Bind(this);
 
-		_hudDrawer = new AthHudDrawer();
 		_panelDrawer = new AthPanelDrawer();
-		UIApi.AddZeepGUIDrawer(_hudDrawer);
 		UIApi.AddZeepGUIDrawer(_panelDrawer);
 	}
 
@@ -86,17 +83,14 @@ public partial class AthStateMachine : StateMachineBase
 		// nothing to render and every CurrentLevel access below would throw.
 		if (Ctx.CurrentLevel == null)
 		{
-			_hudDrawer.Current = null;
 			return;
 		}
 
+		// The window reads the run directly every frame, so nothing has to be pushed to it.
 		if (Plugin.Instance.MyConfig.InGameHud.Value)
 		{
-			_hudDrawer.Current = RunHudView.From(Ctx, paused);
 			return;
 		}
-
-		_hudDrawer.Current = null;
 
 		var colors = new
 		{
@@ -200,6 +194,37 @@ public partial class AthStateMachine : StateMachineBase
 		}
 
 		ChatMessageService.SendCustomMessage(PanelChatRenderer.Render(panel));
+	}
+
+	/// <summary>Stops the run clock until <see cref="ResumeRun" />.</summary>
+	public void PauseRun()
+	{
+		if (Ctx.IsPaused)
+		{
+			return;
+		}
+
+		Ctx.IsPaused = true;
+		Ctx.CurrentLevel?.PauseTiming();
+		Logger.LogInfo("AthStateMachine: Run paused.");
+	}
+
+	/// <summary>Starts the clock again, but only if a level is actually being played.</summary>
+	public void ResumeRun()
+	{
+		if (!Ctx.IsPaused)
+		{
+			return;
+		}
+
+		Ctx.IsPaused = false;
+
+		if (CurrentState is StateAthOnARun)
+		{
+			Ctx.CurrentLevel?.ResumeTiming();
+		}
+
+		Logger.LogInfo("AthStateMachine: Run resumed.");
 	}
 
 	public void OnAthTimerTick()
@@ -328,9 +353,7 @@ public partial class AthStateMachine : StateMachineBase
 	public void Dispose()
 	{
 		StopTimer();
-		UIApi.RemoveZeepGUIDrawer(_hudDrawer);
 		UIApi.RemoveZeepGUIDrawer(_panelDrawer);
-		_hudDrawer.Current = null;
 		_panelDrawer.Clear();
 
 		// Unity's overloaded == reports a destroyed object as null, so this covers both

@@ -1,4 +1,6 @@
-﻿namespace AuthorTimeHunting.Service;
+﻿using AuthorTimeHunting.UI;
+
+namespace AuthorTimeHunting.Service;
 
 /// <summary>
 ///     The services that live as long as the game session does, constructed once in
@@ -36,6 +38,12 @@ public class ModServices
 	///     race instead of being refused.
 	/// </summary>
 	public GameStateObserver GameState { get; } = new();
+
+	/// <summary>
+	///     The mod's window. Session-scoped because it is also what a player sees when no run
+	///     is going - that is where the Start button lives.
+	/// </summary>
+	public AthWindow Window { get; } = new();
 
 	/// <summary>
 	///     Builds the level pool for one run. Lives here because the pool's two sources are

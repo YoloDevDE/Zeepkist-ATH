@@ -12,7 +12,11 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 {
 	public override void Enter()
 	{
-		AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
+		// A run resumed while the player paused ATH must not restart the clock.
+		if (!AthStateMachine.Ctx.IsPaused)
+		{
+			AthStateMachine.Ctx.CurrentLevel.ResumeTiming();
+		}
 	}
 
 	public override void Execute()
@@ -23,7 +27,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 	public override void Exit()
 	{
-		AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
+		AthStateMachine.Ctx.CurrentLevel.PauseTiming();
 	}
 
 	public override void OnRoundEnded()

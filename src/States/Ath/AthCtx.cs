@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AuthorTimeHunting.Entities;
@@ -57,6 +57,12 @@ public class AthCtx
 	public int ConsecutiveDuplicateCount { get; set; }
 
 	public int AvaiableFreeSkips { get; set; } = 1;
+
+	/// <summary>
+	///     True while the player has paused the run from the UI. The level clock is stopped
+	///     and stays stopped across round starts until they resume.
+	/// </summary>
+	public bool IsPaused { get; set; }
 
 	#endregion
 

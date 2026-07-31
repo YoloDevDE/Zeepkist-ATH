@@ -55,6 +55,7 @@ public class StateMasterOn : StateBase
 		SubStateMachine.StateMachineFinished += Stop;
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = true;
+		Master.Services.Window.ActiveRun = AthStateMachine;
 		AthStateMachine.StartTimer();
 		Messenger.Notify().Log("started");
 	}
@@ -63,6 +64,7 @@ public class StateMasterOn : StateBase
 	{
 		IsActive = false;
 		Messenger.Notify().Log("stopped");
+		Master.Services.Window.ActiveRun = null;
 		AthStateMachine.StopTimer();
 		AthStateMachine.Dispose();
 		CommandStop.CommandTrigger -= Stop;
