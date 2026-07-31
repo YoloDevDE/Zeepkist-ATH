@@ -38,12 +38,12 @@ public class StateMasterOff : StateBase
 		StateMachine.TransitionTo(new StateMasterOn((MasterStateMachine)StateMachine));
 	}
 
-    /// <summary>
-    ///     StateMasterOn.Enter() reaches straight into the online HUD. Outside a lobby that
-    ///     chain is null and the transition dies halfway through, leaving
-    ///     MasterStateMachine.CurrentState inconsistent. Refuse before the transition starts.
-    /// </summary>
-    private static bool IsReadyToStart()
+	/// <summary>
+	///     StateMasterOn.Enter() reaches straight into the online HUD. Outside a lobby that
+	///     chain is null and the transition dies halfway through, leaving
+	///     MasterStateMachine.CurrentState inconsistent. Refuse before the transition starts.
+	/// </summary>
+	private static bool IsReadyToStart()
 	{
 		if (ZeepkistNetwork.CurrentLobby == null)
 		{

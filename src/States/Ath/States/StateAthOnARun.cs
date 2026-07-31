@@ -10,7 +10,6 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-
 	public override void Enter()
 	{
 		AthStateMachine.Ctx.CurrentLevel.AddTimeStamp();
@@ -117,6 +116,6 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 			return Level.LevelStatus.GOLD;
 		}
 
-		return Level.LevelStatus.UNKOWN;
+		return Level.LevelStatus.UNKNOWN;
 	}
 }

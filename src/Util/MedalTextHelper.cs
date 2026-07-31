@@ -14,168 +14,176 @@ namespace AuthorTimeHunting.Util;
 /// </summary>
 public static class MedalTextHelper
 {
-    private const string AthHeader = "<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>";
-    private const float FadeInDuration = 0.12f;
-    private static float _shownAt;
-    private static bool _hasOriginalAlignment;
-    private static TextAlignmentOptions _originalAlignment;
+	private const string AthHeader =
+		"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>";
 
-    /// <summary>True while a medal message should be kept visible on RoundOverText.</summary>
-    public static bool IsMedalTextActive { get; private set; }
+	private const float FadeInDuration = 0.12f;
+	private static float _shownAt;
+	private static bool _hasOriginalAlignment;
+	private static TextAlignmentOptions _originalAlignment;
 
-    /// <summary>The full formatted string currently queued for display.</summary>
-    public static string PendingText { get; private set; }
+	/// <summary>True while a medal message should be kept visible on RoundOverText.</summary>
+	public static bool IsMedalTextActive { get; private set; }
 
-    /// <summary>
-    ///     Queues <paramref name="text" /> for display on RoundOverText with the ATH header.
-    ///     The text is written every Update frame by <c>OnlineGameplayUIPatch</c> until cleared.
-    /// </summary>
-    public static void SetMedalText(string text)
-    {
-        PendingText = $"<align=left><margin-left=45%>{AthHeader}{text}</align>";
-        IsMedalTextActive = true;
-        _shownAt = Time.unscaledTime;
-    }
+	/// <summary>The full formatted string currently queued for display.</summary>
+	public static string PendingText { get; private set; }
 
-    public static void SetMedalProgressText(Level level, double runTime, bool isNewMedal)
-    {
-        if (level == null)
-        {
-            return;
-        }
+	/// <summary>
+	///     Queues <paramref name="text" /> for display on RoundOverText with the ATH header.
+	///     The text is written every Update frame by <c>OnlineGameplayUIPatch</c> until cleared.
+	/// </summary>
+	public static void SetMedalText(string text)
+	{
+		PendingText = $"<align=left><margin-left=45%>{AthHeader}{text}</align>";
+		IsMedalTextActive = true;
+		_shownAt = Time.unscaledTime;
+	}
 
-        Level.LevelStatus currentMedal = ResolveRunMedal(level, runTime);
+	public static void SetMedalProgressText(Level level, double runTime, bool isNewMedal)
+	{
+		if (level == null)
+		{
+			return;
+		}
 
-        if (currentMedal is not (Level.LevelStatus.AUTHOR or Level.LevelStatus.GOLD))
-        {
-            return;
-        }
+		Level.LevelStatus currentMedal = ResolveRunMedal(level, runTime);
 
-        string medalName = currentMedal == Level.LevelStatus.AUTHOR ? "AUTHOR" : "GOLD";
-        string medalColorHex = currentMedal == Level.LevelStatus.AUTHOR ? ColorDefinitions.Author.CTToHexRGB() : ColorDefinitions.Gold.CTToHexRGB();
-        string stateColorHex = isNewMedal ? "50E451" : "D5D5D5";
-        string statePrefix = isNewMedal ? "NEW" : "CURRENT";
+		if (currentMedal is not (Level.LevelStatus.AUTHOR or Level.LevelStatus.GOLD))
+		{
+			return;
+		}
 
-        string titleLine = $"<#{stateColorHex}><b>{statePrefix}</b></color> <#DCDCDC>medal:</color> <b><#{medalColorHex}>{medalName}</color></b>";
-        string nextMedalLine = BuildNextMedalLine(level, runTime, currentMedal);
+		string medalName = currentMedal == Level.LevelStatus.AUTHOR ? "AUTHOR" : "GOLD";
+		string medalColorHex = currentMedal == Level.LevelStatus.AUTHOR
+			? ColorDefinitions.Author.CTToHexRGB()
+			: ColorDefinitions.Gold.CTToHexRGB();
+		string stateColorHex = isNewMedal ? "50E451" : "D5D5D5";
+		string statePrefix = isNewMedal ? "NEW" : "CURRENT";
 
-        SetMedalText($"{titleLine}<br>{nextMedalLine}");
-    }
+		string titleLine =
+			$"<#{stateColorHex}><b>{statePrefix}</b></color> <#DCDCDC>medal:</color> <b><#{medalColorHex}>{medalName}</color></b>";
+		string nextMedalLine = BuildNextMedalLine(level, runTime, currentMedal);
 
-    /// <summary>Clears the active medal text (call on round-start).</summary>
-    public static void ClearMedalText()
-    {
-        IsMedalTextActive = false;
-        PendingText = null;
-        _shownAt = 0f;
-    }
+		SetMedalText($"{titleLine}<br>{nextMedalLine}");
+	}
 
-    public static float GetCurrentAlpha()
-    {
-        if (!IsMedalTextActive)
-        {
-            return 0f;
-        }
+	/// <summary>Clears the active medal text (call on round-start).</summary>
+	public static void ClearMedalText()
+	{
+		IsMedalTextActive = false;
+		PendingText = null;
+		_shownAt = 0f;
+	}
 
-        float elapsed = Time.unscaledTime - _shownAt;
+	public static float GetCurrentAlpha()
+	{
+		if (!IsMedalTextActive)
+		{
+			return 0f;
+		}
 
-        if (elapsed < 0f)
-        {
-            return 0f;
-        }
+		float elapsed = Time.unscaledTime - _shownAt;
 
-        if (elapsed <= FadeInDuration)
-        {
-            return Mathf.Clamp01(elapsed / FadeInDuration);
-        }
+		if (elapsed < 0f)
+		{
+			return 0f;
+		}
 
-        return 1f;
-    }
+		if (elapsed <= FadeInDuration)
+		{
+			return Mathf.Clamp01(elapsed / FadeInDuration);
+		}
 
-    /// <summary>
-    ///     Writes <see cref="PendingText" /> into the provided <paramref name="roundOverText" /> component.
-    ///     Called by <c>OnlineGameplayUIPatch</c> each frame while <see cref="IsMedalTextActive" /> is true.
-    /// </summary>
-    public static void ApplyToUI(TMP_Text roundOverText)
-    {
-        if (roundOverText == null || !IsMedalTextActive || PendingText == null)
-        {
-            return;
-        }
+		return 1f;
+	}
 
-        float alpha = GetCurrentAlpha();
+	/// <summary>
+	///     Writes <see cref="PendingText" /> into the provided <paramref name="roundOverText" /> component.
+	///     Called by <c>OnlineGameplayUIPatch</c> each frame while <see cref="IsMedalTextActive" /> is true.
+	/// </summary>
+	public static void ApplyToUI(TMP_Text roundOverText)
+	{
+		if (roundOverText == null || !IsMedalTextActive || PendingText == null)
+		{
+			return;
+		}
 
-        if (alpha <= 0f)
-        {
-            return;
-        }
+		float alpha = GetCurrentAlpha();
 
-        roundOverText.SetText(PendingText);
+		if (alpha <= 0f)
+		{
+			return;
+		}
 
-        if (!_hasOriginalAlignment)
-        {
-            _originalAlignment = roundOverText.alignment;
-            _hasOriginalAlignment = true;
-        }
+		roundOverText.SetText(PendingText);
 
-        if (roundOverText.alignment != TextAlignmentOptions.Left)
-        {
-            roundOverText.alignment = TextAlignmentOptions.Left;
-        }
+		if (!_hasOriginalAlignment)
+		{
+			_originalAlignment = roundOverText.alignment;
+			_hasOriginalAlignment = true;
+		}
 
-        Color currentColor = roundOverText.color;
-        roundOverText.color = new Color(currentColor.r, currentColor.g, currentColor.b, alpha);
-    }
+		if (roundOverText.alignment != TextAlignmentOptions.Left)
+		{
+			roundOverText.alignment = TextAlignmentOptions.Left;
+		}
 
-    public static void ResetUI(TMP_Text roundOverText)
-    {
-        if (roundOverText == null)
-        {
-            return;
-        }
+		Color currentColor = roundOverText.color;
+		roundOverText.color = new Color(currentColor.r, currentColor.g, currentColor.b, alpha);
+	}
 
-        if (_hasOriginalAlignment && roundOverText.alignment != _originalAlignment)
-        {
-            roundOverText.alignment = _originalAlignment;
-        }
+	public static void ResetUI(TMP_Text roundOverText)
+	{
+		if (roundOverText == null)
+		{
+			return;
+		}
 
-        _hasOriginalAlignment = false;
-    }
+		if (_hasOriginalAlignment && roundOverText.alignment != _originalAlignment)
+		{
+			roundOverText.alignment = _originalAlignment;
+		}
 
-    private static Level.LevelStatus ResolveRunMedal(Level level, double runTime)
-    {
-        if (runTime <= level.AuthorTime)
-        {
-            return Level.LevelStatus.AUTHOR;
-        }
+		_hasOriginalAlignment = false;
+	}
 
-        if (runTime <= level.GoldTime)
-        {
-            return Level.LevelStatus.GOLD;
-        }
+	private static Level.LevelStatus ResolveRunMedal(Level level, double runTime)
+	{
+		if (runTime <= level.AuthorTime)
+		{
+			return Level.LevelStatus.AUTHOR;
+		}
 
-        return Level.LevelStatus.UNKOWN;
-    }
+		if (runTime <= level.GoldTime)
+		{
+			return Level.LevelStatus.GOLD;
+		}
 
-    private static string BuildNextMedalLine(Level level, double runTime, Level.LevelStatus currentMedal)
-    {
-        string atTime = level.AuthorTime.GetFormattedTime();
-        string atDisplay = $" {atTime}";
-        double diffToAuthor = runTime - level.AuthorTime;
-        double absDiff = Math.Abs(diffToAuthor);
-        string diffSign = StringUtils.GetSign(diffToAuthor);
-        string diffColorHex = diffToAuthor <= 0 ? ColorDefinitions.GreenSplit.CTToHexRGB() : ColorDefinitions.YellowSplit.CTToHexRGB();
-        string diffDisplay = $"{diffSign}{absDiff.GetFormattedTime()}";
-        string atLabel = "AT:".PadRight(5);
-        string youLabel = "YOU:".PadRight(5);
+		return Level.LevelStatus.UNKNOWN;
+	}
 
-        string atYouBlock = $"<mspace=0.58em><#AAAAAA>{atLabel}</color><#{ColorDefinitions.Author.CTToHexRGB()}>{atDisplay}</color><br><#AAAAAA>{youLabel}</color><#{diffColorHex}>{diffDisplay}</color></mspace>";
+	private static string BuildNextMedalLine(Level level, double runTime, Level.LevelStatus currentMedal)
+	{
+		string atTime = level.AuthorTime.GetFormattedTime();
+		string atDisplay = $" {atTime}";
+		double diffToAuthor = runTime - level.AuthorTime;
+		double absDiff = Math.Abs(diffToAuthor);
+		string diffSign = StringUtils.GetSign(diffToAuthor);
+		string diffColorHex = diffToAuthor <= 0
+			? ColorDefinitions.GreenSplit.CTToHexRGB()
+			: ColorDefinitions.YellowSplit.CTToHexRGB();
+		string diffDisplay = $"{diffSign}{absDiff.GetFormattedTime()}";
+		string atLabel = "AT:".PadRight(5);
+		string youLabel = "YOU:".PadRight(5);
 
-        if (currentMedal == Level.LevelStatus.AUTHOR)
-        {
-            return $"{atYouBlock}<br><#A7A7A7>(respawn to skip)</color>";
-        }
+		string atYouBlock =
+			$"<mspace=0.58em><#AAAAAA>{atLabel}</color><#{ColorDefinitions.Author.CTToHexRGB()}>{atDisplay}</color><br><#AAAAAA>{youLabel}</color><#{diffColorHex}>{diffDisplay}</color></mspace>";
 
-        return atYouBlock;
-    }
+		if (currentMedal == Level.LevelStatus.AUTHOR)
+		{
+			return $"{atYouBlock}<br><#A7A7A7>(respawn to skip)</color>";
+		}
+
+		return atYouBlock;
+	}
 }

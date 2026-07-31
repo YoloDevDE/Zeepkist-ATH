@@ -5,16 +5,16 @@ namespace AuthorTimeHunting.Commands;
 
 public class CommandRestart : ILocalChatCommand
 {
-    public string Prefix => "/";
-    public string Command => "ath restart";
+	public string Prefix => "/";
+	public string Command => "ath restart";
 
-    public string Description => "Restarts the Author-Time-Hunting.";
+	public string Description => "Restarts the Author-Time-Hunting.";
 
-    public void Handle(string arguments)
-    {
-        CommandTrigger?.Invoke();
-    }
+	public void Handle(string arguments)
+	{
+		CommandTrigger?.Invoke();
+	}
 
-    // Event-Definition
-    public static event Action CommandTrigger;
+	// Event-Definition
+	public static event Action CommandTrigger;
 }

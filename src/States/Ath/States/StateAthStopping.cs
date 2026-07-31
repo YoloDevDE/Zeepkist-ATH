@@ -70,6 +70,4 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 		playlistSaveFile.amountOfLevels = playedCount;
 		playlistSaveFile.CreateEditor().Save();
 	}
-
-
 }

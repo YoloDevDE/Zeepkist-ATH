@@ -5,9 +5,6 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-
-
-
 	public override void Execute()
 	{
 		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null

@@ -10,7 +10,6 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthProcessingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-
 	public override async void Execute()
 	{
 		try

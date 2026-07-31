@@ -38,7 +38,8 @@ public abstract class StateMachineBase
 			throw new ArgumentNullException(nameof(nextState));
 		}
 
-		Logger.LogInfo($"StateMachine: Transitioning from {(CurrentState == null ? "null" : CurrentState.GetType().Name)} to {nextState.GetType().Name}");
+		Logger.LogInfo(
+			$"StateMachine: Transitioning from {(CurrentState == null ? "null" : CurrentState.GetType().Name)} to {nextState.GetType().Name}");
 
 		if (CurrentState != null)
 		{
@@ -74,7 +75,8 @@ public abstract class StateMachineBase
 	{
 		try
 		{
-			Logger.LogInfo($"StateMachine: Disposing. Current state: {(CurrentState == null ? "null" : CurrentState.GetType().Name)}");
+			Logger.LogInfo(
+				$"StateMachine: Disposing. Current state: {(CurrentState == null ? "null" : CurrentState.GetType().Name)}");
 
 			if (CurrentState == null)
 			{
@@ -85,7 +87,8 @@ public abstract class StateMachineBase
 			string currentStateName = CurrentState.GetType().Name;
 			string finalStateName = FinalState.GetType().Name;
 
-			Logger.LogDebug($"StateMachine: Checking if current state ({currentStateName}) matches final state ({finalStateName})");
+			Logger.LogDebug(
+				$"StateMachine: Checking if current state ({currentStateName}) matches final state ({finalStateName})");
 
 			if (currentStateName != finalStateName)
 			{

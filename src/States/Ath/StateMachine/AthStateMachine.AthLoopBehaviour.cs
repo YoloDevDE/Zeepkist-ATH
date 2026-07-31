@@ -13,11 +13,6 @@ public partial class AthStateMachine
 	{
 		private AthStateMachine _owner;
 
-		public void Bind(AthStateMachine owner)
-		{
-			_owner = owner;
-		}
-
 		private void Update()
 		{
 			if (_owner is not { _timerStarted: true })
@@ -26,6 +21,11 @@ public partial class AthStateMachine
 			}
 
 			_owner.OnAthTimerTick();
+		}
+
+		public void Bind(AthStateMachine owner)
+		{
+			_owner = owner;
 		}
 	}
 }

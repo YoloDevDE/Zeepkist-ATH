@@ -12,13 +12,8 @@ public class Level
 		FREE = 2,
 		FAILED = 3,
 		BROKEN = 4,
-		UNKOWN = 5
+		UNKNOWN = 5
 	}
-
-	private readonly string _author;
-	private readonly string _name;
-	private DateTime _endTime;
-	private float _personalBestTime = -1f;
 
 	public Level(LevelScriptableObject level)
 		: this(level.UID, level.Name, level.Author, level.TimeAuthor, level.TimeGold)
@@ -34,8 +29,8 @@ public class Level
 	{
 		// Initialize immutable properties
 		LevelUid = levelUid;
-		_name = name;
-		_author = author;
+		Name = name;
+		Author = author;
 		AuthorTime = authorTime;
 		GoldTime = goldTime;
 	}
@@ -43,8 +38,8 @@ public class Level
 	// Basic level information (immutable after creation)
 	public string LevelUid { get; }
 
-	public string Name => $"<noparse>{_name}</noparse>";
-	public string Author => $"<noparse>{_author}</noparse>";
+	public string Name => $"<noparse>{field}</noparse>";
+	public string Author => $"<noparse>{field}</noparse>";
 	public double AuthorTime { get; }
 	public double GoldTime { get; }
 
@@ -85,7 +80,7 @@ public class Level
 			}
 
 			{
-				return LevelStatus.UNKOWN;
+				return LevelStatus.UNKNOWN;
 			}
 		}
 	}
@@ -97,15 +92,15 @@ public class Level
 
 	public float PersonalBestTime
 	{
-		get => _personalBestTime;
+		get;
 		set
 		{
-			if (value >= 0 && (_personalBestTime <= 0 || value < _personalBestTime))
+			if (value >= 0 && (field <= 0 || value < field))
 			{
-				_personalBestTime = value;
+				field = value;
 			}
 		}
-	}
+	} = -1f;
 
 	public TimeSpan TimeWasted =>
 		LevelBroken
@@ -132,8 +127,8 @@ public class Level
 
 	public DateTime EndTime
 	{
-		get => _endTime == default ? DateTime.Now : _endTime;
-		set => _endTime = value;
+		get => field == default ? DateTime.Now : field;
+		set;
 	}
 
 	private List<DateTime> TimeStamps { get; } = [];

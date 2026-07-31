@@ -18,60 +18,61 @@ namespace AuthorTimeHunting.Patches;
 [HarmonyPatch(typeof(OnlineGameplayUI), "Update")]
 public static class OnlineGameplayUIPatch
 {
-    private static FieldInfo _endRoundBufferField;
+	private static FieldInfo _endRoundBufferField;
 
-    [HarmonyPostfix]
-    public static void Postfix(OnlineGameplayUI __instance)
-    {
-        bool isCountdownActive = StateAthStarting.IsCountdownActive;
-        bool isMedalTextActive = MedalTextHelper.IsMedalTextActive;
+	[HarmonyPostfix]
+	public static void Postfix(OnlineGameplayUI __instance)
+	{
+		bool isCountdownActive = StateAthStarting.IsCountdownActive;
+		bool isMedalTextActive = MedalTextHelper.IsMedalTextActive;
 
-        TMP_Text roundOverText = __instance.RoundOverText;
+		TMP_Text roundOverText = __instance.RoundOverText;
 
-        if (roundOverText == null)
-        {
-            return;
-        }
+		if (roundOverText == null)
+		{
+			return;
+		}
 
-        if (!isMedalTextActive)
-        {
-            MedalTextHelper.ResetUI(roundOverText);
-        }
+		if (!isMedalTextActive)
+		{
+			MedalTextHelper.ResetUI(roundOverText);
+		}
 
-        if (!isCountdownActive && !isMedalTextActive)
-        {
-            return;
-        }
+		if (!isCountdownActive && !isMedalTextActive)
+		{
+			return;
+		}
 
-        // Lazily resolve private fields via reflection
-        if (_endRoundBufferField == null)
-        {
-            _endRoundBufferField = typeof(OnlineGameplayUI).GetField("EndRoundBuffer", BindingFlags.NonPublic | BindingFlags.Instance);
-        }
+		// Lazily resolve private fields via reflection
+		if (_endRoundBufferField == null)
+		{
+			_endRoundBufferField =
+				typeof(OnlineGameplayUI).GetField("EndRoundBuffer", BindingFlags.NonPublic | BindingFlags.Instance);
+		}
 
-        // Force the EndRoundBuffer container active so RoundOverText is visible
-        GameObject endRoundBuffer = _endRoundBufferField?.GetValue(__instance) as GameObject;
+		// Force the EndRoundBuffer container active so RoundOverText is visible
+		GameObject endRoundBuffer = _endRoundBufferField?.GetValue(__instance) as GameObject;
 
-        if (endRoundBuffer != null && !endRoundBuffer.activeSelf)
-        {
-            endRoundBuffer.SetActive(true);
-        }
+		if (endRoundBuffer != null && !endRoundBuffer.activeSelf)
+		{
+			endRoundBuffer.SetActive(true);
+		}
 
-        if (isCountdownActive)
-        {
-            // Keep alpha at 1 for ATH countdown (GameState 1 animates it from 0)
-            Color c = roundOverText.color;
+		if (isCountdownActive)
+		{
+			// Keep alpha at 1 for ATH countdown (GameState 1 animates it from 0)
+			Color c = roundOverText.color;
 
-            if (c.a < 1f)
-            {
-                roundOverText.color = new Color(c.r, c.g, c.b, 1f);
-            }
-        }
+			if (c.a < 1f)
+			{
+				roundOverText.color = new Color(c.r, c.g, c.b, 1f);
+			}
+		}
 
-        if (isMedalTextActive)
-        {
-            // Re-apply medal text every frame and control alpha via helper-side fade profile
-            MedalTextHelper.ApplyToUI(roundOverText);
-        }
-    }
+		if (isMedalTextActive)
+		{
+			// Re-apply medal text every frame and control alpha via helper-side fade profile
+			MedalTextHelper.ApplyToUI(roundOverText);
+		}
+	}
 }

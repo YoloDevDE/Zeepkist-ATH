@@ -6,7 +6,6 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthEvaluateSkip(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-
 	public override void Execute()
 	{
 		AthCtx athCtx = AthStateMachine.Ctx;
