@@ -50,7 +50,7 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 		catch (Exception e)
 		{
 			Logger.LogError($"StateAthStartLevelFirstTime: Could not pre-load the next level: {e.Message}");
-			Overlay.Notify("Could not load the next level - the playlist may run out", HudPalette.Warning);
+			Messenger.Notify().LogWarning("Could not load the next level - the playlist may run out");
 		}
 	}
 
@@ -58,7 +58,6 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 	public override void OnRoundStarted()
 	{
 		_ = AddLevelAsync();
-		Overlay.ClearBanner();
 		StateMachine.TransitionTo(new StateAthOnARun(AthStateMachine));
 	}
 }

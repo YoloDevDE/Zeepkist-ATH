@@ -25,8 +25,6 @@ public class StateMasterOff : StateBase
 	}
 
 	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
-	private AthOverlay Overlay => Master.Services.Overlay;
-
 	public override void Enter()
 	{
 		CommandStop.CommandTrigger += StopChallenge;
@@ -48,7 +46,7 @@ public class StateMasterOff : StateBase
 	{
 		if (!GameStateObserver.IsInOnlineLobby)
 		{
-			Overlay.Notify("ATH only runs in an online lobby", HudPalette.Warning);
+			Messenger.Notify().LogWarning("ATH only runs in an online lobby");
 			return;
 		}
 
@@ -58,7 +56,7 @@ public class StateMasterOff : StateBase
 		if (!GameStateObserver.IsRacing)
 		{
 			_startPending = true;
-			Overlay.Notify("ATH starts as soon as the level is loaded", HudPalette.Default);
+			Messenger.Notify().Log("ATH starts as soon as the level is loaded");
 			Logger.LogInfo($"StateMasterOff: Start requested while {DescribeWait()}, waiting for the race to start.");
 			return;
 		}
@@ -98,7 +96,7 @@ public class StateMasterOff : StateBase
 		if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null ||
 		    PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)
 		{
-			Overlay.Notify("Online HUD not ready yet, try again in a moment", HudPalette.Warning);
+			Messenger.Notify().LogWarning("Online HUD not ready yet, try again in a moment");
 			return false;
 		}
 
@@ -117,10 +115,10 @@ public class StateMasterOff : StateBase
 		if (_startPending)
 		{
 			_startPending = false;
-			Overlay.Notify("Pending start cancelled", HudPalette.Default);
+			Messenger.Notify().Log("Pending start cancelled");
 			return;
 		}
 
-		Overlay.Notify("ATH is not running", HudPalette.Warning);
+		Messenger.Notify().LogWarning("ATH is not running");
 	}
 }

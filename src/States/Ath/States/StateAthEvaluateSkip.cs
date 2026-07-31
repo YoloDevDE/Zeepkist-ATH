@@ -1,5 +1,7 @@
-using AuthorTimeHunting.States.Ath.StateMachine;
+﻿using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI;
+
+using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -41,28 +43,28 @@ public class StateAthEvaluateSkip(AthStateMachine stateMachine) : AthState(state
 	private void HandleBrokenSkip(AthCtx ctx)
 	{
 		ctx.CurrentLevel.LevelBroken = true;
-		Overlay.Notify("'Broken-Skip' used - spent time refunded", HudPalette.Warning);
+		Messenger.Notify().LogWarning("'Broken-Skip' used - spent time refunded");
 	}
 
 	private void HandleGoldSkip()
 	{
-		Overlay.Notify("'Gold-Skip' used", HudPalette.Gold);
+		Messenger.Notify().LogSuccess("'Gold-Skip' used");
 	}
 
 	private void HandleFreeSkip(AthCtx ctx)
 	{
 		ctx.AvaiableFreeSkips -= 1;
 		ctx.CurrentLevel.FreeSkipped = true;
-		Overlay.Notify("'Free-Skip' used", HudPalette.FreeSkip);
+		Messenger.Notify().LogSuccess("'Free-Skip' used");
 	}
 
 	private void HandleTimeExpiredSkip()
 	{
-		Overlay.Notify("Well.. I tried to warn you.. Hunt is over once the level is loaded.", HudPalette.Danger, 10f);
+		Messenger.Notify().LogError("Well.. I tried to warn you.. Hunt is over once the level is loaded.", 10f);
 	}
 
 	private void HandlePenaltySkip()
 	{
-		Overlay.Notify("'Penalty-Skip' used", HudPalette.Penalty);
+		Messenger.Notify().LogError("'Penalty-Skip' used");
 	}
 }

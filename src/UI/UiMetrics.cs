@@ -48,6 +48,18 @@ internal static class UiMetrics
 	}
 
 	/// <summary>
+	///     Head room added to every measured panel height.
+	///     A panel that measures a hair short grows a scrollbar, and a scrollbar on a HUD is
+	///     worse than a little empty space: it means the panel is now something you operate
+	///     rather than read. Counting rows by hand will drift again the next time one is
+	///     added, so the measurement is given a row to be wrong by.
+	/// </summary>
+	public static float Slack(ImGui gui)
+	{
+		return gui.GetRowHeight();
+	}
+
+	/// <summary>
 	///     Buttons follow the text size rather than the screen - a button scaled to a 4K canvas
 	///     would be a slab.
 	/// </summary>

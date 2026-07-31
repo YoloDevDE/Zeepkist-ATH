@@ -11,7 +11,6 @@ public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(state
 		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null
 			? $"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>"
 			: "Good Luck Have Fun!";
-		Overlay.ShowBanner(MedalBanner.Message(levelInfo));
 	}
 
 	public override void OnLevelLoaded()

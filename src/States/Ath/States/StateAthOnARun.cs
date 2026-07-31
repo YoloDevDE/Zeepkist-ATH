@@ -4,6 +4,8 @@ using AuthorTimeHunting.UI;
 using ZeepkistClient;
 using ZeepkistNetworking;
 
+using AuthorTimeHunting.Util;
+
 namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachine)
@@ -20,7 +22,6 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 	public override void Execute()
 	{
 		OnAthTimerTick();
-		AthStateMachine.Show(AthStateMachine.Ctx.Messages.OnARun());
 	}
 
 	public override void Exit()
@@ -64,18 +65,14 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (runMedalStatus == Level.LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
 		{
-			Overlay.Notify("Gold medal claimed!<br>You can now skip without penalty", HudPalette.Default);
-			Overlay.ShowBanner(MedalBanner.Message("New Medal Claimed: Gold", 5f));
-			AthStateMachine.Show(AthStateMachine.Ctx.Messages.GoldMedalClaimed());
+			Messenger.Notify().Log("Gold medal claimed!<br>You can now skip without penalty");
 		}
 
 		StateMachine.TransitionTo(new StateAthPausing(AthStateMachine));
-		AthStateMachine.Show(AthStateMachine.Ctx.Messages.CrossedFinishLine());
 	}
 
 	public override void OnRoundStarted()
 	{
-		Overlay.ClearBanner();
 		AthStateMachine.Ctx.CurrentLevel.Attempt++;
 		Execute();
 	}
@@ -92,8 +89,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
 		{
-			Overlay.Notify("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", HudPalette.Default,
-				10f);
+			Messenger.Notify().Log("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
 		}
 	}
 

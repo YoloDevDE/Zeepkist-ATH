@@ -27,13 +27,7 @@ public class AthCtx
 		// access, so opening the config mid-run and raising Duration handed out extra time.
 		Duration = Plugin.Instance.MyConfig.Duration.Value * 1000;
 		PenaltyTimeInMilliseconds = Plugin.Instance.MyConfig.PenaltyTime.Value * 1000;
-		Messages = new RunPresenter(this);
 	}
-
-	/// <summary>
-	///     Builds every chat message for this run. Reads the context, never writes to it.
-	/// </summary>
-	public RunPresenter Messages { get; }
 
 	#region Run Settings
 

@@ -57,13 +57,13 @@ public class StateMasterOn : StateBase
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
 		Master.Services.PublishRun(AthStateMachine);
 		AthStateMachine.StartTimer();
-		Master.Services.Overlay.Notify("Hunt started", HudPalette.Positive);
+		Messenger.Notify().LogSuccess("Hunt started");
 	}
 
 	public override void Exit()
 	{
 		IsActive = false;
-		Master.Services.Overlay.Notify("Hunt stopped", HudPalette.Default);
+		Messenger.Notify().Log("Hunt stopped");
 		Master.Services.PublishRun(null);
 		AthStateMachine.StopTimer();
 		AthStateMachine.Dispose();
@@ -101,7 +101,7 @@ public class StateMasterOn : StateBase
 		// No race condition between the check and the transition: IsRacing is derived from
 		// game state that only changes between frames, and nothing here yields.
 		Logger.LogInfo("StateMasterOn: Restart requested outside a running race, deferring the new run.");
-		Master.Services.Overlay.Notify("ATH restarts as soon as the level is loaded", HudPalette.Default);
+		Messenger.Notify().Log("ATH restarts as soon as the level is loaded");
 		StateMachine.TransitionTo(new StateMasterOff(Master, true));
 	}
 
@@ -116,7 +116,7 @@ public class StateMasterOn : StateBase
 
 	private void Start()
 	{
-		Master.Services.Overlay.Notify("ATH is already running", HudPalette.Warning);
+		Messenger.Notify().LogWarning("ATH is already running");
 	}
 
 	private void Stop()

@@ -2,6 +2,8 @@
 using AuthorTimeHunting.UI;
 using ZeepkistClient;
 
+using AuthorTimeHunting.Util;
+
 namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(stateMachine)
@@ -20,7 +22,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 		if (!_hasShownAuthorMedal)
 		{
-			Overlay.Notify("Author time claimed!<br>[Respawn to continue]", HudPalette.Default);
+			Messenger.Notify().Log("Author time claimed!<br>[Respawn to continue]");
 
 			double lastRunTime = AthStateMachine.Ctx.LastRunTime;
 
@@ -31,15 +33,11 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 			if (lastRunTime >= 0)
 			{
-				Overlay.ShowBanner(MedalBanner.ForRun(AthStateMachine.Ctx.CurrentLevel, lastRunTime,
-					AthStateMachine.Ctx.LastRunMedalWasNew));
 			}
 			else
 			{
-				Overlay.ShowBanner(MedalBanner.Message("NEW medal: AUTHOR  (respawn to skip)", 6f));
 			}
 
-			AthStateMachine.Show(AthStateMachine.Ctx.Messages.AuthorMedalClaimed());
 			_hasShownAuthorMedal = true;
 		}
 
@@ -53,7 +51,6 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 	public override void OnRoundEnded()
 	{
-		Overlay.ClearBanner();
 		StateMachine.TransitionTo(new StateAthLevelSummary(AthStateMachine));
 	}
 
@@ -61,7 +58,6 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 	// Private Methods
 	public override void OnPlayerSpawned()
 	{
-		Overlay.ClearBanner();
 		PlaylistService.SkipLevel();
 	}
 }

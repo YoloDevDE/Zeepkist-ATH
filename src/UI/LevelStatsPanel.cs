@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
 using Imui.Core;
@@ -196,6 +196,6 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		float content = row * (TitleSize * 1.2f + 0.9f + MedalRowSize * 2f + 1f + 0.85f + 4f + 1.2f);
 
 		// One per row, plus the three AddSpacing calls between the sections.
-		return content + 14 * spacing + UiMetrics.WindowChrome(gui);
+		return content + 14 * spacing + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
 	}
 }

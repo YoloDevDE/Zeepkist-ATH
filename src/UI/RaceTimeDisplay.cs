@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using AuthorTimeHunting.Util;
 using TMPro;
@@ -41,7 +41,7 @@ public class RaceTimeDisplay : IDisposable
 	private readonly RaceTimeBehaviour _behaviour;
 
 	/// <summary>Restored when we stop writing, because we did not own them.</summary>
-	private readonly Dictionary<TMP_Text, TextOverflowModes> _originalOverflow = new();
+	private readonly Dictionary<TMP_Text, LabelState> _borrowed = new();
 
 	public RaceTimeDisplay()
 	{
@@ -73,14 +73,14 @@ public class RaceTimeDisplay : IDisposable
 
 			if (!value)
 			{
-				RestoreOverflow();
+				Restore();
 			}
 		}
 	}
 
 	public void Dispose()
 	{
-		RestoreOverflow();
+		Restore();
 
 		if (_behaviour != null)
 		{
@@ -149,7 +149,7 @@ public class RaceTimeDisplay : IDisposable
 
 		float elapsed = player.ticker.GetTicker();
 
-		RememberOverflow(label);
+		Borrow(label);
 		label.text = Compose(elapsed, level.TimeGold, level.TimeAuthor);
 	}
 
@@ -221,29 +221,62 @@ public class RaceTimeDisplay : IDisposable
 	}
 
 	/// <summary>
-	///     The label is sized for one line. Without this the extra two are clipped away and the
-	///     whole feature looks like it does nothing.
+	///     Takes the label over, once, and keeps what it looked like first.
+	///     Two settings have to move. Overflow, because the label is sized for one line and
+	///     would otherwise clip the other two away entirely. And auto-sizing, which is what
+	///     made the text shrink to a crumb: TMP is told to fit three lines into a box built
+	///     for one, and it obliges by dropping the font size until they do. Turning it off
+	///     lets the text keep its size and spill out of the box instead, which is what the
+	///     overflow change is for.
 	/// </summary>
-	private void RememberOverflow(TMP_Text label)
+	private void Borrow(TMP_Text label)
 	{
-		if (_originalOverflow.ContainsKey(label))
+		if (_borrowed.ContainsKey(label))
 		{
 			return;
 		}
 
-		_originalOverflow[label] = label.overflowMode;
+		_borrowed[label] = new LabelState(label.overflowMode, label.enableAutoSizing, label.fontSize);
+
 		label.overflowMode = TextOverflowModes.Overflow;
+		label.enableAutoSizing = false;
+
+		// enableAutoSizing leaves fontSize wherever the last shrink put it, so the size the
+		// label had before we touched it has to be put back by hand.
+		label.fontSize = label.fontSizeMax > 0 ? label.fontSizeMax : label.fontSize;
 	}
 
-	private void RestoreOverflow()
+	/// <summary>Hands the label back exactly as it was found.</summary>
+	private void Restore()
 	{
-		foreach (KeyValuePair<TMP_Text, TextOverflowModes> entry in _originalOverflow)
-			if (entry.Key != null)
+		foreach (KeyValuePair<TMP_Text, LabelState> entry in _borrowed)
+		{
+			if (entry.Key == null)
 			{
-				entry.Key.overflowMode = entry.Value;
+				continue;
 			}
 
-		_originalOverflow.Clear();
+			entry.Key.overflowMode = entry.Value.Overflow;
+			entry.Key.enableAutoSizing = entry.Value.AutoSizing;
+			entry.Key.fontSize = entry.Value.FontSize;
+		}
+
+		_borrowed.Clear();
+	}
+
+	/// <summary>What a label looked like before ATH took it over.</summary>
+	private readonly struct LabelState
+	{
+		public LabelState(TextOverflowModes overflow, bool autoSizing, float fontSize)
+		{
+			Overflow = overflow;
+			AutoSizing = autoSizing;
+			FontSize = fontSize;
+		}
+
+		public TextOverflowModes Overflow { get; }
+		public bool AutoSizing { get; }
+		public float FontSize { get; }
 	}
 
 	/// <summary>

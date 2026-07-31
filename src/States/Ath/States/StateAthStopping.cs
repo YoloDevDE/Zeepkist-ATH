@@ -14,10 +14,8 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 	{
 		try
 		{
-			Overlay.ClearBanner();
 			// Null when the run is stopped before the first level was ever loaded.
 			AthStateMachine.Ctx.CurrentLevel?.Stop();
-			AthStateMachine.Show(AthStateMachine.Ctx.Messages.End());
 
 			// A snapshot, taken here because everything below this state tears the run down.
 			AthStateMachine.Services.Results.Show(RunReportView.From(AthStateMachine.Ctx));

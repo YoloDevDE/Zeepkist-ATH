@@ -64,9 +64,6 @@ public class ModServices
 	/// </summary>
 	public ResultsScreen Results { get; } = new();
 
-	/// <summary>Centre-screen banners and notifications. Session-scoped like the window.</summary>
-	public AthOverlay Overlay { get; } = new();
-
 	/// <summary>
 	///     Tells the UI which run is in progress, or null when none is. One call rather than
 	///     two assignments, so a new drawer cannot be left reading a stale run.

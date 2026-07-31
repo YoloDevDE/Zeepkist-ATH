@@ -35,8 +35,6 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 
 			if (currentResult != null && hasMedalToShow && lastRunTime >= 0)
 			{
-				Overlay.ShowBanner(MedalBanner.ForRun(AthStateMachine.Ctx.CurrentLevel, lastRunTime,
-					AthStateMachine.Ctx.LastRunMedalWasNew));
 				_hasShownMedal = true;
 			}
 		}
@@ -84,6 +82,5 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 
 	public override void OnPlayerSpawned()
 	{
-		Overlay.ClearBanner();
 	}
 }

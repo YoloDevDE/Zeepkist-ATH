@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
@@ -274,7 +274,7 @@ public class ControlPanel : IZeepGUIDrawer
 		if (view == null)
 		{
 			// One line of status plus a single button.
-			return row + buttonHeight + 4 * spacing + chrome;
+			return row + buttonHeight + 4 * spacing + chrome + UiMetrics.Slack(gui);
 		}
 
 		// Clock, bar, budget footer, medals, the controls heading, then three button rows.
@@ -282,8 +282,9 @@ public class ControlPanel : IZeepGUIDrawer
 		                + row * view.Details.Count
 		                + 3 * buttonHeight;
 
-		int gaps = 7 + view.Details.Count + 2;
+		// Five rows, the detail rows, two AddSpacing calls and three buttons.
+		int gaps = 10 + view.Details.Count;
 
-		return content + gaps * spacing + chrome;
+		return content + gaps * spacing + chrome + UiMetrics.Slack(gui);
 	}
 }

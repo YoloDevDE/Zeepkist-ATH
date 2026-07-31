@@ -4,6 +4,8 @@ using AuthorTimeHunting.UI;
 using ZeepkistNetworking;
 using Logger = AuthorTimeHunting.Util.Logger;
 
+using AuthorTimeHunting.Util;
+
 namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : AthState(stateMachine)
@@ -20,7 +22,6 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 			int retries = AthStateMachine.Ctx.ConsecutiveDuplicateCount;
 			Logger.LogWarning(
 				$"StateAthResolvingDuplicateLevel: Duplicate limit reached after {retries} retries. Ending run.");
-			AthStateMachine.Show(AthStateMachine.Ctx.Messages.DuplicateLimitReached(retries));
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 			return;
 		}
@@ -35,7 +36,7 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 		{
 			// async void - nothing above us can catch this.
 			Logger.LogError($"StateAthResolvingDuplicateLevel: Could not draw a replacement level: {ex.Message}");
-			Overlay.Notify("Could not find another level to play", HudPalette.Danger);
+			Messenger.Notify().LogError("Could not find another level to play");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}

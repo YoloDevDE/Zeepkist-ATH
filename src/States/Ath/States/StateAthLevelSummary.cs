@@ -6,7 +6,6 @@ public class StateAthLevelSummary(AthStateMachine stateMachine) : AthState(state
 {
 	public override void Execute()
 	{
-		AthStateMachine.Show(AthStateMachine.Ctx.Messages.LevelSummary());
 		StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
 	}
 }

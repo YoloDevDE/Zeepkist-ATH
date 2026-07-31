@@ -24,7 +24,6 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		try
 		{
 			// Sende Startmeldung
-			AthStateMachine.Show(AthStateMachine.Ctx.Messages.Starting());
 
 			// ATH owns the clock - the lobby round timer must not cut a level short.
 			// This used to sit in the non-RTM branch only, so in the default (RTM)
@@ -60,7 +59,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 
 					if (retryCount <= 0)
 					{
-						Overlay.Notify("Failed to start playlist after multiple attempts", HudPalette.Danger);
+						Messenger.Notify().LogError("Failed to start playlist after multiple attempts");
 						// Weiter zum nächsten Schritt trotz Fehler
 					}
 
@@ -78,7 +77,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			catch (Exception ex)
 			{
 				Logger.LogError($"Failed to skip level: {ex.Message}");
-				Overlay.Notify("Error while skipping to the first level", HudPalette.Danger);
+				Messenger.Notify().LogError("Error while skipping to the first level");
 			}
 
 			StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
@@ -86,7 +85,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		catch (Exception ex)
 		{
 			Logger.LogError($"Execute failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-			Overlay.Notify("Something went wrong while starting the hunt", HudPalette.Danger);
+			Messenger.Notify().LogError("Something went wrong while starting the hunt");
 
 			// Optional: Transition zu einem Fehler-State oder Reset-State
 			// StateMachine.TransitionTo(new StateAthError(AthStateMachine));
@@ -106,7 +105,6 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		{
 			for (int i = 5; i >= 1; i--)
 			{
-				Overlay.ShowBanner(MedalBanner.Message($"Starting in {i}..."));
 				// Used to be .ContinueWith(_ => { }), which swallowed not just the
 				// cancellation but every other exception along with it.
 				await Task.Delay(1000, _cts.Token);
