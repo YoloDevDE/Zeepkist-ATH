@@ -32,8 +32,13 @@ public class AthCtx
 
     public bool HasTimeRunningLowNotified { get; set; }
 
-    public bool IsTimeRunningLow => GetRemainingTime().TotalMilliseconds <= GetAccumulatedPenaltyTime();
-    public bool IsTimeAfterSkipRunningLow => GetRemainingTime().TotalMilliseconds <= GetAccumulatedPenaltyTime() + PenaltyTimeInMilliseconds;
+    // Fatal tier: a single further penalty skip would exhaust the budget.
+    // GetRemainingTime() already has the accumulated penalties subtracted, so the
+    // threshold is one penalty - adding GetAccumulatedPenaltyTime() counted them twice.
+    public bool IsTimeRunningLow => GetRemainingTime().TotalMilliseconds <= PenaltyTimeInMilliseconds;
+
+    // Warning tier: one penalty skip away from the fatal tier.
+    public bool IsTimeAfterSkipRunningLow => GetRemainingTime().TotalMilliseconds <= 2 * PenaltyTimeInMilliseconds;
 
     public int AuthorMedals
     {

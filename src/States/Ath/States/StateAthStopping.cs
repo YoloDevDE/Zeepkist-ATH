@@ -29,12 +29,22 @@ public class StateAthStopping(IStateMachine stateMachine) : AthState
                 return;
             }
 
+            // The last two entries are the level that was running and the one already
+            // queued behind it - neither was played, so they stay out of the saved run.
+            int playedCount = Math.Max(0, ZeepkistNetwork.CurrentLobby.Playlist.Count - 2);
+
+            if (playedCount == 0)
+            {
+                Logger.LogInfo("StateAthStopping: Run too short to save a playlist, skipping.");
+                return;
+            }
+
             string playlistName = $"ATH-RUN-{DateTime.Now.ToString($"yyyy-MM-dd_HH-mm-ss_{AthStateMachine.Ctx.AuthorMedals}_{AthStateMachine.Ctx.GoldMedals}_{AthStateMachine.Ctx.Penalties}")}";
             PlaylistSaveJSON playlistSaveFile = new PlaylistSaveJSON();
             playlistSaveFile.name = playlistName;
-            playlistSaveFile.levels = ZeepkistNetwork.CurrentLobby.Playlist.GetRange(0, ZeepkistNetwork.CurrentLobby.Playlist.Count - 2);
+            playlistSaveFile.levels = ZeepkistNetwork.CurrentLobby.Playlist.GetRange(0, playedCount);
             playlistSaveFile.roundLength = 420;
-            playlistSaveFile.amountOfLevels = ZeepkistNetwork.CurrentLobby.Playlist.Count - 1;
+            playlistSaveFile.amountOfLevels = playedCount;
             playlistSaveFile.CreateEditor().Save();
         }
         catch (Exception e)
