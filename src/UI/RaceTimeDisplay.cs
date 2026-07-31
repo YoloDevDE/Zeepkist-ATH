@@ -239,11 +239,13 @@ public class RaceTimeDisplay : IDisposable
 		_borrowed[label] = new LabelState(label.overflowMode, label.enableAutoSizing, label.fontSize);
 
 		label.overflowMode = TextOverflowModes.Overflow;
-		label.enableAutoSizing = false;
 
-		// enableAutoSizing leaves fontSize wherever the last shrink put it, so the size the
-		// label had before we touched it has to be put back by hand.
-		label.fontSize = label.fontSizeMax > 0 ? label.fontSizeMax : label.fontSize;
+		// Switching auto-sizing off freezes fontSize at whatever is on screen right now, and
+		// right now is still the game's own single line at its normal size - Borrow runs
+		// before the three lines are written. So the size is already correct and must not be
+		// touched. Setting it to fontSizeMax here is what blew the timer up: that is the
+		// ceiling the auto-sizer was allowed to reach, not the size it was actually using.
+		label.enableAutoSizing = false;
 	}
 
 	/// <summary>Hands the label back exactly as it was found.</summary>
