@@ -44,7 +44,7 @@ public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthSta
 
 		try
 		{
-			OnlineZeeplevel newLevel = await RandomLevelService.Instance.DrawRandomLevelAsync();
+			OnlineZeeplevel newLevel = await RandomLevels.DrawRandomLevelAsync();
 			PlaylistService.ReplaceLevelInCurrentPlaylist(brokenLevel, newLevel);
 			PlaylistService.RestartCurrentLevel();
 		}

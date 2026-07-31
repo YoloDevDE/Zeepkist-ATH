@@ -1,4 +1,5 @@
-﻿using AuthorTimeHunting.States.Master.States;
+﻿using AuthorTimeHunting.Service;
+using AuthorTimeHunting.States.Master.States;
 
 namespace AuthorTimeHunting.States.Master.StateMachine;
 
@@ -8,11 +9,15 @@ namespace AuthorTimeHunting.States.Master.StateMachine;
 /// </summary>
 public class MasterStateMachine : StateMachineBase
 {
-	public MasterStateMachine()
+	public MasterStateMachine(ModServices services)
 	{
+		Services = services;
 		InitialState = new StateMasterOff(this);
 		FinalState = new StateMasterOff(this);
 	}
+
+	/// <summary>Session-scoped services, handed down to the run's machine.</summary>
+	public ModServices Services { get; }
 
 	public override StateBase InitialState { get; }
 	public override StateBase FinalState { get; }

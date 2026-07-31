@@ -10,19 +10,19 @@ namespace AuthorTimeHunting.States.Master.States;
 
 public class StateMasterOn : StateBase
 {
-    /// <summary>
-    ///     Set as soon as this instance starts tearing itself down. The teardown runs
-    ///     through StateAthStopping, which fires StateMachineFinished - and Stop is a
-    ///     subscriber of exactly that event. Without the flag an externally triggered
-    ///     stop re-enters TransitionTo while the first one is still on the stack, and
-    ///     Exit() runs twice: the "stopped" toast appears doubled and the second
-    ///     AthStateMachine.Dispose() touches an already destroyed component.
-    /// </summary>
-    private bool _shuttingDown;
+	/// <summary>
+	///     Set as soon as this instance starts tearing itself down. The teardown runs
+	///     through StateAthStopping, which fires StateMachineFinished - and Stop is a
+	///     subscriber of exactly that event. Without the flag an externally triggered
+	///     stop re-enters TransitionTo while the first one is still on the stack, and
+	///     Exit() runs twice: the "stopped" toast appears doubled and the second
+	///     AthStateMachine.Dispose() touches an already destroyed component.
+	/// </summary>
+	private bool _shuttingDown;
 
 	public StateMasterOn(MasterStateMachine stateMachine) : base(stateMachine)
 	{
-		AthStateMachine = new AthStateMachine();
+		AthStateMachine = new AthStateMachine(stateMachine.Services);
 	}
 
 	public static bool IsActive { get; private set; }
@@ -112,11 +112,11 @@ public class StateMasterOn : StateBase
 		StateMachine.TransitionTo(new StateMasterOff((MasterStateMachine)StateMachine));
 	}
 
-    /// <summary>
-    ///     Hands the HUD elements ATH borrowed back to the game. The whole chain is gone
-    ///     when the stop was triggered by DisconnectedFromGame, so it stays optional.
-    /// </summary>
-    private static void RestoreGameHud()
+	/// <summary>
+	///     Hands the HUD elements ATH borrowed back to the game. The whole chain is gone
+	///     when the stop was triggered by DisconnectedFromGame, so it stays optional.
+	/// </summary>
+	private static void RestoreGameHud()
 	{
 		if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null ||
 		    PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)

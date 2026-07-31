@@ -1,6 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
-using AuthorTimeHunting.States;
 using AuthorTimeHunting.Service;
+using AuthorTimeHunting.States;
 using AuthorTimeHunting.States.Master.StateMachine;
 using BepInEx;
 using HarmonyLib;
@@ -12,10 +12,9 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-	private const string ConfigCategoryGeneral = "General";
-
 	private Harmony _harmony;
 	private StateMachineBase _masterStateMachine;
+	private ModServices _services;
 
 	private Plugin()
 	{
@@ -23,19 +22,20 @@ public class Plugin : BaseUnityPlugin
 		Instance = this;
 	}
 
-    /// <summary>
-    ///     Singleton instance of the plugin
-    /// </summary>
-    public static Plugin Instance { get; private set; }
+	/// <summary>
+	///     Singleton instance of the plugin
+	/// </summary>
+	public static Plugin Instance { get; private set; }
 
-    /// <summary>
-    ///     Configuration settings for the plugin
-    /// </summary>
-    public PluginConfig MyConfig { get; private set; }
+	/// <summary>
+	///     Configuration settings for the plugin
+	/// </summary>
+	public PluginConfig MyConfig { get; private set; }
 
 	private void Awake()
 	{
 		InitializeConfig();
+		_services = new ModServices();
 		InitializeHarmony();
 		RegisterChatCommands();
 		InitializeStateMachine();
@@ -43,10 +43,6 @@ public class Plugin : BaseUnityPlugin
 		Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 	}
 
-	private void Start()
-	{
-		InitializeServices();
-	}
 
 	private void OnDestroy()
 	{
@@ -75,15 +71,7 @@ public class Plugin : BaseUnityPlugin
 
 	private void InitializeStateMachine()
 	{
-		_masterStateMachine = new MasterStateMachine();
+		_masterStateMachine = new MasterStateMachine(_services);
 		_masterStateMachine.Init();
-	}
-
-	private void InitializeServices()
-	{
-		// Initialize singleton services
-		_ = LocalLevelCacheService.Instance;
-		_ = RandomLevelService.Instance;
-		_ = PlaylistService.Instance;
 	}
 }

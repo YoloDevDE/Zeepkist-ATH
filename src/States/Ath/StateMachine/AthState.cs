@@ -20,7 +20,11 @@ public abstract class AthState : StateBase
 	/// <summary>The run's state machine, already typed - no cast at the call site.</summary>
 	public AthStateMachine AthStateMachine { get; }
 
-	public PlaylistService PlaylistService => PlaylistService.Instance;
+	/// <summary>Shorthand for the session's playlist service.</summary>
+	public PlaylistService PlaylistService => AthStateMachine.Services.Playlist;
+
+	/// <summary>Shorthand for this run's level pool.</summary>
+	public RandomLevelService RandomLevels => AthStateMachine.RandomLevels;
 
 	/// <summary>Every frame while the run's timer is running.</summary>
 	public virtual void OnAthTimerTick()

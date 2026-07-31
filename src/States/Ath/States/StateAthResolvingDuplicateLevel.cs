@@ -28,7 +28,7 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 
 		try
 		{
-			OnlineZeeplevel newLevel = await RandomLevelService.Instance.DrawRandomLevelAsync();
+			OnlineZeeplevel newLevel = await RandomLevels.DrawRandomLevelAsync();
 			PlaylistService.AddLevelToCurrentPlaylist(newLevel);
 			PlaylistService.SkipToNextLevel();
 		}
@@ -45,6 +45,4 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 	{
 		StateMachine.TransitionTo(new StateAthProcessingLevel(AthStateMachine));
 	}
-
-
 }

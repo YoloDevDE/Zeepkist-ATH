@@ -52,7 +52,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			while (!playlistStarted && retryCount > 0)
 				try
 				{
-					OnlineZeeplevel level = await RandomLevelService.Instance.DrawRandomLevelAsync();
+					OnlineZeeplevel level = await RandomLevels.DrawRandomLevelAsync();
 					PlaylistService.StartNewPlaylist(level);
 					playlistStarted = true;
 				}

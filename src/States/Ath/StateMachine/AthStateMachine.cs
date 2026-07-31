@@ -22,12 +22,12 @@ namespace AuthorTimeHunting.States.Ath.StateMachine;
 /// </summary>
 public partial class AthStateMachine : StateMachineBase
 {
-	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
-
 	/// <summary>
 	///     How many frames in a row the tick may throw before the run is given up on.
 	/// </summary>
 	private const int MaxConsecutiveTickFailures = 10;
+
+	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
 
 	private AthLoopBehaviour _behaviour;
 	private int _consecutiveTickFailures;
@@ -36,16 +36,17 @@ public partial class AthStateMachine : StateMachineBase
 	private DateTime _lastServerMessageTime = DateTime.MinValue;
 	private bool _timerStarted;
 
-	public AthStateMachine()
+	public AthStateMachine(ModServices services)
 	{
 		// One AthStateMachine per run, so this is the run's starting line: fresh context,
 		// and a level pool that does not carry the exclusions of previous runs.
+		Services = services;
 		Ctx = new AthCtx();
-		RandomLevelService.Instance.Reset();
+		RandomLevels = services.CreateRandomLevelService();
 		InitialState = new StateAthStarting(this);
 		FinalState = new StateAthStopping(this);
 
-		GameObject host = new GameObject(nameof(AthStateMachine))
+		GameObject host = new(nameof(AthStateMachine))
 		{
 			hideFlags = HideFlags.HideAndDontSave
 		};
@@ -56,6 +57,12 @@ public partial class AthStateMachine : StateMachineBase
 	}
 
 	public AthCtx Ctx { get; }
+
+	/// <summary>Session-scoped services shared with the rest of the mod.</summary>
+	public ModServices Services { get; }
+
+	/// <summary>This run's level pool. A new run gets a new one.</summary>
+	public RandomLevelService RandomLevels { get; }
 
 	public override StateBase InitialState { get; }
 	public override StateBase FinalState { get; }
@@ -147,7 +154,8 @@ public partial class AthStateMachine : StateMachineBase
 		}
 		catch (Exception e)
 		{
-			Logger.LogError($"AthStateMachine: {eventName} failed in {state.GetType().Name}: {e.Message}\n{e.StackTrace}");
+			Logger.LogError(
+				$"AthStateMachine: {eventName} failed in {state.GetType().Name}: {e.Message}\n{e.StackTrace}");
 			return false;
 		}
 	}
@@ -170,7 +178,8 @@ public partial class AthStateMachine : StateMachineBase
 			return;
 		}
 
-		Logger.LogError($"AthStateMachine: Tick failed {MaxConsecutiveTickFailures} frames in a row, stopping the run.");
+		Logger.LogError(
+			$"AthStateMachine: Tick failed {MaxConsecutiveTickFailures} frames in a row, stopping the run.");
 		_consecutiveTickFailures = 0;
 		StopTimer();
 

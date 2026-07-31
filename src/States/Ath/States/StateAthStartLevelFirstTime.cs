@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepkistNetworking;
@@ -10,8 +9,6 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-
-
 	public override void Execute()
 	{
 		try
@@ -30,13 +27,13 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 		}
 	}
 
-    /// <summary>
-    ///     Pre-loads the level after the current one so the playlist never runs dry. Started
-    ///     without awaiting - the run continues either way - so it has to swallow and report
-    ///     its own failures. Unhandled, they would end up in an unobserved Task and the
-    ///     playlist would simply be empty at the end with nothing in the log to explain it.
-    /// </summary>
-    private async Task AddLevelAsync()
+	/// <summary>
+	///     Pre-loads the level after the current one so the playlist never runs dry. Started
+	///     without awaiting - the run continues either way - so it has to swallow and report
+	///     its own failures. Unhandled, they would end up in an unobserved Task and the
+	///     playlist would simply be empty at the end with nothing in the log to explain it.
+	/// </summary>
+	private async Task AddLevelAsync()
 	{
 		if (!Plugin.Instance.MyConfig.RandomPlaylist.Value)
 		{
@@ -46,7 +43,7 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 		try
 		{
 			Logger.LogInfo("Adding Random Level");
-			OnlineZeeplevel level = await RandomLevelService.Instance.DrawRandomLevelAsync();
+			OnlineZeeplevel level = await RandomLevels.DrawRandomLevelAsync();
 			PlaylistService.AddLevelToCurrentPlaylist(level);
 		}
 		catch (Exception e)
