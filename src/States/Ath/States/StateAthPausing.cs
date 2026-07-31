@@ -1,4 +1,5 @@
 ﻿using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
@@ -62,8 +63,21 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 		StateMachine.TransitionTo(new StateAthOnARun(AthStateMachine));
 	}
 
+	/// <summary>
+	///     Photo mode is treated as "the player is driving again", because RoundStarted and
+	///     this are the only two ways back into a run from the pause screen.
+	///     It is only that during a race, though. Entering photo mode on the podium or while
+	///     the next level loads used to restart the run clock and bill the player for time
+	///     they spent looking at a screenshot.
+	/// </summary>
 	public override void OnPhotoModeEntered()
 	{
+		if (!GameStateObserver.IsRacing)
+		{
+			Logger.LogInfo("StateAthPausing: Photo mode entered outside a running race, keeping the clock paused.");
+			return;
+		}
+
 		OnRoundStarted();
 	}
 
