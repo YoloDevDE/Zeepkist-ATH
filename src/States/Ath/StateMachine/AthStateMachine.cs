@@ -1,13 +1,11 @@
 ﻿using System;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
-using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using Crosstales;
 using UnityEngine;
 using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
-using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
 using Object = UnityEngine.Object;
 

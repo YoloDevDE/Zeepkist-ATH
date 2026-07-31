@@ -1,8 +1,6 @@
 ﻿using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
-using ZeepkistClient;
-
 using AuthorTimeHunting.Util;
+using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
@@ -32,9 +30,6 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 			}
 
 			if (lastRunTime >= 0)
-			{
-			}
-			else
 			{
 			}
 

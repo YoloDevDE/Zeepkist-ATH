@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepkistNetworking;
 using ZeepSDK.Level;

@@ -1,11 +1,9 @@
 ﻿using System;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
+using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
 using Logger = AuthorTimeHunting.Util.Logger;
-
-using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Ath.States;
 

@@ -2,7 +2,6 @@
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.States.Master.StateMachine;
-using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
 using ZeepSDK.Multiplayer;

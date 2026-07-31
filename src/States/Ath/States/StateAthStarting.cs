@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 using ZeepkistNetworking;
@@ -104,11 +103,9 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		try
 		{
 			for (int i = 5; i >= 1; i--)
-			{
 				// Used to be .ContinueWith(_ => { }), which swallowed not just the
 				// cancellation but every other exception along with it.
 				await Task.Delay(1000, _cts.Token);
-			}
 		}
 		catch (OperationCanceledException)
 		{

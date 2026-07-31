@@ -1,7 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;
-using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Master.States;
@@ -25,6 +24,7 @@ public class StateMasterOff : StateBase
 	}
 
 	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
+
 	public override void Enter()
 	{
 		CommandStop.CommandTrigger += StopChallenge;

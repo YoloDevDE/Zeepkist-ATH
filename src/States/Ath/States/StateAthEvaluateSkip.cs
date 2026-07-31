@@ -1,6 +1,4 @@
 ﻿using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
-
 using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Ath.States;
