@@ -3,10 +3,8 @@
     <!-- General Project Properties -->
     <PropertyGroup>
         <TargetFramework>net472</TargetFramework>
-        <BaseOutputPath>src\bin</BaseOutputPath>
-        <BaseIntermediateOutputPath>src\obj</BaseIntermediateOutputPath>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>1.17.7</Version>
+        <Version>2.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <PackageId>Author Time Hunting</PackageId>
@@ -31,7 +29,6 @@
         <PackageReference Include="ZeepSDK" Version="2.6.1" PrivateAssets="all" />
         <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/> <!-- Fody package -->
         <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all"/> <!-- Costura package -->
-        <PackageReference Include="ZeepTourney" Version="0.0.5"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
@@ -42,26 +39,34 @@
         <Reference Include="Microsoft.CSharp"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <Compile Include="src\**\*.cs" />
-    </ItemGroup>
+    <!--
+        Deploy-Ziel. Überschreibbar per `dotnet build -p:ZeepkistDir=...`
+        oder per Umgebungsvariable ZeepkistDir, damit der Build auf anderen
+        Maschinen und im CI nicht bricht.
+    -->
+    <PropertyGroup>
+        <ZeepkistDir Condition="'$(ZeepkistDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Zeepkist</ZeepkistDir>
+        <ZeepkistPluginDir>$(ZeepkistDir)\BepInEx\plugins\Sideloaded\Plugins</ZeepkistPluginDir>
+    </PropertyGroup>
 
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <!-- Delete the plugin directory if it exists -->
-        <RemoveDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
+    <Target Name="DeployToZeepkist" AfterTargets="PostBuildEvent" Condition="Exists('$(ZeepkistDir)')">
+        <PropertyGroup>
+            <_AthDeployDir>$(ZeepkistPluginDir)\$(ProjectName)</_AthDeployDir>
+            <_AthZipPath>$(ZeepkistPluginDir)\$(ProjectName)-$(Version).zip</_AthZipPath>
+        </PropertyGroup>
 
-        <!-- Create the plugin directory -->
-        <MakeDir Directories="C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)"/>
+        <RemoveDir Directories="$(_AthDeployDir)"/>
+        <MakeDir Directories="$(_AthDeployDir)"/>
 
-        <!-- Copy DLL to the plugin directory -->
-        <Exec Command="copy /Y &quot;$(TargetDir)$(ProjectName).dll&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\$(ProjectName)-$(Version).dll&quot;"/>
+        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFiles="$(_AthDeployDir)\$(ProjectName)-$(Version).dll"/>
 
-        <!-- Create a zip file from the directory -->
-        <Exec Command="powershell -Command &quot;Compress-Archive -Path &quot;&apos;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)\*&apos;&quot; -DestinationPath &quot;&apos;C:\Program Files (x86)\Steam\steamapps\common\Zeepkist\BepInEx\plugins\Sideloaded\Plugins\$(ProjectName)-$(Version).zip&apos;&quot; -Force&quot;"/>
+        <Delete Files="$(_AthZipPath)"/>
+        <ZipDirectory SourceDirectory="$(_AthDeployDir)" DestinationFile="$(_AthZipPath)" Overwrite="true"/>
+
+        <Message Importance="high" Text="ATH: deployed $(ProjectName)-$(Version).dll -> $(_AthDeployDir)"/>
     </Target>
 
-    <!-- Enable debug logging -->
-    <PropertyGroup>
-        <DefineConstants>DEBUG;TRACE</DefineConstants>
-    </PropertyGroup>
+    <Target Name="_AthDeploySkipped" AfterTargets="PostBuildEvent" Condition="!Exists('$(ZeepkistDir)')">
+        <Message Importance="high" Text="ATH: Zeepkist nicht gefunden unter '$(ZeepkistDir)' — Deploy übersprungen. Override: -p:ZeepkistDir=&lt;pfad&gt;"/>
+    </Target>
 </Project>

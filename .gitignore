@@ -1,4 +1,12 @@
-﻿/.idea/
+/.idea/
 *.sln
 *.slnf
 *.slnx
+
+# Build-Output. Enthält u. a. Assembly-CSharp.dll, Facepunch.Steamworks.dll,
+# FMODUnity.dll und Crosstales.dll — Spiel-Assemblies gehören nicht ins Repo.
+[Bb]in/
+[Oo]bj/
+
+# Von Fody bei jedem Build generiert
+FodyWeavers.xsd
