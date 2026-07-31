@@ -179,30 +179,6 @@ public class LocalLevelCacheService
         });
     }
 
-    public LevelItem GetRandomLevelItem(IEnumerable<string> excludedUids = null)
-    {
-        EnsureInitialized();
-
-        if (CachedLevelItems.Count == 0)
-        {
-            Logger.LogError("LocalLevelCacheService: No levels in cache.");
-            return null;
-        }
-
-        HashSet<string> excluded = excludedUids != null ? new HashSet<string>(excludedUids, StringComparer.OrdinalIgnoreCase) : new HashSet<string>();
-
-        List<LevelItem> available = CachedLevelItems.Where(l => !excluded.Contains(l.FileUid)).ToList();
-
-        if (available.Count == 0)
-        {
-            Logger.LogWarning("LocalLevelCacheService: All levels have been played. Playlist exhausted.");
-            return null;
-        }
-
-        int index = Random.Range(0, available.Count);
-        return available[index];
-    }
-
     /// <summary>
     ///     Returns a shuffled batch of cached levels, excluding the given UIDs.
     /// </summary>
@@ -250,18 +226,6 @@ public class LocalLevelCacheService
         catch (Exception ex)
         {
             Logger.LogWarning($"LocalLevelCacheService: Could not send warning notification: {ex.Message}");
-        }
-    }
-
-    private static void TryNotifyError(string message)
-    {
-        try
-        {
-            Messenger.Notify().LogError(message);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning($"LocalLevelCacheService: Could not send error notification: {ex.Message}");
         }
     }
 

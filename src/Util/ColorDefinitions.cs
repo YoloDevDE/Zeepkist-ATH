@@ -13,10 +13,6 @@ public static class ColorDefinitions
     public static Color GreenSplit => HexToColor("#50E451");
     public static Color YellowSplit => HexToColor("#EDB227");
 
-    public static Color Penalty => Color.red;
-
-    public static Color FreeSkip => Color.white;
-
 
     public static Color HexToColor(string hex)
     {

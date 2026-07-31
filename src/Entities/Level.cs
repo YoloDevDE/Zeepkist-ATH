@@ -40,7 +40,6 @@ public class Level
 
     // Game state
     public int Attempt { get; set; }
-    public int Crashes { get; set; }
     public bool Skipped { get; set; }
     public bool FreeSkipped { get; set; }
     public bool LevelBroken { get; set; }
@@ -84,7 +83,6 @@ public class Level
     // Boolean Properties basierend auf Status
     public bool AuthorTimeAcquired => Status == LevelStatus.AUTHOR;
     public bool GoldMedalAcquired => Status is LevelStatus.GOLD or LevelStatus.AUTHOR;
-    public bool GoldSkipped => Status == LevelStatus.GOLD && Skipped;
     public bool PenaltySkipped => Status == LevelStatus.FAILED && Skipped;
 
     public float PersonalBestTime
