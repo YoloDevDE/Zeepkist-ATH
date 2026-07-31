@@ -11,6 +11,13 @@ namespace AuthorTimeHunting.Service;
 
 public class PlaylistService
 {
+	private readonly WorkshopDownloadService _workshopDownloads;
+
+	public PlaylistService(WorkshopDownloadService workshopDownloads)
+	{
+		_workshopDownloads = workshopDownloads;
+	}
+
 	private static List<OnlineZeeplevel> CurrentLobbyPlaylist => ZeepkistNetwork.CurrentLobby.Playlist;
 	private static int CurrentPlaylistIndex => ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex;
 
@@ -19,6 +26,7 @@ public class PlaylistService
 	{
 		CurrentLobbyPlaylist.Clear();
 		CurrentLobbyPlaylist.Add(initialLevel);
+		_workshopDownloads.EnsureDownloaded(initialLevel);
 		QueueServerPlaylistUpdate();
 	}
 
@@ -28,6 +36,9 @@ public class PlaylistService
 		MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
 		Logger.LogInfo(
 			$"PlaylistService: Added level '{level.Name}' (UID: {level.UID}) to playlist. Playlist count is now {CurrentLobbyPlaylist.Count}.");
+		// This is the level the run will skip to next round. Fetch it now, while the player
+		// is still driving, instead of letting the podium wait for Steam.
+		_workshopDownloads.EnsureDownloaded(level);
 		QueueServerPlaylistUpdate();
 	}
 
@@ -43,6 +54,7 @@ public class PlaylistService
 
 		CurrentLobbyPlaylist[index] = newLevel;
 		Logger.LogInfo($"PlaylistService: Replaced level '{oldLevel.Name}' with '{newLevel.Name}' at index {index}");
+		_workshopDownloads.EnsureDownloaded(newLevel);
 		QueueServerPlaylistUpdate();
 	}
 

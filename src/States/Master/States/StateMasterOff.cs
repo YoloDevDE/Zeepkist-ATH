@@ -105,7 +105,9 @@ public class StateMasterOff : StateBase
 
 	private static string DescribeWait()
 	{
-		return !GameStateObserver.IsLevelReady ? "the level is loading" : $"the lobby is in {GameStateObserver.LobbyState}";
+		return !GameStateObserver.IsLevelReady
+			? "the level is loading"
+			: $"the lobby is in {GameStateObserver.LobbyState}";
 	}
 
 	private void StopChallenge()

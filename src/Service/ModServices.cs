@@ -1,4 +1,4 @@
-namespace AuthorTimeHunting.Service;
+﻿namespace AuthorTimeHunting.Service;
 
 /// <summary>
 ///     The services that live as long as the game session does, constructed once in
@@ -18,9 +18,17 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public class ModServices
 {
+	public ModServices()
+	{
+		Playlist = new PlaylistService(WorkshopDownloads);
+	}
+
 	public LocalLevelCacheService LocalLevelCache { get; } = new();
 	public GraphQLService GraphQL { get; } = new();
-	public PlaylistService Playlist { get; } = new();
+	/// <summary>Pre-fetches workshop levels so the podium does not wait for Steam.</summary>
+	public WorkshopDownloadService WorkshopDownloads { get; } = new();
+
+	public PlaylistService Playlist { get; }
 
 	/// <summary>
 	///     Watches the lobby from the moment the mod loads, so a start request can wait for a

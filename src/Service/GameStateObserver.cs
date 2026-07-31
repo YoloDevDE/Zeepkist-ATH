@@ -1,6 +1,5 @@
 using System;
 using AuthorTimeHunting.Enums;
-using AuthorTimeHunting.Util;
 using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.Level;
@@ -21,10 +20,10 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public partial class GameStateObserver
 {
+	private ObserverBehaviour _behaviour;
 	private bool _lastIsRacing;
 	private bool _lastKnownStateValid;
 	private ZeepkistLobbyState _lastLobbyState;
-	private ObserverBehaviour _behaviour;
 
 	public GameStateObserver()
 	{
@@ -100,7 +99,8 @@ public partial class GameStateObserver
 		{
 			_lastKnownStateValid = true;
 			_lastLobbyState = state ?? ZeepkistLobbyState.Racing;
-			Logger.LogInfo($"GameStateObserver: Lobby state is now {(state.HasValue ? state.Value.ToString() : "no lobby")}.");
+			Logger.LogInfo(
+				$"GameStateObserver: Lobby state is now {(state.HasValue ? state.Value.ToString() : "no lobby")}.");
 			Raise(() => LobbyStateChanged?.Invoke(state), nameof(LobbyStateChanged));
 		}
 
