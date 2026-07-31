@@ -1,9 +1,13 @@
 # Author Time Hunting — IST-Zustand
 
-**Stand:** 2026-07-30 · **Branch:** `2.0.0` · **Version in csproj:** `2.0.0`
-**Build:** `dotnet build` → 0 Errors, 0 Warnings (verifiziert)
-**Umfang:** 48 `.cs`-Dateien, 4.002 Zeilen in `src/`
+**Stand:** 2026-07-31 · **Branch:** `2.0.0` · **Version in csproj:** `2.0.0`
+**Build:** Debug und Release → 0 Errors, 0 Warnings (verifiziert)
+**Umfang:** 45 `.cs`-Dateien, 3.756 Zeilen in `src/`
 **Tests:** keine
+
+> Die Bestandsaufnahme wurde am 2026-07-30 erstellt. Abschnitt 4 ist seitdem
+> abgearbeitet worden — siehe **4.5 Erledigt**. Die Abschnitte 1–3 und 5
+> beschreiben weiterhin den aktuellen Aufbau.
 
 ---
 
@@ -149,9 +153,12 @@ Alle unter `docs/diagrams/`. In Rider mit dem PlantUML-Plugin direkt rendern.
 
 ## 4. Befunde
 
-Priorisiert. Zeilenangaben gegen `HEAD` auf `2.0.0` + uncommitted Changes.
+Priorisiert. Zeilenangaben gegen den Stand vom 2026-07-30.
+**Alle Befunde der Kategorien 4.1 und 4.2 sowie 4.4 sind inzwischen behoben**
+— die Originaltexte bleiben als Begründung stehen, der aktuelle Stand steht in
+**4.5**.
 
-### 4.1 Kritisch — falsches Verhalten im Normalbetrieb
+### 4.1 Kritisch — falsches Verhalten im Normalbetrieb ✅ erledigt
 
 | # | Befund | Ort |
 |---|---|---|
@@ -162,7 +169,7 @@ Priorisiert. Zeilenangaben gegen `HEAD` auf `2.0.0` + uncommitted Changes.
 | **K5** | **Broken-Level-Recovery ersetzt das falsche Level.** `ReplaceLevelInCurrentPlaylist(new OnlineZeeplevel { UID = Ctx.CurrentLevel?.LevelUid }, …)` — `Ctx.CurrentLevel` ist noch das **vorherige** Level, weil `StateAthProcessingLevel` das neue nur lokal instanziiert und nicht in den Context schreibt. Das kaputte Level bleibt in der Playlist, ein bereits gespieltes wird ersetzt. | `StateAthResolvingBrokenLevel.cs:32,36` |
 | **K6** | **NRE beim Start außerhalb einer Lobby.** `StateMasterOn.Enter()` greift ungeprüft auf `PlayerManager.Instance.currentMaster.OnlineGameplayUI` zu. `/ath start` im Hauptmenü oder in Singleplayer bricht den Transition-Vorgang mitten drin ab — `MasterStateMachine.CurrentState` bleibt inkonsistent. | `StateMasterOn.cs:44` |
 
-### 4.2 Hoch — Logik weicht von der Absicht ab
+### 4.2 Hoch — Logik weicht von der Absicht ab ✅ erledigt (außer H2)
 
 | # | Befund | Ort |
 |---|---|---|
@@ -178,7 +185,7 @@ Priorisiert. Zeilenangaben gegen `HEAD` auf `2.0.0` + uncommitted Changes.
 | **H10** | `IStateMachine.TransitionTo` loggt `SubStateMachine?.CurrentState.GetType().Name` — der Null-Guard greift nur für `SubStateMachine`. Ist die Sub-SM gesetzt, `CurrentState` aber `null`, wirft die Log-Zeile. | `IStateMachine.cs:20` |
 | **H11** | `ChatMessageService.SendCustomMessage` greift ungeprüft auf `ZeepkistNetwork.LocalPlayer.SteamID` zu. Beim Disconnect-getriggerten Stop ist das plausibel `null`. | `ChatMessageService.cs:9` |
 
-### 4.3 Mittel — Struktur & Wartbarkeit
+### 4.3 Mittel — Struktur & Wartbarkeit (teilweise erledigt)
 
 | # | Befund |
 |---|---|
@@ -195,7 +202,7 @@ Priorisiert. Zeilenangaben gegen `HEAD` auf `2.0.0` + uncommitted Changes.
 | **M11** | `OnAthTimerTick()` läuft **jeden Frame** ungethrottelt; `SetServerMessage()` baut jedes Mal den kompletten HUD-String und wirft ihn per Vergleich weg. |
 | **M12** | Drei der vier `Handle*Skip(AthCtx ctx)`-Methoden nutzen ihren Parameter nicht. |
 
-### 4.4 Build & Repo
+### 4.4 Build & Repo ✅ erledigt (außer B5, B6)
 
 | # | Befund | Ort |
 |---|---|---|
@@ -205,6 +212,51 @@ Priorisiert. Zeilenangaben gegen `HEAD` auf `2.0.0` + uncommitted Changes.
 | **B4** | `FodyWeavers.xsd` untracked (generiert, gehört ignoriert). | — |
 | **B5** | Keine Tests, kein CI, kein `Directory.Build.props`, kein `.editorconfig`. | — |
 | **B6** | 21 lokale Branches (`1.16.0` … `2.0.0`, `Refactor`, `Refactor-2`, `testing-stuff`, `dev`). Aufräumen lohnt. | — |
+
+---
+
+### 4.5 Erledigt — Stand 2026-07-31
+
+Neun Commits auf `2.0.0`, jeder einzeln gebaut. **Keiner davon ist im laufenden
+Spiel getestet** — sie sind gegen den Kontrollfluss verifiziert, nicht gegen die
+Realität. Das ist der wichtigste offene Punkt.
+
+| Commit | Befunde |
+|---|---|
+| `1cb6783` | B1, B2, B3, B4 |
+| `6fb7e0e` | M2 (Teil 1: 3 Dateien, 443 LoC) |
+| `6c2173a` | M2 (Teil 2: 6 Symbole) |
+| `dc0440b` | K3, H9, H10, H11 |
+| `d325d37` | K2, K6, H1, H5, H6 |
+| `ced4ef4` | K1, K5 |
+| `cfd72d5` | K4 |
+| `73fdd64` | H3, H4, H7, H8 |
+| `1d3cdfe` | M6, M8, M12, Reste aus M7 |
+
+**Drei Entscheidungen, die dabei getroffen wurden** und die keine reinen
+Bugfixes sind:
+
+1. **K3 — Schwellwerte neu definiert.** `GetRemainingTime()` zieht Penalties
+   bereits ab; beide Low-Time-Properties addierten sie erneut. Die neue Regel
+   hängt nicht an der Vergangenheit, sondern an der nächsten Entscheidung:
+   rot bei Restzeit ≤ 1× PenaltyTime, gelb bei ≤ 2×. Mit den Defaults also
+   rot ab 5 min, gelb ab 10 min.
+2. **H8 — Level-Pool wird pro Run zurückgesetzt.** Wiederholungen zu vermeiden
+   gilt jetzt *innerhalb* eines Runs, nicht darüber hinaus. Ohne das lief der
+   Pool bei lokalen Playlists nach wenigen Runs leer. Level über Runs hinweg
+   auszuschließen braucht Persistenz — offene Frage 2.
+3. **H3 — statt Reparatur gelöscht.** Die im Befund vorgeschlagene Formel hätte
+   eine Methode ohne Aufrufer korrigiert.
+
+**Bewusst nicht angefasst:**
+
+| # | Warum |
+|---|---|
+| **H2** | `Retries` wird nie dekrementiert. Bevor das „gefixt" wird, muss klar sein, was der Mechanismus überhaupt tun soll — bisher existiert er nur als Text in `MessageBrokenLevel()`. |
+| **M3** | `LevelItem.ValidationTimeAuthor/Gold/AuthorId` sind technisch tot, aber genau die Daten für Difficulty-Filter und Author-Blocklist. Löschen würde den Hook wegwerfen — siehe offene Frage 3. |
+| **M10** | `StateAthPausing.OnPhotoModeEntered()` delegiert an `OnRoundStarted()` und startet damit die Uhr. `OnRoundStarted` und `OnPhotoModeEntered` sind aber die einzigen beiden Wege aus `StateAthPausing` zurück in einen Lauf. Ob das ein Fehlgriff ist oder der Workaround dafür, dass `RacingApi.RoundStarted` bei einem Respawn *innerhalb* der Runde nicht feuert, lässt sich nur am laufenden Spiel entscheiden. |
+
+**Offen:** M1 (`AthCtx` God Object, jetzt 552 LoC), M4, M5, M9, M11, B5, B6.
 
 ---
 
@@ -231,9 +283,15 @@ tragfähig und sollten bei einem Refactoring erhalten bleiben:
 1. **Zielgruppe:** Solo-Challenge oder kompetitiv gegen andere? Aktuell ist alles
    rein lokal — Mitspieler sehen nichts vom Run.
 2. **Persistenz:** Soll ein Run überleben (Personal Best, Historie, Streaks)?
-   Aktuell ist nach dem Spielende alles weg.
+   Aktuell ist nach dem Spielende alles weg. Seit H8 gilt das auch für den
+   Level-Pool: jeder Run startet mit einem sauberen Pool.
 3. **Level-Auswahl:** Braucht es Kuratierung (Difficulty-Buckets, Author-Blocklist,
    Workshop-Tags, „nur Levels mit ≥ N Finishes")? Die Daten dafür kommen bereits
-   per GraphQL an und werden verworfen (M3).
-4. **Reparieren vs. Neu bauen:** K1–K6 sind Bugs im bestehenden Design. Willst du
-   die einzeln fixen, oder ist 2.0.0 der Moment für einen Umbau von `AthCtx`?
+   per GraphQL an und werden verworfen (M3) — die Felder sind absichtlich stehen
+   geblieben.
+4. **Reparieren vs. Neu bauen:** ~~K1–K6 sind Bugs im bestehenden Design.~~
+   Beantwortet: einzeln repariert, siehe 4.5. Die Frage stellt sich jetzt nur noch
+   für `AthCtx` (M1) — 552 LoC aus Run-State, Statistik und View-Formatierung.
+5. **Verifikation:** Neun Commits sind gebaut, aber keiner ist im Spiel getestet.
+   Was ist die minimale Runde, die K1 (`/ath stop`, Restart, Disconnect), K4
+   (Levelnachschub mit und ohne GraphQL) und K5 (Broken-Level) abdeckt?
