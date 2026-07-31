@@ -124,7 +124,9 @@ public class AthCtx
     public double AvgAuthorTime()
     {
         List<Level> levels = Levels.Where(x => !x.LevelBroken).ToList();
-        return levels.Average(level => level.AuthorTime);
+        // Average() throws on an empty sequence - a run without a single non-broken
+        // level would take the whole end summary down with it.
+        return levels.Count == 0 ? 0 : levels.Average(level => level.AuthorTime);
     }
 
     public TimeSpan TimeWastedTotal()
@@ -226,6 +228,13 @@ public class AthCtx
         Level level = new Level(levelScriptableObject);
         CurrentLevel = level;
         Levels.Add(level);
+
+        // Per-level scratch state. Without the reset the medal overlay keeps showing
+        // the previous level's run until the player crosses a finish line here.
+        LastRunTime = -1;
+        LastRunMedalStatus = Level.LevelStatus.UNKOWN;
+        LastRunMedalWasNew = false;
+
         CurrentLevel.Start();
     }
 

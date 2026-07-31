@@ -1,6 +1,7 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Util;
+using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Master.States;
 
@@ -38,7 +39,34 @@ public class StateMasterOff : IState
     // Private Methods
     private void StartChallenge()
     {
+        if (!IsReadyToStart())
+        {
+            return;
+        }
+
         StateMachine.TransitionTo(new StateMasterOn(StateMachine));
+    }
+
+    /// <summary>
+    ///     StateMasterOn.Enter() reaches straight into the online HUD. Outside a lobby that
+    ///     chain is null and the transition dies halfway through, leaving
+    ///     MasterStateMachine.CurrentState inconsistent. Refuse before the transition starts.
+    /// </summary>
+    private static bool IsReadyToStart()
+    {
+        if (ZeepkistNetwork.CurrentLobby == null)
+        {
+            Messenger.Notify().LogWarning("ATH only runs in an online lobby");
+            return false;
+        }
+
+        if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null || PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)
+        {
+            Messenger.Notify().LogWarning("Online HUD not ready yet, try again once a level is loaded");
+            return false;
+        }
+
+        return true;
     }
 
     private void StopChallenge()

@@ -33,9 +33,13 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
             // Sende Startmeldung
             ChatMessageService.SendCustomMessage(AthStateMachine.Ctx.MessageStarting());
 
+            // ATH owns the clock - the lobby round timer must not cut a level short.
+            // This used to sit in the non-RTM branch only, so in the default (RTM)
+            // mode the lobby timer stayed live.
+            ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
+
             if (!Plugin.Instance.MyConfig.RandomPlaylist.Value)
             {
-                ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
                 await Task.Delay(2500);
                 MultiplayerApi.UpdateServerPlaylist();
                 await Task.Delay(500);

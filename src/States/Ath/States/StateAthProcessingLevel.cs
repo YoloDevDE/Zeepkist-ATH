@@ -42,6 +42,8 @@ public class StateAthProcessingLevel(IStateMachine stateMachine) : AthState
                 return;
             }
 
+            // A level we actually keep ends the duplicate streak.
+            AthStateMachine.Ctx.ConsecutiveDuplicateCount = 0;
             StateMachine.TransitionTo(new StateAthStartLevelFirstTime(StateMachine));
         }
         catch (Exception ex)
