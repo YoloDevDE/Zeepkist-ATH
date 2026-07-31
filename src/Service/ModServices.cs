@@ -41,16 +41,22 @@ public class ModServices
 	public GameStateObserver GameState { get; } = new();
 
 	/// <summary>
-	///     The always-on run display. Session-scoped like the rest of the UI; it shows itself
-	///     when <see cref="PublishRun" /> hands it a run.
+	///     The mod's main panel: the clock, the score and the controls. Session-scoped because
+	///     it is also what a player sees when no run is going - that is where Start lives.
 	/// </summary>
-	public AthHud Hud { get; } = new();
+	public ControlPanel Control { get; } = new();
 
 	/// <summary>
-	///     The control panel behind /ath. Session-scoped because it is also what a player sees
-	///     when no run is going - that is where the Start button lives.
+	///     What the level being played costs and how it compares. Shown alongside the control
+	///     panel and toggled with it - the two are one UI, drawn as two windows.
 	/// </summary>
-	public AthWindow Window { get; } = new();
+	public LevelStatsPanel LevelStats { get; } = new();
+
+	/// <summary>
+	///     Rewrites the game's own running-time label while a hunt is on. Not a drawer - it
+	///     writes into the game's UI rather than ours, so it is not registered with UIApi.
+	/// </summary>
+	public RaceTimeDisplay RaceTime { get; } = new();
 
 	/// <summary>Centre-screen banners and notifications. Session-scoped like the window.</summary>
 	public AthOverlay Overlay { get; } = new();
@@ -61,8 +67,17 @@ public class ModServices
 	/// </summary>
 	public void PublishRun(AthStateMachine run)
 	{
-		Hud.ActiveRun = run;
-		Window.ActiveRun = run;
+		Control.ActiveRun = run;
+		LevelStats.ActiveRun = run;
+		LevelStats.Visible = run != null;
+		RaceTime.Enabled = run != null;
+	}
+
+	/// <summary>What /ath does: shows or hides the mod, both panels together.</summary>
+	public void ToggleUi()
+	{
+		Control.Toggle();
+		LevelStats.Visible = Control.Visible && LevelStats.ActiveRun != null;
 	}
 
 	/// <summary>

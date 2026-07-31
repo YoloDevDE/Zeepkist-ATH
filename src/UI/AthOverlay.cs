@@ -18,7 +18,7 @@ namespace AuthorTimeHunting.UI;
 ///     a Harmony patch on OnlineGameplayUI.Update plus reflection to reach a private field,
 ///     re-applying the text every frame. Drawing it ourselves removes all of that: the mod no
 ///     longer patches the game at all.
-///     Unlike AthWindow this draws straight onto the canvas with no window chrome, because a
+///     Unlike the panels this draws straight onto the canvas with no window chrome, because a
 ///     banner is not something you drag around. That also means nothing clips it for us, so
 ///     every size here is measured off the current screen rather than assumed.
 /// </summary>

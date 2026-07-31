@@ -1,0 +1,38 @@
+﻿Ich möchte dass du das UI grundlegend überarbeitest.
+
+Wir bruachen mehrere Panels, aber erstmal mach alles an UI weg was wir bisher haben. damit bin ich leider nicht so glücklich. es gibt gute Ansätze aber mehr auch nicht.
+
+Ich möchte ein "Control Panel haben"
+Dieses hat Steuerelemente von ATH overall.
+Start, Stop, Restart, Pause, Resume, Skip, Skip broken... sowas halt.
+Es hat die Dauer des Runs, die Medals (mit Sprite, das müssen wir noch herausfinden) und einen Background.
+Das soll 1 zu 1 wie in Trackmania RMC sein.
+
+Dann brauche ich ein Panel mit LevelStats für das Current Level.
+Attempts Amount
+Level Name und Author natürlich.
+Die MEdals Gold,Author undso.
+Amount of Crashes
+Wie lange wir dieses Level schon spielen
+Eine Art Ampel wie gut wir sind auf dem LEvel (gemessen Attempts und Duration in Relation zu anderen Maps)
+
+Dann möchte ich dass wir ein aktuelles UI manipulieren.
+Das "time panel" während man einen Run hat, dort tickt die Zeit des CurrentRuns hoch. das ist ein TextMeshPro Panel.
+Da möchte ich dass du daraus 3 Zeilen machst, die aligned sind.
+
+So soll das sturktiriert sein
+CurrentRun
+diffToGold
+diffToAT
+
+So formatier:
+00:00.000 (wir färben das ein, wenn wir unter AT sind mach es AT colored, Wenn wir über AT und unter Gold sind Gold, sonst rot)
+  +00.000 (sobald wir drüber sind, wird aus dem + ein -)
+  +00.000
+
+Das soll Konfigurierbar sein in sofern, dass wir nur Gold oder Nur AT zeigen oder nix davon oder nur den colorchange von CurrentRun oder auch das nicht.
+so mit checkboxes
+ColorChange[y|n]
+ShowGoldInTimeWhatever[y|n]
+ShowATInTimeWhatever[y|n]  
+

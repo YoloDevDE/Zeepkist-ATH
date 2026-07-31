@@ -37,10 +37,10 @@ public class Plugin : BaseUnityPlugin
 	{
 		InitializeConfig();
 		_services = new ModServices();
-		UIApi.AddZeepGUIDrawer(_services.Hud);
-		UIApi.AddZeepGUIDrawer(_services.Window);
+		UIApi.AddZeepGUIDrawer(_services.Control);
+		UIApi.AddZeepGUIDrawer(_services.LevelStats);
 		UIApi.AddZeepGUIDrawer(_services.Overlay);
-		CommandAth.CommandTrigger += _services.Window.Toggle;
+		CommandAth.CommandTrigger += _services.ToggleUi;
 		InitializeHarmony();
 		RegisterChatCommands();
 		InitializeStateMachine();
@@ -53,12 +53,13 @@ public class Plugin : BaseUnityPlugin
 	{
 		if (_services != null)
 		{
-			CommandAth.CommandTrigger -= _services.Window.Toggle;
-			UIApi.RemoveZeepGUIDrawer(_services.Hud);
-			UIApi.RemoveZeepGUIDrawer(_services.Window);
+			CommandAth.CommandTrigger -= _services.ToggleUi;
+			UIApi.RemoveZeepGUIDrawer(_services.Control);
+			UIApi.RemoveZeepGUIDrawer(_services.LevelStats);
 			UIApi.RemoveZeepGUIDrawer(_services.Overlay);
 		}
 
+		_services?.RaceTime.Dispose();
 		_services?.GameState.Dispose();
 		_services?.WorkshopDownloads.Dispose();
 		_harmony?.UnpatchSelf();

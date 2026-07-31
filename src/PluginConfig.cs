@@ -26,6 +26,15 @@ public class PluginConfig
 		SavePlaylistOnRunEnd = config.Bind("Misc", "Save Playlist on Run End", false,
 			"Literally what it says. what did you expect");
 
+		RaceTimeColorChange = config.Bind("Race Timer", "Colour the Run Time", true,
+			"Tints the running time by the medal it is currently on: author, gold, or neither.");
+
+		RaceTimeShowGold = config.Bind("Race Timer", "Show Gold Delta", true,
+			"Adds a line under the running time showing how far ahead of or behind the gold time you are.");
+
+		RaceTimeShowAuthor = config.Bind("Race Timer", "Show Author Delta", true,
+			"Adds a line under the running time showing how far ahead of or behind the author time you are.");
+
 		GraphQlUrl = config.Bind("Backend", "GraphQL URL", "https://graphql.zeepki.st/",
 			"GraphQL endpoint used for level queries.");
 	}
@@ -65,4 +74,21 @@ public class PluginConfig
 	///     GraphQL endpoint URL
 	/// </summary>
 	public ConfigEntry<string> GraphQlUrl { get; }
+
+	#region Race Timer
+
+	// The three switches over the game's own running-time display. Kept separate rather
+	// than one "style" enum because they are genuinely independent: colour without deltas
+	// is a perfectly reasonable setup, and so is the reverse.
+
+	/// <summary>Tint the running time by the medal it currently sits on.</summary>
+	public ConfigEntry<bool> RaceTimeColorChange { get; }
+
+	/// <summary>Show the delta to the gold time under the running time.</summary>
+	public ConfigEntry<bool> RaceTimeShowGold { get; }
+
+	/// <summary>Show the delta to the author time under the running time.</summary>
+	public ConfigEntry<bool> RaceTimeShowAuthor { get; }
+
+	#endregion
 }

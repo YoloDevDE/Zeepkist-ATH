@@ -47,6 +47,19 @@ public class Level
 
 	// Game state
 	public int Attempt { get; set; }
+
+	/// <summary>
+	///     How often the car was wrecked here. Counted across every attempt on this level, and
+	///     deliberately not reset by <see cref="Start" /> - a level's crash count is about the
+	///     level, not about the run currently on it.
+	/// </summary>
+	public int Crashes { get; private set; }
+
+	/// <summary>
+	///     Wheels torn off here. Counted per wheel, so one bad landing can add four - which is
+	///     the honest number, and exactly why it is kept apart from <see cref="Crashes" />.
+	/// </summary>
+	public int WheelsLost { get; private set; }
 	public bool Skipped { get; set; }
 	public bool FreeSkipped { get; set; }
 	public bool LevelBroken { get; set; }
@@ -159,6 +172,16 @@ public class Level
 		{
 			TimeStamps.Add(DateTime.Now);
 		}
+	}
+
+	public void RegisterCrash()
+	{
+		Crashes++;
+	}
+
+	public void RegisterWheelLost()
+	{
+		WheelsLost++;
 	}
 
 	public void Start()

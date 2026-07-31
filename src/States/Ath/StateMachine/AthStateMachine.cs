@@ -290,6 +290,22 @@ public partial class AthStateMachine : StateMachineBase
 		TryForward(nameof(OnPhotoModeEntered), state => state.OnPhotoModeEntered());
 	}
 
+	/// <summary>
+	///     Counted rather than forwarded: no state cares that a crash happened, the level
+	///     stats panel just wants the tally. Giving every state an OnCrashed override to
+	///     ignore would be twelve no-ops for one counter.
+	/// </summary>
+	private void OnCrashed(CrashReason reason)
+	{
+		Ctx.CurrentLevel?.RegisterCrash();
+	}
+
+	/// <summary>Fires once per wheel, so a bad landing can add four. Same reasoning as above.</summary>
+	private void OnWheelBroken()
+	{
+		Ctx.CurrentLevel?.RegisterWheelLost();
+	}
+
 	private void SubscribeEvents()
 	{
 		if (_eventsSubscribed)
@@ -302,6 +318,8 @@ public partial class AthStateMachine : StateMachineBase
 		RacingApi.PlayerSpawned += OnPlayerSpawned;
 		RacingApi.CrossedFinishLine += OnCrossedFinishLine;
 		RacingApi.LevelLoaded += OnLevelLoaded;
+		RacingApi.Crashed += OnCrashed;
+		RacingApi.WheelBroken += OnWheelBroken;
 		PhotoModeApi.PhotoModeEntered += OnPhotoModeEntered;
 
 		_eventsSubscribed = true;
@@ -319,6 +337,8 @@ public partial class AthStateMachine : StateMachineBase
 		RacingApi.PlayerSpawned -= OnPlayerSpawned;
 		RacingApi.CrossedFinishLine -= OnCrossedFinishLine;
 		RacingApi.LevelLoaded -= OnLevelLoaded;
+		RacingApi.Crashed -= OnCrashed;
+		RacingApi.WheelBroken -= OnWheelBroken;
 		PhotoModeApi.PhotoModeEntered -= OnPhotoModeEntered;
 
 		_eventsSubscribed = false;

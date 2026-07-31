@@ -7,16 +7,15 @@ using UnityEngine;
 namespace AuthorTimeHunting.UI;
 
 /// <summary>
-///     What the run HUD shows, as data. Built from <see cref="AthCtx" /> once per draw and
-///     handed to whatever renders it.
+///     What the control panel shows about the run as a whole, as data. Built from
+///     <see cref="AthCtx" /> once per draw and handed to whatever renders it.
 ///     This is the seam the in-game UI is built on. The HUD used to exist only as a single
 ///     40-line string of TextMeshPro colour tags inside AthStateMachine, which meant the
 ///     layout, the numbers and the colours were one inseparable thing. Splitting them lets
-///     the same run be rendered as an Imui window without touching the run at all - and it
-///     is why the old server message can be retired one renderer at a time.
-///     The shape mirrors how the run is actually read: a handful of headline values the HUD
-///     shows while driving, and <see cref="Details" /> for the control panel, which is opened
-///     deliberately and can afford rows.
+///     the same run be rendered as an Imui panel without touching the run at all.
+///     Anything about the level being played is in <see cref="LevelStatsView" /> instead - the
+///     split follows the two panels, and the two questions: how is the run going, and how is
+///     this level going.
 /// </summary>
 public class RunHudView
 {
@@ -26,9 +25,9 @@ public class RunHudView
 
 	public bool Paused { get; private set; }
 
-	#region Headline
+	#region Time Budget
 
-	/// <summary>Time left in the budget - the HUD's largest element by a wide margin.</summary>
+	/// <summary>Time left in the budget - the panel's largest element by a wide margin.</summary>
 	public string TimeLeft { get; private set; }
 
 	public Color32 TimeColour { get; private set; }
@@ -36,27 +35,30 @@ public class RunHudView
 	/// <summary>Share of the budget still unspent, 0..1, for the bar under the clock.</summary>
 	public float RemainingFraction { get; private set; }
 
+	/// <summary>The budget this run was given, fixed when it started.</summary>
+	public string Duration { get; private set; }
+
+	/// <summary>What one penalty skip costs.</summary>
+	public string PenaltyTime { get; private set; }
+
+	#endregion
+
+	#region Score
+
 	public int AuthorMedals { get; private set; }
 	public int GoldMedals { get; private set; }
 	public int Penalties { get; private set; }
 
 	#endregion
 
-	#region Current Level
-
-	public string LevelTime { get; private set; }
-	public string Attempt { get; private set; }
-
-	/// <summary>What skipping right now would cost. The single most decision-relevant value.</summary>
+	/// <summary>What skipping right now would cost. The most decision-relevant value here.</summary>
 	public string SkipType { get; private set; }
 
 	public Color32 SkipColour { get; private set; }
 
-	#endregion
-
 	/// <summary>
-	///     The rows too detailed for the HUD: the fixed run settings, and the penalty
-	///     breakdown that shows what the budget would have been without them.
+	///     The penalty breakdown, and empty until the first penalty is taken. Shown so the cost
+	///     of skipping stays visible instead of silently vanishing into the one clock.
 	/// </summary>
 	public IReadOnlyList<HudRow> Details { get; private set; }
 
@@ -79,11 +81,11 @@ public class RunHudView
 			TimeLeft = TimeFormatter.FormatDuration((int)remaining),
 			TimeColour = TimeLeftColour(ctx, paused),
 			RemainingFraction = ctx.Duration <= 0 ? 0f : Mathf.Clamp01((float)(remaining / ctx.Duration)),
+			Duration = TimeSpan.FromMilliseconds(ctx.Duration).ToFormattedString(),
+			PenaltyTime = TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds).ToFormattedString(),
 			AuthorMedals = ctx.AuthorMedals,
 			GoldMedals = ctx.GoldMedals,
 			Penalties = ctx.Penalties,
-			LevelTime = TimeFormatter.FormatDuration((int)ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds),
-			Attempt = ctx.CurrentLevel.Attempt.ToString(),
 			SkipType = SkipTypeLabel(ctx),
 			SkipColour = SkipTypeColour(ctx),
 			Details = BuildDetails(ctx)
@@ -92,27 +94,20 @@ public class RunHudView
 
 	private static HudRow[] BuildDetails(AthCtx ctx)
 	{
-		List<HudRow> rows =
-		[
-			new("Duration", TimeSpan.FromMilliseconds(ctx.Duration).ToFormattedString()),
-			new("Skip Penalty", TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds).ToFormattedString(),
-				HudPalette.Penalty),
-			new("Free Skips Left", ctx.AvaiableFreeSkips.ToString(), HudPalette.FreeSkip)
-		];
-
-		if (ctx.Penalties > 0)
+		if (ctx.Penalties == 0)
 		{
-			// What the budget would have been without penalties, so the cost of skipping
-			// stays visible instead of silently vanishing into one number.
-			rows.Add(new HudRow("Without Penalties",
-				TimeFormatter.FormatDuration((int)ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds),
-				HudPalette.Muted));
-			rows.Add(new HudRow("Time Lost",
-				TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds * ctx.Penalties).ToFormattedString(),
-				HudPalette.Bad));
+			return [];
 		}
 
-		return rows.ToArray();
+		return
+		[
+			new HudRow("Without Penalties",
+				TimeFormatter.FormatDuration((int)ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds),
+				HudPalette.Muted),
+			new HudRow("Time Lost",
+				TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds * ctx.Penalties).ToFormattedString(),
+				HudPalette.Bad)
+		];
 	}
 
 	private static Color32 TimeLeftColour(AthCtx ctx, bool paused)
