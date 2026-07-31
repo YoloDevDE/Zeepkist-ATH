@@ -14,6 +14,9 @@ namespace AuthorTimeHunting.UI;
 ///     layout, the numbers and the colours were one inseparable thing. Splitting them lets
 ///     the same run be rendered as an Imui window without touching the run at all - and it
 ///     is why the old server message can be retired one renderer at a time.
+///     The shape mirrors how the run is actually read: a handful of headline values the HUD
+///     shows while driving, and <see cref="Details" /> for the control panel, which is opened
+///     deliberately and can afford rows.
 /// </summary>
 public class RunHudView
 {
@@ -23,14 +26,39 @@ public class RunHudView
 
 	public bool Paused { get; private set; }
 
-	/// <summary>Fixed run settings, shown once at the top.</summary>
-	public IReadOnlyList<HudRow> Settings { get; private set; }
+	#region Headline
 
-	/// <summary>How the run as a whole is going.</summary>
-	public IReadOnlyList<HudRow> Run { get; private set; }
+	/// <summary>Time left in the budget - the HUD's largest element by a wide margin.</summary>
+	public string TimeLeft { get; private set; }
 
-	/// <summary>What is happening on the level right now.</summary>
-	public IReadOnlyList<HudRow> Level { get; private set; }
+	public Color32 TimeColour { get; private set; }
+
+	/// <summary>Share of the budget still unspent, 0..1, for the bar under the clock.</summary>
+	public float RemainingFraction { get; private set; }
+
+	public int AuthorMedals { get; private set; }
+	public int GoldMedals { get; private set; }
+	public int Penalties { get; private set; }
+
+	#endregion
+
+	#region Current Level
+
+	public string LevelTime { get; private set; }
+	public string Attempt { get; private set; }
+
+	/// <summary>What skipping right now would cost. The single most decision-relevant value.</summary>
+	public string SkipType { get; private set; }
+
+	public Color32 SkipColour { get; private set; }
+
+	#endregion
+
+	/// <summary>
+	///     The rows too detailed for the HUD: the fixed run settings, and the penalty
+	///     breakdown that shows what the budget would have been without them.
+	/// </summary>
+	public IReadOnlyList<HudRow> Details { get; private set; }
 
 	/// <summary>
 	///     Null when no level has been loaded yet, which happens between /ath start and the
@@ -43,51 +71,48 @@ public class RunHudView
 			return null;
 		}
 
+		double remaining = ctx.GetRemainingTime().TotalMilliseconds;
+
 		return new RunHudView
 		{
 			Paused = paused,
-			Settings = new[]
-			{
-				new HudRow("Duration", TimeSpan.FromMilliseconds(ctx.Duration).ToFormattedString()),
-				new HudRow("Skip Penalty", TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds).ToFormattedString(),
-					HudPalette.Penalty)
-			},
-			Run = BuildRunRows(ctx, paused),
-			Level = BuildLevelRows(ctx)
+			TimeLeft = TimeFormatter.FormatDuration((int)remaining),
+			TimeColour = TimeLeftColour(ctx, paused),
+			RemainingFraction = ctx.Duration <= 0 ? 0f : Mathf.Clamp01((float)(remaining / ctx.Duration)),
+			AuthorMedals = ctx.AuthorMedals,
+			GoldMedals = ctx.GoldMedals,
+			Penalties = ctx.Penalties,
+			LevelTime = TimeFormatter.FormatDuration((int)ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds),
+			Attempt = ctx.CurrentLevel.Attempt.ToString(),
+			SkipType = SkipTypeLabel(ctx),
+			SkipColour = SkipTypeColour(ctx),
+			Details = BuildDetails(ctx)
 		};
 	}
 
-	private static HudRow[] BuildRunRows(AthCtx ctx, bool paused)
+	private static HudRow[] BuildDetails(AthCtx ctx)
 	{
-		string timeLeft = TimeFormatter.FormatDuration((int)ctx.GetRemainingTime().TotalMilliseconds);
+		List<HudRow> rows =
+		[
+			new("Duration", TimeSpan.FromMilliseconds(ctx.Duration).ToFormattedString()),
+			new("Skip Penalty", TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds).ToFormattedString(),
+				HudPalette.Penalty),
+			new("Free Skips Left", ctx.AvaiableFreeSkips.ToString(), HudPalette.FreeSkip)
+		];
 
 		if (ctx.Penalties > 0)
 		{
-			// Show what the budget would have been without penalties, so the cost of
-			// skipping stays visible instead of silently vanishing into one number.
-			string clean =
-				TimeFormatter.FormatDuration((int)ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds);
-			string lost = TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds * ctx.Penalties).ToFormattedString();
-			timeLeft = $"{timeLeft}   ({clean} - {lost})";
+			// What the budget would have been without penalties, so the cost of skipping
+			// stays visible instead of silently vanishing into one number.
+			rows.Add(new HudRow("Without Penalties",
+				TimeFormatter.FormatDuration((int)ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds),
+				HudPalette.Muted));
+			rows.Add(new HudRow("Time Lost",
+				TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds * ctx.Penalties).ToFormattedString(),
+				HudPalette.Bad));
 		}
 
-		return new[]
-		{
-			new HudRow("State", paused ? "PAUSED" : "ACTIVE", paused ? HudPalette.Muted : HudPalette.Good),
-			new HudRow("Time Left", timeLeft, TimeLeftColour(ctx, paused)),
-			new HudRow("AT / Gold / Skips", $"{ctx.AuthorMedals} / {ctx.GoldMedals} / {ctx.Penalties}")
-		};
-	}
-
-	private static HudRow[] BuildLevelRows(AthCtx ctx)
-	{
-		return new[]
-		{
-			new HudRow("Level Time",
-				TimeFormatter.FormatDuration((int)ctx.CurrentLevel.GetPlayDuration().TotalMilliseconds)),
-			new HudRow("Skip Type", SkipTypeLabel(ctx), SkipTypeColour(ctx)),
-			new HudRow("Attempt", ctx.CurrentLevel.Attempt.ToString())
-		};
+		return rows.ToArray();
 	}
 
 	private static Color32 TimeLeftColour(AthCtx ctx, bool paused)
@@ -119,10 +144,10 @@ public class RunHudView
 
 		if (ctx.AvaiableFreeSkips > 0)
 		{
-			return $"Free Skip ({ctx.AvaiableFreeSkips}x left)";
+			return $"Free Skip ({ctx.AvaiableFreeSkips}x)";
 		}
 
-		return ctx.IsTimeRunningLow ? "FATAL SKIP" : "Penalty Skip!";
+		return ctx.IsTimeRunningLow ? "FATAL SKIP" : "Penalty Skip";
 	}
 
 	private static Color32 SkipTypeColour(AthCtx ctx)

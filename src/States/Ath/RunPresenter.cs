@@ -148,10 +148,7 @@ public class RunPresenter
 				.Line($"'{haunting.Author}' !", HudPalette.AuthorName)
 				.Line($"You've beaten {haunting.Levels.Count} of their levels:", HudPalette.Default);
 
-			foreach (Level level in haunting.Levels)
-			{
-				panel.Line($"- {level.Name}", HudPalette.LevelName);
-			}
+			foreach (Level level in haunting.Levels) panel.Line($"- {level.Name}", HudPalette.LevelName);
 		}
 
 		return panel.Done();

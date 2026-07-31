@@ -135,6 +135,9 @@ public class Level
 
 	private List<DateTime> TimeStamps { get; } = [];
 
+	/// <summary>True while play time is being counted.</summary>
+	public bool IsTiming => TimeStamps.Count % 2 == 1;
+
 
 	/// <summary>
 	///     Stops counting play time. Idempotent: an interval is only closed when one is open.
@@ -157,9 +160,6 @@ public class Level
 			TimeStamps.Add(DateTime.Now);
 		}
 	}
-
-	/// <summary>True while play time is being counted.</summary>
-	public bool IsTiming => TimeStamps.Count % 2 == 1;
 
 	public void Start()
 	{

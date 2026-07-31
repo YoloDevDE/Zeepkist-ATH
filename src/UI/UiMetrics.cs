@@ -38,12 +38,6 @@ internal static class UiMetrics
 		return Mathf.Clamp(gui.Canvas.SafeScreenRect.W * fraction, low, high);
 	}
 
-	/// <summary>Caps a computed content height so a window can never be taller than the screen.</summary>
-	public static float ClampHeight(ImGui gui, float desired)
-	{
-		return Mathf.Min(desired, gui.Canvas.SafeScreenRect.H - Margin(gui) * 2f);
-	}
-
 	/// <summary>
 	///     The label column of a label/value row, as a share of the row it sits in. Fixed
 	///     column widths either waste half a wide window or crush the value out of a narrow one.

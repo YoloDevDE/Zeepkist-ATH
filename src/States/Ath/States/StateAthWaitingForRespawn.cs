@@ -1,8 +1,5 @@
-﻿using AuthorTimeHunting.Service;
-using AuthorTimeHunting.States.Ath.StateMachine;
+﻿using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI;
-using AuthorTimeHunting.Util;
-using UnityEngine;
 using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
@@ -23,7 +20,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 		if (!_hasShownAuthorMedal)
 		{
-			Overlay.Notify("Author time claimed!<br>[Respawn to continue]", HudPalette.Default, 5f);
+			Overlay.Notify("Author time claimed!<br>[Respawn to continue]", HudPalette.Default);
 
 			double lastRunTime = AthStateMachine.Ctx.LastRunTime;
 

@@ -1,4 +1,5 @@
-﻿using AuthorTimeHunting.UI;
+﻿using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI;
 
 namespace AuthorTimeHunting.Service;
 
@@ -40,13 +41,29 @@ public class ModServices
 	public GameStateObserver GameState { get; } = new();
 
 	/// <summary>
-	///     The mod's window. Session-scoped because it is also what a player sees when no run
-	///     is going - that is where the Start button lives.
+	///     The always-on run display. Session-scoped like the rest of the UI; it shows itself
+	///     when <see cref="PublishRun" /> hands it a run.
+	/// </summary>
+	public AthHud Hud { get; } = new();
+
+	/// <summary>
+	///     The control panel behind /ath. Session-scoped because it is also what a player sees
+	///     when no run is going - that is where the Start button lives.
 	/// </summary>
 	public AthWindow Window { get; } = new();
 
 	/// <summary>Centre-screen banners and notifications. Session-scoped like the window.</summary>
 	public AthOverlay Overlay { get; } = new();
+
+	/// <summary>
+	///     Tells the UI which run is in progress, or null when none is. One call rather than
+	///     two assignments, so a new drawer cannot be left reading a stale run.
+	/// </summary>
+	public void PublishRun(AthStateMachine run)
+	{
+		Hud.ActiveRun = run;
+		Window.ActiveRun = run;
+	}
 
 	/// <summary>
 	///     Builds the level pool for one run. Lives here because the pool's two sources are

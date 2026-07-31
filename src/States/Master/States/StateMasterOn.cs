@@ -55,7 +55,7 @@ public class StateMasterOn : StateBase
 		CommandSkipBroken.CommandTrigger += SkipBrokenLevel;
 		SubStateMachine.StateMachineFinished += Stop;
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
-		Master.Services.Window.ActiveRun = AthStateMachine;
+		Master.Services.PublishRun(AthStateMachine);
 		AthStateMachine.StartTimer();
 		Master.Services.Overlay.Notify("Hunt started", HudPalette.Positive);
 	}
@@ -64,7 +64,7 @@ public class StateMasterOn : StateBase
 	{
 		IsActive = false;
 		Master.Services.Overlay.Notify("Hunt stopped", HudPalette.Default);
-		Master.Services.Window.ActiveRun = null;
+		Master.Services.PublishRun(null);
 		AthStateMachine.StopTimer();
 		AthStateMachine.Dispose();
 		CommandStop.CommandTrigger -= Stop;

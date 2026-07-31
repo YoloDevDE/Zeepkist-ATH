@@ -37,6 +37,7 @@ public class Plugin : BaseUnityPlugin
 	{
 		InitializeConfig();
 		_services = new ModServices();
+		UIApi.AddZeepGUIDrawer(_services.Hud);
 		UIApi.AddZeepGUIDrawer(_services.Window);
 		UIApi.AddZeepGUIDrawer(_services.Overlay);
 		CommandAth.CommandTrigger += _services.Window.Toggle;
@@ -53,6 +54,7 @@ public class Plugin : BaseUnityPlugin
 		if (_services != null)
 		{
 			CommandAth.CommandTrigger -= _services.Window.Toggle;
+			UIApi.RemoveZeepGUIDrawer(_services.Hud);
 			UIApi.RemoveZeepGUIDrawer(_services.Window);
 			UIApi.RemoveZeepGUIDrawer(_services.Overlay);
 		}

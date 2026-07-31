@@ -30,9 +30,9 @@ public partial class AthStateMachine : StateMachineBase
 	private const int MaxConsecutiveTickFailures = 10;
 
 	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
+	private readonly AthPanelDrawer _panelDrawer;
 
 	private AthLoopBehaviour _behaviour;
-	private readonly AthPanelDrawer _panelDrawer;
 	private int _consecutiveTickFailures;
 	private bool _eventsSubscribed;
 	private string _lastServerMessage;

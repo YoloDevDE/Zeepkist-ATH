@@ -4,7 +4,6 @@ using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
 using Imui.Core;
-using Imui.Rendering;
 using UnityEngine;
 using ZeepSDK.Chat;
 using ZeepSDK.UI;
@@ -13,47 +12,39 @@ using Logger = AuthorTimeHunting.Util.Logger;
 namespace AuthorTimeHunting.UI;
 
 /// <summary>
-///     The mod's window: the run HUD plus the controls that used to be chat commands.
-///     Session-scoped, registered once for the whole game session rather than per run. It has
-///     to outlive a run because it is also what a player sees when nothing is running - that
-///     is where the Start button lives, and /ath is the way back to it.
+///     ATH's control panel: the buttons that used to be chat commands, plus the run detail
+///     that is too fine-grained for the HUD.
+///     It no longer repeats the run state - <see cref="AthHud" /> owns that now and is always
+///     on while a hunt runs. This window is opened on purpose with /ath and closed again, so
+///     it can afford rows and a title bar.
+///     Session-scoped, registered once for the whole game session: it is also what a player
+///     sees when nothing is running, and that is where the Start button lives.
 /// </summary>
 public class AthWindow : IZeepGUIDrawer
 {
 	private const string WindowTitle = "Author Time Hunting";
 
 	/// <summary>Share of the screen width, before the clamp below.</summary>
-	private const float WidthFraction = 0.22f;
+	private const float WidthFraction = 0.2f;
 
-	private const float MinWidth = 300f;
-	private const float MaxWidth = 460f;
+	private const float MinWidth = 280f;
+	private const float MaxWidth = 400f;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton;
+	// No resizing: the height is recomputed from the content every frame, so a dragged
+	// corner would spring back next frame anyway.
+	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
 	private bool _mouseOverWindow;
 
 	/// <summary>
 	///     The run currently in progress, or null when ATH is idle. Set by StateMasterOn so
 	///     the window always reflects reality rather than caching its own copy.
-	///     Starting a run also shows the window: once a hunt is on, its state is the point.
 	/// </summary>
-	public AthStateMachine ActiveRun
-	{
-		get;
-		set
-		{
-			field = value;
-
-			if (value != null)
-			{
-				Visible = true;
-			}
-		}
-	}
+	public AthStateMachine ActiveRun { get; set; }
 
 	/// <summary>
-	///     Toggled by /ath. Starts hidden so the mod stays out of the way until asked for,
-	///     and is switched on automatically when a run begins.
+	///     Toggled by /ath. Starts hidden and stays that way when a run begins - the HUD is
+	///     what a hunt puts on screen; this is the panel you ask for.
 	/// </summary>
 	public bool Visible { get; set; }
 
@@ -87,9 +78,10 @@ public class AthWindow : IZeepGUIDrawer
 		RunHudView view = run == null ? null : RunHudView.From(run.Ctx, run.Ctx.IsPaused);
 
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
-		float height = UiMetrics.ClampHeight(gui, EstimateHeight(gui, view));
 
-		ImRect rect = ImWindowPlacement.Place(gui, WindowTitle.AsSpan(), width, height, ImWindowAnchor.TopLeft);
+		// Auto-sized: the panel is as tall as what it has to say and no taller.
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, MeasureHeight(gui, view),
+			ImWindowAnchor.TopLeft);
 
 		bool open = true;
 
@@ -100,27 +92,14 @@ public class AthWindow : IZeepGUIDrawer
 
 		try
 		{
-			// The height above is what the content wants; the screen, or the player's own
-			// resize, may give it less. Scrolling is what makes the difference survivable.
-			gui.BeginScrollable();
-
-			try
+			if (view == null)
 			{
-				if (view == null)
-				{
-					DrawIdle(gui, run != null);
-				}
-				else
-				{
-					DrawSection(gui, "Run Settings", view.Settings);
-					DrawSection(gui, "Current Run", view.Run);
-					DrawSection(gui, "Current Level", view.Level);
-					DrawRunControls(gui, run);
-				}
+				DrawIdle(gui, run != null);
 			}
-			finally
+			else
 			{
-				gui.EndScrollable();
+				DrawDetails(gui, view.Details);
+				DrawRunControls(gui, run, view);
 			}
 		}
 		finally
@@ -135,7 +114,8 @@ public class AthWindow : IZeepGUIDrawer
 	/// </summary>
 	private static void DrawIdle(ImGui gui, bool starting)
 	{
-		Text(gui, starting ? "Waiting for the level to load..." : "No hunt running.", HudPalette.Muted, NextRow(gui));
+		UiText.Left(gui, starting ? "Waiting for the level to load..." : "No hunt running.", HudPalette.Muted,
+			NextRow(gui));
 		gui.AddSpacing();
 
 		ImRect row = NextButtonRow(gui);
@@ -156,9 +136,9 @@ public class AthWindow : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawRunControls(ImGui gui, AthStateMachine run)
+	private static void DrawRunControls(ImGui gui, AthStateMachine run, RunHudView view)
 	{
-		Text(gui, "Controls", HudPalette.Section, NextRow(gui));
+		UiText.Left(gui, "Controls", HudPalette.Section, NextRow(gui));
 
 		ImRect skipRect = SplitRow(gui, NextButtonRow(gui), out ImRect brokenRect);
 
@@ -175,9 +155,9 @@ public class AthWindow : IZeepGUIDrawer
 
 		ImRect pauseRect = SplitRow(gui, NextButtonRow(gui), out ImRect restartRect);
 
-		if (gui.Button((run.Ctx.IsPaused ? "Resume" : "Pause").AsSpan(), pauseRect))
+		if (gui.Button((view.Paused ? "Resume" : "Pause").AsSpan(), pauseRect))
 		{
-			if (run.Ctx.IsPaused)
+			if (view.Paused)
 			{
 				run.ResumeRun();
 			}
@@ -198,22 +178,22 @@ public class AthWindow : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawSection(ImGui gui, string title, IReadOnlyList<RunHudView.HudRow> rows)
+	private static void DrawDetails(ImGui gui, IReadOnlyList<RunHudView.HudRow> rows)
 	{
 		if (rows == null || rows.Count == 0)
 		{
 			return;
 		}
 
-		Text(gui, title, HudPalette.Section, NextRow(gui));
+		UiText.Left(gui, "Run", HudPalette.Section, NextRow(gui));
 
 		foreach (RunHudView.HudRow row in rows)
 		{
 			ImRect line = NextRow(gui);
 			ImRect labelRect = line.TakeLeft(UiMetrics.LabelWidth(line.W), out ImRect valueRect);
 
-			Text(gui, row.Label, HudPalette.Muted, labelRect);
-			Text(gui, row.Value, row.ValueColour, valueRect);
+			UiText.Left(gui, row.Label, HudPalette.Muted, labelRect);
+			UiText.Left(gui, row.Value, row.ValueColour, valueRect);
 		}
 
 		gui.AddSpacing();
@@ -237,13 +217,7 @@ public class AthWindow : IZeepGUIDrawer
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
 	}
 
-	private static void Text(ImGui gui, string text, Color32 colour, ImRect rect)
-	{
-		// Ellipsis, not overflow: a long level name must not paint over the next column.
-		gui.Text(text.AsSpan(), colour, rect, false, ImTextOverflow.Ellipsis);
-	}
-
-	private static float EstimateHeight(ImGui gui, RunHudView view)
+	private static float MeasureHeight(ImGui gui, RunHudView view)
 	{
 		float spacing = gui.Style.Layout.Spacing;
 		float buttonHeight = UiMetrics.ButtonHeight(gui);
@@ -255,14 +229,13 @@ public class AthWindow : IZeepGUIDrawer
 			return gui.GetRowsHeightWithSpacing(1) + buttonHeight + 3 * spacing + chrome;
 		}
 
-		// Three sections with a heading each, then the "Controls" heading and three
+		// The "Run" heading and its detail rows, then the "Controls" heading and three
 		// button rows.
-		const int sections = 3;
-		int rows = sections + 1 + view.Settings.Count + view.Run.Count + view.Level.Count;
+		int rows = 2 + view.Details.Count;
 
 		return gui.GetRowsHeightWithSpacing(rows)
 		       + 3 * (buttonHeight + spacing)
-		       + sections * spacing
+		       + spacing
 		       + chrome;
 	}
 }

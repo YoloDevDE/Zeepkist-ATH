@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Imui.Controls;
 using Imui.Core;
@@ -24,8 +24,11 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public class AthOverlay : IZeepGUIDrawer
 {
-	/// <summary>Distance from the top of the screen, as a share of its height.</summary>
-	private const float BannerTopFraction = 0.12f;
+	/// <summary>
+	///     Distance from the top of the screen, as a share of its height. Kept clear of the
+	///     HUD, which owns the top of the screen while a hunt is running.
+	/// </summary>
+	private const float BannerTopFraction = 0.32f;
 
 	private const float BannerWidthFraction = 0.45f;
 	private const float BannerMinWidth = 360f;
@@ -138,7 +141,7 @@ public class AthOverlay : IZeepGUIDrawer
 			height);
 
 		ImRect line = area.TakeTop(headlineHeight, out ImRect rest);
-		Centred(gui, banner.Headline, Fade(HudPalette.Author, alpha), line, bodySize * HeadlineScale);
+		UiText.Centre(gui, banner.Headline, Fade(HudPalette.Author, alpha), line, bodySize * HeadlineScale);
 
 		if (banner.Lines == null)
 		{
@@ -148,7 +151,7 @@ public class AthOverlay : IZeepGUIDrawer
 		foreach (OverlayLine overlayLine in banner.Lines)
 		{
 			line = rest.TakeTop(rowHeight, out rest);
-			Centred(gui, overlayLine.Text, Fade(overlayLine.Colour, alpha), line, bodySize);
+			UiText.Centre(gui, overlayLine.Text, Fade(overlayLine.Colour, alpha), line, bodySize);
 		}
 	}
 
@@ -177,21 +180,13 @@ public class AthOverlay : IZeepGUIDrawer
 		{
 			Toast toast = _toasts[first + i];
 			ImRect rect = new(screen.Left + margin, y + i * rowHeight, width, rowHeight);
-			gui.Text(toast.Text.AsSpan(), toast.Colour, rect, false, ImTextOverflow.Ellipsis);
+			UiText.Left(gui, toast.Text, toast.Colour, rect);
 		}
 	}
 
 	private static Color32 Fade(Color32 colour, float alpha)
 	{
 		return new Color32(colour.r, colour.g, colour.b, (byte)(255 * Mathf.Clamp01(alpha)));
-	}
-
-	private static void Centred(ImGui gui, string text, Color32 colour, ImRect rect, float size)
-	{
-		// Centred both ways: the rect is a slice of the screen, so left-aligned text would
-		// start at an arbitrary offset that moves with the resolution.
-		ImTextSettings settings = new(size, 0.5f, 0.5f, false, ImTextOverflow.Ellipsis);
-		gui.Text(text.AsSpan(), in settings, colour, rect);
 	}
 
 	private readonly struct Toast

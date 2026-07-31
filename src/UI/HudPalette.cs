@@ -28,6 +28,15 @@ public static class HudPalette
 
 	public static readonly Color32 White = new(255, 255, 255, 255);
 
+	/// <summary>
+	///     The HUD's own backdrop. Translucent rather than opaque: it sits over the track, and
+	///     a solid slab at the top of the screen reads as part of the game's UI, not the mod's.
+	/// </summary>
+	public static readonly Color32 Surface = new(12, 14, 18, 214);
+
+	/// <summary>The unfilled part of the time-budget bar.</summary>
+	public static readonly Color32 Track = new(255, 255, 255, 38);
+
 	/// <summary>Section headings inside a panel.</summary>
 	public static readonly Color32 Heading = new(179, 54, 163, 255);
 
