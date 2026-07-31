@@ -1,25 +1,19 @@
-﻿using System;
-using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.Master.States;
+﻿using AuthorTimeHunting.States.Master.States;
 
 namespace AuthorTimeHunting.States.Master.StateMachine;
 
-public class MasterStateMachine : IStateMachine
+/// <summary>
+///     The mod's own lifecycle: off until /ath start, on until /ath stop. The running state
+///     carries the run's machine as a sub-state machine.
+/// </summary>
+public class MasterStateMachine : StateMachineBase
 {
-    public MasterStateMachine()
-    {
-        InitialState = new StateMasterOff(this);
-        FinalState = new StateMasterOff(this);
-    }
+	public MasterStateMachine()
+	{
+		InitialState = new StateMasterOff(this);
+		FinalState = new StateMasterOff(this);
+	}
 
-    public event Action StateMachineFinished;
-
-    public IState FinalState { get; set; }
-    public IState CurrentState { get; set; }
-    public IState InitialState { get; set; }
-
-    public void InvokeFinish()
-    {
-        StateMachineFinished?.Invoke();
-    }
+	public override StateBase InitialState { get; }
+	public override StateBase FinalState { get; }
 }

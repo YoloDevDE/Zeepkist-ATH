@@ -1,22 +1,59 @@
-﻿using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.Service;
+﻿using AuthorTimeHunting.Service;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
 
-public abstract class AthState : IState
+/// <summary>
+///     A state of the run. On top of the lifecycle hooks it inherits, it gets one overridable
+///     method per game event ATH listens to.
+///     None of these are abstract: a state overrides the handful of moments it cares about
+///     and stays silent about the rest. The events themselves are subscribed once, centrally,
+///     by <see cref="StateMachine.AthStateMachine" /> and forwarded to whichever state is
+///     current - a state never registers or removes a handler and therefore cannot leak one.
+/// </summary>
+public abstract class AthState : StateBase
 {
-    public AthStateMachine AthStateMachine => (AthStateMachine)StateMachine;
-    public PlaylistService PlaylistService => PlaylistService.Instance;
-    public abstract IStateMachine StateMachine { get; }
-    public abstract void Enter();
-    public abstract void Execute();
-    public abstract void Exit();
+	protected AthState(AthStateMachine stateMachine) : base(stateMachine)
+	{
+		AthStateMachine = stateMachine;
+	}
 
-    public abstract void OnAthTimerTick();
-    public virtual void OnRoundStarted() { }
-    public virtual void OnRoundEnded() { }
-    public virtual void OnPlayerSpawned() { }
-    public virtual void OnCrossedFinishLine(float time) { }
-    public virtual void OnLevelLoaded() { }
-    public virtual void OnPhotoModeEntered() { }
+	/// <summary>The run's state machine, already typed - no cast at the call site.</summary>
+	public AthStateMachine AthStateMachine { get; }
+
+	public PlaylistService PlaylistService => PlaylistService.Instance;
+
+	/// <summary>Every frame while the run's timer is running.</summary>
+	public virtual void OnAthTimerTick()
+	{
+	}
+
+	/// <summary>A lobby round has started.</summary>
+	public virtual void OnRoundStarted()
+	{
+	}
+
+	/// <summary>A lobby round has ended, e.g. because someone skipped.</summary>
+	public virtual void OnRoundEnded()
+	{
+	}
+
+	/// <summary>The local player spawned, which in Zeepkist also means respawned.</summary>
+	public virtual void OnPlayerSpawned()
+	{
+	}
+
+	/// <summary>The local player crossed the finish line with the given time.</summary>
+	public virtual void OnCrossedFinishLine(float time)
+	{
+	}
+
+	/// <summary>A level finished loading.</summary>
+	public virtual void OnLevelLoaded()
+	{
+	}
+
+	/// <summary>The player entered photo mode.</summary>
+	public virtual void OnPhotoModeEntered()
+	{
+	}
 }

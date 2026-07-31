@@ -1,35 +1,32 @@
-﻿using AuthorTimeHunting.Interfaces;
-using AuthorTimeHunting.States.Ath.StateMachine;
+﻿using AuthorTimeHunting.States.Ath.StateMachine;
 using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthLoadingLevel(IStateMachine stateMachine) : AthState
+public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-    public override IStateMachine StateMachine { get; } = stateMachine;
 
 
-    public override void Enter() { }
 
+	public override void Execute()
+	{
+		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null
+			? $"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>"
+			: "Good Luck Have Fun!";
+		PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.SetText(
+			$"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>{levelInfo}");
+	}
 
-    public override void Execute()
-    {
-        string levelInfo = AthStateMachine.Ctx.CurrentLevel != null ? $"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>" : "Good Luck Have Fun!";
-        PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.SetText($"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>{levelInfo}");
-    }
+	public override void OnLevelLoaded()
+	{
+		if (!AthStateMachine.Ctx.IsTimeOver() && (Plugin.Instance.MyConfig.RandomPlaylist.Value ||
+		                                          AthStateMachine.Ctx.Levels.Count <
+		                                          ZeepkistNetwork.CurrentLobby.Playlist.Count))
+		{
+			StateMachine.TransitionTo(new StateAthProcessingLevel(AthStateMachine));
+			return;
+		}
 
-    public override void Exit() { }
-
-    public override void OnAthTimerTick() { }
-
-    public override void OnLevelLoaded()
-    {
-        if (!AthStateMachine.Ctx.IsTimeOver() && (Plugin.Instance.MyConfig.RandomPlaylist.Value || AthStateMachine.Ctx.Levels.Count < ZeepkistNetwork.CurrentLobby.Playlist.Count))
-        {
-            StateMachine.TransitionTo(new StateAthProcessingLevel(StateMachine));
-            return;
-        }
-
-        StateMachine.TransitionTo(new StateAthStopping(StateMachine));
-    }
+		StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
+	}
 }

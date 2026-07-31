@@ -1,5 +1,4 @@
 ﻿using System;
-using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
@@ -8,10 +7,20 @@ using UnityEngine;
 using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
 using Logger = AuthorTimeHunting.Util.Logger;
+using Object = UnityEngine.Object;
 
 namespace AuthorTimeHunting.States.Ath.StateMachine;
 
-public class AthStateMachine : MonoBehaviour, IStateMachine
+/// <summary>
+///     The run's state machine. A plain class, not a MonoBehaviour: it needs a Unity update
+///     loop, but it also needs to inherit <see cref="StateMachineBase" />, and C# has no
+///     multiple inheritance. So the frame loop lives in a small nested MonoBehaviour that
+///     does nothing but call back in - see AthStateMachine.AthLoopBehaviour.cs.
+///     It subscribes to the game's events exactly once and forwards them to whichever state
+///     is current. States never subscribe to anything themselves, so they cannot leak a
+///     handler no matter how a run ends.
+/// </summary>
+public partial class AthStateMachine : StateMachineBase
 {
 	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
 
@@ -20,16 +29,14 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 	/// </summary>
 	private const int MaxConsecutiveTickFailures = 10;
 
+	private AthLoopBehaviour _behaviour;
 	private int _consecutiveTickFailures;
-	private float _accumulatedDeltaTime;
 	private bool _eventsSubscribed;
 	private string _lastServerMessage;
 	private DateTime _lastServerMessageTime = DateTime.MinValue;
 	private bool _timerStarted;
 
-	public AthCtx Ctx { get; set; }
-
-	private void Awake()
+	public AthStateMachine()
 	{
 		// One AthStateMachine per run, so this is the run's starting line: fresh context,
 		// and a level pool that does not carry the exclusions of previous runs.
@@ -37,33 +44,21 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 		RandomLevelService.Instance.Reset();
 		InitialState = new StateAthStarting(this);
 		FinalState = new StateAthStopping(this);
-		_eventsSubscribed = false;
-		_timerStarted = false;
-		_accumulatedDeltaTime = 0f;
-	}
 
-	private void Update()
-	{
-		if (!_timerStarted)
+		GameObject host = new GameObject(nameof(AthStateMachine))
 		{
-			return;
-		}
+			hideFlags = HideFlags.HideAndDontSave
+		};
 
-		_accumulatedDeltaTime += Time.deltaTime;
-		OnAthTimerTick();
+		Object.DontDestroyOnLoad(host);
+		_behaviour = host.AddComponent<AthLoopBehaviour>();
+		_behaviour.Bind(this);
 	}
 
+	public AthCtx Ctx { get; }
 
-	public IState CurrentState { get; set; }
-	public IState InitialState { get; private set; }
-	public IState FinalState { get; private set; }
-	public event Action StateMachineFinished;
-
-	public void InvokeFinish()
-	{
-		StateMachineFinished?.Invoke();
-	}
-
+	public override StateBase InitialState { get; }
+	public override StateBase FinalState { get; }
 
 	public void SetServerMessage(bool paused)
 	{
@@ -130,6 +125,8 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.serverMessageText.text = message;
 	}
 
+	#region Event Forwarding
+
 	/// <summary>
 	///     Forwards a game event to the current state without letting an exception in that
 	///     state escape. These handlers run inside ZeepSDK's event dispatch, which other mods
@@ -179,8 +176,7 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 
 		try
 		{
-			// TransitionTo is a default interface member, so it needs the interface.
-			((IStateMachine)this).TransitionTo(FinalState);
+			TransitionTo(FinalState);
 		}
 		catch (Exception e)
 		{
@@ -252,6 +248,10 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 		_eventsSubscribed = false;
 	}
 
+	#endregion
+
+	#region Lifecycle
+
 	public void StartTimer()
 	{
 		if (_timerStarted)
@@ -259,7 +259,6 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 			return;
 		}
 
-		_accumulatedDeltaTime = 0f;
 		SubscribeEvents();
 		_timerStarted = true;
 	}
@@ -272,7 +271,6 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 		}
 
 		UnsubscribeEvents();
-		_accumulatedDeltaTime = 0f;
 		_timerStarted = false;
 	}
 
@@ -280,13 +278,16 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 	{
 		StopTimer();
 
-		// Reading .gameObject on an already destroyed component throws before the
-		// null check can help - ask Unity about the component itself instead.
-		if (this == null)
+		// Unity's overloaded == reports a destroyed object as null, so this covers both
+		// "already disposed" and "the GameObject went away underneath us".
+		if (_behaviour == null)
 		{
 			return;
 		}
 
-		Destroy(gameObject);
+		Object.Destroy(_behaviour.gameObject);
+		_behaviour = null;
 	}
+
+	#endregion
 }
