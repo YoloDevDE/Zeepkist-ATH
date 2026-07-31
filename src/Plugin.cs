@@ -46,6 +46,7 @@ public class Plugin : BaseUnityPlugin
 
 	private void OnDestroy()
 	{
+		_services?.GameState.Dispose();
 		_harmony?.UnpatchSelf();
 		_harmony = null;
 	}

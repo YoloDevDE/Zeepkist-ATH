@@ -1,4 +1,5 @@
 ﻿using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.States.Master.StateMachine;
 using AuthorTimeHunting.Util;
@@ -31,6 +32,8 @@ public class StateMasterOn : StateBase
 	public AthStateMachine AthStateMachine { get; }
 
 	public override StateMachineBase SubStateMachine => AthStateMachine;
+
+	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
 
 
 	/***
@@ -83,7 +86,21 @@ public class StateMasterOn : StateBase
 		// Same reason as in Stop: the teardown below fires StateMachineFinished, and
 		// an unguarded Stop would turn the restart into a plain stop.
 		_shuttingDown = true;
-		StateMachine.TransitionTo(new StateMasterOn((MasterStateMachine)StateMachine));
+
+		if (GameStateObserver.IsRacing)
+		{
+			StateMachine.TransitionTo(new StateMasterOn(Master));
+			return;
+		}
+
+		// Restarting into a podium or a loading screen would have the new run's
+		// StateAthStarting rewrite a playlist the game is in the middle of switching. Wind
+		// this run down instead and let StateMasterOff pick the moment.
+		// No race condition between the check and the transition: IsRacing is derived from
+		// game state that only changes between frames, and nothing here yields.
+		Logger.LogInfo("StateMasterOn: Restart requested outside a running race, deferring the new run.");
+		Messenger.Notify().Log("ATH restarts as soon as the level is loaded");
+		StateMachine.TransitionTo(new StateMasterOff(Master, true));
 	}
 
 	private void SkipBrokenLevel()
@@ -109,7 +126,7 @@ public class StateMasterOn : StateBase
 
 		_shuttingDown = true;
 		RestoreGameHud();
-		StateMachine.TransitionTo(new StateMasterOff((MasterStateMachine)StateMachine));
+		StateMachine.TransitionTo(new StateMasterOff(Master));
 	}
 
 	/// <summary>

@@ -23,6 +23,12 @@ public class ModServices
 	public PlaylistService Playlist { get; } = new();
 
 	/// <summary>
+	///     Watches the lobby from the moment the mod loads, so a start request can wait for a
+	///     race instead of being refused.
+	/// </summary>
+	public GameStateObserver GameState { get; } = new();
+
+	/// <summary>
 	///     Builds the level pool for one run. Lives here because the pool's two sources are
 	///     session-scoped even though the pool itself is not.
 	/// </summary>
