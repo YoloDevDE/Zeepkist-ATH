@@ -15,13 +15,25 @@ public class AthCtx
     private const int RETRIES = 3;
     private bool _previousTimeRunningLowState;
 
+    /// <summary>
+    ///     One AthCtx exists per run - it is created in AthStateMachine.Awake(), and a fresh
+    ///     AthStateMachine is built for every /ath start and /ath restart.
+    /// </summary>
+    public AthCtx()
+    {
+        // Snapshot, not live reads: both values used to be read from the config on every
+        // access, so opening the config mid-run and raising Duration handed out extra time.
+        Duration = Plugin.Instance.MyConfig.Duration.Value * 1000;
+        PenaltyTimeInMilliseconds = Plugin.Instance.MyConfig.PenaltyTime.Value * 1000;
+    }
+
     public int Retries { get; set; } = RETRIES;
 
     public int ConsecutiveDuplicateCount { get; set; } = 0;
 
-    public int Duration => Plugin.Instance.MyConfig.Duration.Value * 1000;
+    public int Duration { get; }
 
-    public int PenaltyTimeInMilliseconds => Plugin.Instance.MyConfig.PenaltyTime.Value * 1000;
+    public int PenaltyTimeInMilliseconds { get; }
 
 
     public Level CurrentLevel { get; set; }

@@ -1,5 +1,6 @@
 ﻿using System;
 using AuthorTimeHunting.Interfaces;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
 using Crosstales;
@@ -22,7 +23,10 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 
     private void Awake()
     {
+        // One AthStateMachine per run, so this is the run's starting line: fresh context,
+        // and a level pool that does not carry the exclusions of previous runs.
         Ctx = new AthCtx();
+        RandomLevelService.Instance.Reset();
         InitialState = new StateAthStarting(this);
         FinalState = new StateAthStopping(this);
         _eventsSubscribed = false;

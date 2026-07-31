@@ -21,6 +21,21 @@ public class RandomLevelService
     private List<LevelItem> PlayedLevels { get; } = new List<LevelItem>();
 
     /// <summary>
+    ///     Clears the level pool for a new run. All three collections used to live for the
+    ///     whole process with no way to clear them, so every run inherited the exclusions of
+    ///     all previous ones - with local playlists as the source the pool ran dry after a
+    ///     few runs and /ath start failed until the game was restarted.
+    ///     Avoiding repeats is a within-run rule, so a new run starts from a clean pool.
+    /// </summary>
+    public void Reset()
+    {
+        Logger.LogInfo($"RandomLevelService: Resetting pool. Discarding {CachedLevels.Count} cached, {PlayedLevels.Count} played and {FetchedLevelUids.Count} tracked levels.");
+        CachedLevels.Clear();
+        PlayedLevels.Clear();
+        FetchedLevelUids.Clear();
+    }
+
+    /// <summary>
     ///     Draws a random level from the cached playlist and returns it as an
     ///     <see cref="OnlineZeeplevel" />. Acts as a black box: if the cached list is
     ///     currently empty it fetches until levels are available, then always takes the

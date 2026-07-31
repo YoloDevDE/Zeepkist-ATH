@@ -137,8 +137,6 @@ public class Level
         TimeStamps.Add(DateTime.Now);
     }
 
-    public TimeSpan GetTotalDuration() => GetPlayDuration();
-
     public void Start()
     {
         StartTime = DateTime.Now;
@@ -209,6 +207,4 @@ public class Level
     }
 
     public override int GetHashCode() => LevelUid.GetHashCode();
-
-    public TimeSpan GetPauseDuration() => GetTotalDuration() - GetPlayDuration();
 }
