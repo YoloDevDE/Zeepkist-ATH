@@ -111,18 +111,29 @@ public class StateAthStarting(IStateMachine stateMachine) : AthState
         IsCountdownActive = true;
         TMP_Text text = PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText;
 
-        for (int i = 5; i >= 1; i--)
+        try
         {
-            if (_cts.Token.IsCancellationRequested)
+            for (int i = 5; i >= 1; i--)
             {
-                break;
+                text.SetText($"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Starting in <b>{i}</b>...");
+                // Used to be .ContinueWith(_ => { }), which swallowed not just the
+                // cancellation but every other exception along with it.
+                await Task.Delay(1000, _cts.Token);
             }
-
-            text.SetText($"<#ff01d2ff><b>A</b>uthor <b>T</b>ime <b>H</b>unting</color> <sprite=\"Zeepkist\" name=\"Smile\"><br>Starting in <b>{i}</b>...");
-            await Task.Delay(1000, _cts.Token).ContinueWith(_ => { });
         }
-
-        IsCountdownActive = false;
+        catch (OperationCanceledException)
+        {
+            // Exit() cancelled us because the state is going away. Nothing to clean up
+            // beyond the finally block.
+        }
+        finally
+        {
+            IsCountdownActive = false;
+            // Null first: Exit() may still call Cancel(), and that throws on a disposed source.
+            CancellationTokenSource cts = _cts;
+            _cts = null;
+            cts?.Dispose();
+        }
     }
 
     public override void OnAthTimerTick() { }

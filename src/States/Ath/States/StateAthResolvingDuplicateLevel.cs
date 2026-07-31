@@ -1,6 +1,8 @@
-﻿using AuthorTimeHunting.Interfaces;
+﻿using System;
+using AuthorTimeHunting.Interfaces;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
 using ZeepkistNetworking;
 using Logger = AuthorTimeHunting.Util.Logger;
 
@@ -27,13 +29,19 @@ public class StateAthResolvingDuplicateLevel(IStateMachine stateMachine) : AthSt
             return;
         }
 
-        // Get current level UID to check if the next candidate would just be the same level again
-        string currentUid = AthStateMachine.Ctx.CurrentLevel?.LevelUid;
-
-
-        OnlineZeeplevel newLevel = await RandomLevelService.Instance.DrawRandomLevelAsync();
-        PlaylistService.AddLevelToCurrentPlaylist(newLevel);
-        PlaylistService.SkipToNextLevel();
+        try
+        {
+            OnlineZeeplevel newLevel = await RandomLevelService.Instance.DrawRandomLevelAsync();
+            PlaylistService.AddLevelToCurrentPlaylist(newLevel);
+            PlaylistService.SkipToNextLevel();
+        }
+        catch (Exception ex)
+        {
+            // async void - nothing above us can catch this.
+            Logger.LogError($"StateAthResolvingDuplicateLevel: Could not draw a replacement level: {ex.Message}");
+            Messenger.Notify().LogError("Could not find another level to play");
+            StateMachine.TransitionTo(new StateAthStopping(StateMachine));
+        }
     }
 
     public override void Exit() { }

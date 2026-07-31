@@ -23,7 +23,7 @@ public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
         {
             if (athCtx.CurrentLevel.GoldMedalAcquired)
             {
-                HandleGoldSkip(athCtx);
+                HandleGoldSkip();
             }
             else if (athCtx.AvaiableFreeSkips > 0)
             {
@@ -31,11 +31,11 @@ public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
             }
             else if (athCtx.IsTimeRunningLow)
             {
-                HandleTimeExpiredSkip(athCtx);
+                HandleTimeExpiredSkip();
             }
             else
             {
-                HandlePenaltySkip(athCtx);
+                HandlePenaltySkip();
             }
         }
 
@@ -54,7 +54,7 @@ public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
         Messenger.Notify().LogWarning("'Broken-Skip' used<br>Spent time refunded", 5f);
     }
 
-    private static void HandleGoldSkip(AthCtx ctx)
+    private static void HandleGoldSkip()
     {
         Messenger.Notify().LogCustomColors("'Gold-Skip' used", Color.black, new Color(1f, 0.84f, 0f), 5f);
     }
@@ -66,12 +66,12 @@ public class StateAthEvaluateSkip(IStateMachine stateMachine) : AthState
         Messenger.Notify().LogCustomColors("'Free-Skip' used", Color.black, Color.white, 5f);
     }
 
-    private static void HandleTimeExpiredSkip(AthCtx ctx)
+    private static void HandleTimeExpiredSkip()
     {
         Messenger.Notify().LogCustomColors("Well.. I tried to warn you.. Hunt is over once the level is loaded.", Color.white, Color.red, 10f);
     }
 
-    private static void HandlePenaltySkip(AthCtx ctx)
+    private static void HandlePenaltySkip()
     {
         Messenger.Notify().LogError("'Penalty-Skip' used", 5f);
     }

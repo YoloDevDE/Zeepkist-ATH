@@ -64,12 +64,9 @@ public class StateAthWaitingForRespawn(IStateMachine stateMachine) : AthState
 
 
     // Private Methods
-    public override async void OnPlayerSpawned()
+    public override void OnPlayerSpawned()
     {
         MedalTextHelper.ClearMedalText();
-        string currentUid = AthStateMachine.Ctx.CurrentLevel?.LevelUid;
-
-
         PlaylistService.SkipLevel();
     }
 }
