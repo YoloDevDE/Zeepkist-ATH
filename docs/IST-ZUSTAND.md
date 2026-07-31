@@ -185,11 +185,11 @@ Priorisiert. Zeilenangaben gegen den Stand vom 2026-07-30.
 | **H10** | `IStateMachine.TransitionTo` loggt `SubStateMachine?.CurrentState.GetType().Name` — der Null-Guard greift nur für `SubStateMachine`. Ist die Sub-SM gesetzt, `CurrentState` aber `null`, wirft die Log-Zeile. | `IStateMachine.cs:20` |
 | **H11** | `ChatMessageService.SendCustomMessage` greift ungeprüft auf `ZeepkistNetwork.LocalPlayer.SteamID` zu. Beim Disconnect-getriggerten Stop ist das plausibel `null`. | `ChatMessageService.cs:9` |
 
-### 4.3 Mittel — Struktur & Wartbarkeit (teilweise erledigt)
+### 4.3 Mittel — Struktur & Wartbarkeit (M1, M2, M6, M8, M12 erledigt)
 
 | # | Befund |
 |---|---|
-| **M1** | **`AthCtx` ist ein God Object** (547 LoC): Run-State + 12 Statistik-Methoden + 12 View-/Formatier-Methoden in einer Klasse. Die `Message*()`-Methoden gehören in einen Presenter, die Statistik in einen `RunStatistics`-Typ. |
+| **M1** ✅ | **`AthCtx` ist ein God Object** (547 LoC): Run-State + 12 Statistik-Methoden + 12 View-/Formatier-Methoden in einer Klasse. Die `Message*()`-Methoden gehören in einen Presenter, die Statistik in einen `RunStatistics`-Typ. |
 | **M2** | **Toter Code, ~450 LoC:** `ServerMessage.cs` (404 LoC vollständige Builder-DSL, nie instanziiert), `EntityPresenter`, `UIService` (leerer Singleton), `AthCtx.GetTotalLevelDuration/GetTotalLevelPauseDuration/Skips`, `AthCtx.DEFAULT_DURATION_IN_MILLIS/DEFAULT_PENALTY_TIME_IN_MILLIS`, `Level.Crashes`, `Level.GoldSkipped`, `LocalLevelCacheService.GetRandomLevelItem` (Singular) + `TryNotifyError`, `ColorDefinitions.Penalty/FreeSkip`, `LevelItem.ValidationTimeAuthor/ValidationTimeGold/AuthorId`. |
 | **M3** | **GraphQL liefert Daten, die nie ankommen.** `validationTimeAuthor` / `validationTimeGold` werden abgefragt, in `LevelItem` gemappt — und nie gelesen. `Level` bezieht seine Zeiten aus dem geladenen `LevelScriptableObject`. Damit ist **kein Vorfiltern nach Schwierigkeit möglich**, bevor ein Level geladen wurde. |
 | **M4** | **~60 hartcodierte Farb-Hex-Strings** in `AthCtx` und `AthStateMachine` statt über `ColorDefinitions`. `CTToHexRGB()` kommt aus der Third-Party-Lib `Crosstales` — für eine Hex-Konvertierung eine unnötige Kopplung. |
@@ -256,7 +256,21 @@ Bugfixes sind:
 | **M3** | `LevelItem.ValidationTimeAuthor/Gold/AuthorId` sind technisch tot, aber genau die Daten für Difficulty-Filter und Author-Blocklist. Löschen würde den Hook wegwerfen — siehe offene Frage 3. |
 | **M10** | `StateAthPausing.OnPhotoModeEntered()` delegiert an `OnRoundStarted()` und startet damit die Uhr. `OnRoundStarted` und `OnPhotoModeEntered` sind aber die einzigen beiden Wege aus `StateAthPausing` zurück in einen Lauf. Ob das ein Fehlgriff ist oder der Workaround dafür, dass `RacingApi.RoundStarted` bei einem Respawn *innerhalb* der Runde nicht feuert, lässt sich nur am laufenden Spiel entscheiden. |
 
-**Offen:** M1 (`AthCtx` God Object, jetzt 552 LoC), M4, M5, M9, M11, B5, B6.
+**M1 aufgelöst** (`9ebce8d`). `AthCtx` ist in drei Dateien zerlegt:
+
+| Datei | LoC | Verantwortung |
+|---|---|---|
+| `AthCtx.cs` | 552 → 150 | Run-State, Zeitbudget, Level-Verwaltung |
+| `RunPresenter.cs` | 341 | die zehn Message-Methoden, erreichbar als `Ctx.Messages` |
+| `RunStatistics.cs` | 137 | die Zahlen der Endauswertung, über `IReadOnlyList<Level>` |
+
+Den Schnitt hat die Kartierung der Aufrufstellen vorgegeben: alle zehn
+Statistik-Methoden hatten genau *einen* Aufrufer (`MessageEnd()`) und waren nie
+Teil der Schnittstelle, die die States benutzen. `AuthorMedals` / `GoldMedals` /
+`Penalties` sind bewusst in `AthCtx` geblieben — die sehen wie Statistik aus,
+sind aber Live-Zähler, die das HUD jeden Frame liest.
+
+**Offen:** M4, M5, M9, M11, B5, B6.
 
 ---
 
