@@ -20,6 +20,9 @@ public class PluginConfig
 
 		Minimalist = config.Bind("Misc", "Minimalist", false, "Makes it a bit less text");
 
+		InGameHud = config.Bind("Misc", "In-Game HUD", true,
+			"Draws the run HUD as a movable in-game window instead of the server message block.");
+
 		SavePlaylistOnRunEnd = config.Bind("Misc", "Save Playlist on Run End", false,
 			"Literally what it says. what did you expect");
 
@@ -36,6 +39,12 @@ public class PluginConfig
 	///     When enabled, shows less text in the UI
 	/// </summary>
 	public ConfigEntry<bool> Minimalist { get; }
+
+	/// <summary>
+	///     When enabled, the run HUD is drawn as an in-game window instead of being written
+	///     into the game's server message area
+	/// </summary>
+	public ConfigEntry<bool> InGameHud { get; }
 
 	/// <summary>
 	///     When enabled, the playlist will be random

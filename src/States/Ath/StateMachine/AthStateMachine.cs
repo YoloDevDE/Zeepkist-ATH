@@ -1,11 +1,13 @@
 ﻿using System;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
+using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
 using Crosstales;
 using UnityEngine;
 using ZeepSDK.PhotoMode;
 using ZeepSDK.Racing;
+using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
 using Object = UnityEngine.Object;
 
@@ -30,6 +32,7 @@ public partial class AthStateMachine : StateMachineBase
 	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
 
 	private AthLoopBehaviour _behaviour;
+	private readonly AthHudDrawer _hudDrawer;
 	private int _consecutiveTickFailures;
 	private bool _eventsSubscribed;
 	private string _lastServerMessage;
@@ -54,6 +57,9 @@ public partial class AthStateMachine : StateMachineBase
 		Object.DontDestroyOnLoad(host);
 		_behaviour = host.AddComponent<AthLoopBehaviour>();
 		_behaviour.Bind(this);
+
+		_hudDrawer = new AthHudDrawer();
+		UIApi.AddZeepGUIDrawer(_hudDrawer);
 	}
 
 	public AthCtx Ctx { get; }
@@ -67,14 +73,27 @@ public partial class AthStateMachine : StateMachineBase
 	public override StateBase InitialState { get; }
 	public override StateBase FinalState { get; }
 
+	/// <summary>
+	///     Refreshes the run HUD. Either renders it into the game's server message area or
+	///     hands a snapshot to the in-game window, depending on the config.
+	/// </summary>
 	public void SetServerMessage(bool paused)
 	{
 		// No level yet means /ath start followed straight by /ath stop - there is
 		// nothing to render and every CurrentLevel access below would throw.
 		if (Ctx.CurrentLevel == null)
 		{
+			_hudDrawer.Current = null;
 			return;
 		}
+
+		if (Plugin.Instance.MyConfig.InGameHud.Value)
+		{
+			_hudDrawer.Current = RunHudView.From(Ctx, paused);
+			return;
+		}
+
+		_hudDrawer.Current = null;
 
 		var colors = new
 		{
@@ -286,6 +305,8 @@ public partial class AthStateMachine : StateMachineBase
 	public void Dispose()
 	{
 		StopTimer();
+		UIApi.RemoveZeepGUIDrawer(_hudDrawer);
+		_hudDrawer.Current = null;
 
 		// Unity's overloaded == reports a destroyed object as null, so this covers both
 		// "already disposed" and "the GameObject went away underneath us".

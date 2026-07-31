@@ -49,6 +49,21 @@
     </ItemGroup>
 
     <!--
+        On net472 ReadOnlySpan<T> exists both in mscorlib and in System.Memory, which
+        arrives transitively through the GraphQL client. Anything touching ZeepSDK's Imui
+        text API then fails to compile with CS0433. Hiding System.Memory behind an alias
+        leaves exactly one visible ReadOnlySpan<T> - the one from mscorlib, which is what
+        the game's own assemblies were built against. Same trick GTR uses.
+    -->
+    <Target Name="AliasSystemMemory" AfterTargets="ResolveAssemblyReferences">
+        <ItemGroup>
+            <ReferencePath Condition="'%(FileName)' == 'System.Memory'">
+                <Aliases>MemoryAlias</Aliases>
+            </ReferencePath>
+        </ItemGroup>
+    </Target>
+
+    <!--
         Deploy-Ziel. Überschreibbar per `dotnet build -p:ZeepkistDir=...`
         oder per Umgebungsvariable ZeepkistDir, damit der Build auf anderen
         Maschinen und im CI nicht bricht.
