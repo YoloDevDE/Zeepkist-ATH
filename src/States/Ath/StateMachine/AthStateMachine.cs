@@ -55,6 +55,13 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
 
     public void SetServerMessage(bool paused)
     {
+        // No level yet means /ath start followed straight by /ath stop - there is
+        // nothing to render and every CurrentLevel access below would throw.
+        if (Ctx.CurrentLevel == null)
+        {
+            return;
+        }
+
         var colors = new
         {
             State = paused ? "#999999" : "#42b336", TimeLeft = paused
@@ -202,9 +209,13 @@ public class AthStateMachine : MonoBehaviour, IStateMachine
     {
         StopTimer();
 
-        if (gameObject != null)
+        // Reading .gameObject on an already destroyed component throws before the
+        // null check can help - ask Unity about the component itself instead.
+        if (this == null)
         {
-            Destroy(gameObject);
+            return;
         }
+
+        Destroy(gameObject);
     }
 }

@@ -11,6 +11,16 @@ namespace AuthorTimeHunting.States.Master.States;
 
 public class StateMasterOn : IState
 {
+    /// <summary>
+    ///     Set as soon as this instance starts tearing itself down. The teardown runs
+    ///     through StateAthStopping, which fires StateMachineFinished - and Stop is a
+    ///     subscriber of exactly that event. Without the flag an externally triggered
+    ///     stop re-enters TransitionTo while the first one is still on the stack, and
+    ///     Exit() runs twice: the "stopped" toast appears doubled and the second
+    ///     AthStateMachine.Dispose() touches an already destroyed component.
+    /// </summary>
+    private bool _shuttingDown;
+
     public StateMasterOn(IStateMachine stateMachine)
     {
         StateMachine = stateMachine;
@@ -81,6 +91,9 @@ public class StateMasterOn : IState
 
     private void Restart()
     {
+        // Same reason as in Stop: the teardown below fires StateMachineFinished, and
+        // an unguarded Stop would turn the restart into a plain stop.
+        _shuttingDown = true;
         StateMachine.TransitionTo(new StateMasterOn(StateMachine));
     }
 
@@ -100,9 +113,29 @@ public class StateMasterOn : IState
 
     private void Stop()
     {
+        if (_shuttingDown)
+        {
+            return;
+        }
+
+        _shuttingDown = true;
+        RestoreGameHud();
+        StateMachine.TransitionTo(new StateMasterOff(StateMachine));
+    }
+
+    /// <summary>
+    ///     Hands the HUD elements ATH borrowed back to the game. The whole chain is gone
+    ///     when the stop was triggered by DisconnectedFromGame, so it stays optional.
+    /// </summary>
+    private static void RestoreGameHud()
+    {
+        if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null || PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)
+        {
+            return;
+        }
+
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = true;
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.enabled = false;
         PlayerManager.Instance.currentMaster.OnlineGameplayUI.RoundOverText.SetText("Thanks for playing ATH :)");
-        StateMachine.TransitionTo(new StateMasterOff(StateMachine));
     }
 }
