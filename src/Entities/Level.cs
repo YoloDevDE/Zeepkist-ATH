@@ -60,6 +60,7 @@ public class Level
 	///     the honest number, and exactly why it is kept apart from <see cref="Crashes" />.
 	/// </summary>
 	public int WheelsLost { get; private set; }
+
 	public bool Skipped { get; set; }
 	public bool FreeSkipped { get; set; }
 	public bool LevelBroken { get; set; }

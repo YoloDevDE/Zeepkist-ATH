@@ -1,3 +1,4 @@
+using System;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath;
 using AuthorTimeHunting.Util;
@@ -66,7 +67,7 @@ public class LevelStatsView
 		double delta = level.PersonalBestTime - level.AuthorTime;
 
 		view.PersonalBest = TimeFormatter.FormatTime(level.PersonalBestTime);
-		view.AuthorDelta = $"{(delta <= 0 ? "-" : "+")}{TimeFormatter.FormatTime(System.Math.Abs(delta))}";
+		view.AuthorDelta = $"{(delta <= 0 ? "-" : "+")}{TimeFormatter.FormatTime(Math.Abs(delta))}";
 		view.PersonalBestColour = level.AuthorTimeAcquired
 			? HudPalette.Author
 			: level.GoldMedalAcquired

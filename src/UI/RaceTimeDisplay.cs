@@ -4,6 +4,7 @@ using AuthorTimeHunting.Util;
 using TMPro;
 using UnityEngine;
 using Logger = AuthorTimeHunting.Util.Logger;
+using Object = UnityEngine.Object;
 
 namespace AuthorTimeHunting.UI;
 
@@ -49,7 +50,7 @@ public class RaceTimeDisplay : IDisposable
 			hideFlags = HideFlags.HideAndDontSave
 		};
 
-		UnityEngine.Object.DontDestroyOnLoad(host);
+		Object.DontDestroyOnLoad(host);
 		_behaviour = host.AddComponent<RaceTimeBehaviour>();
 		_behaviour.Bind(this);
 	}
@@ -83,7 +84,7 @@ public class RaceTimeDisplay : IDisposable
 
 		if (_behaviour != null)
 		{
-			UnityEngine.Object.Destroy(_behaviour.gameObject);
+			Object.Destroy(_behaviour.gameObject);
 		}
 	}
 

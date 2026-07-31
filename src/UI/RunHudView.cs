@@ -25,32 +25,6 @@ public class RunHudView
 
 	public bool Paused { get; private set; }
 
-	#region Time Budget
-
-	/// <summary>Time left in the budget - the panel's largest element by a wide margin.</summary>
-	public string TimeLeft { get; private set; }
-
-	public Color32 TimeColour { get; private set; }
-
-	/// <summary>Share of the budget still unspent, 0..1, for the bar under the clock.</summary>
-	public float RemainingFraction { get; private set; }
-
-	/// <summary>The budget this run was given, fixed when it started.</summary>
-	public string Duration { get; private set; }
-
-	/// <summary>What one penalty skip costs.</summary>
-	public string PenaltyTime { get; private set; }
-
-	#endregion
-
-	#region Score
-
-	public int AuthorMedals { get; private set; }
-	public int GoldMedals { get; private set; }
-	public int Penalties { get; private set; }
-
-	#endregion
-
 	/// <summary>What skipping right now would cost. The most decision-relevant value here.</summary>
 	public string SkipType { get; private set; }
 
@@ -183,4 +157,30 @@ public class RunHudView
 		public string Value { get; }
 		public Color32 ValueColour { get; }
 	}
+
+	#region Time Budget
+
+	/// <summary>Time left in the budget - the panel's largest element by a wide margin.</summary>
+	public string TimeLeft { get; private set; }
+
+	public Color32 TimeColour { get; private set; }
+
+	/// <summary>Share of the budget still unspent, 0..1, for the bar under the clock.</summary>
+	public float RemainingFraction { get; private set; }
+
+	/// <summary>The budget this run was given, fixed when it started.</summary>
+	public string Duration { get; private set; }
+
+	/// <summary>What one penalty skip costs.</summary>
+	public string PenaltyTime { get; private set; }
+
+	#endregion
+
+	#region Score
+
+	public int AuthorMedals { get; private set; }
+	public int GoldMedals { get; private set; }
+	public int Penalties { get; private set; }
+
+	#endregion
 }

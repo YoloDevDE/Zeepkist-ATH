@@ -1,5 +1,4 @@
 using System;
-using AuthorTimeHunting.States.Ath;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
 using Imui.Core;

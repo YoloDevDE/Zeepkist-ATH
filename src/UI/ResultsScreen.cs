@@ -165,7 +165,8 @@ public class ResultsScreen : IZeepGUIDrawer
 
 	private static void DrawRows(ImGui gui, IReadOnlyList<RunReportView.ReportRow> rows)
 	{
-		foreach (RunReportView.ReportRow row in rows) UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
+		foreach (RunReportView.ReportRow row in rows)
+			UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
 	}
 
 	private void DrawLevels(ImGui gui, RunReportView report)
@@ -226,10 +227,7 @@ public class ResultsScreen : IZeepGUIDrawer
 		float[] weights = [0.06f, 0.44f, 0.2f, 0.12f, 0.18f];
 		float offset = 0f;
 
-		for (int i = 0; i < column; i++)
-		{
-			offset += weights[i];
-		}
+		for (int i = 0; i < column; i++) offset += weights[i];
 
 		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
 	}

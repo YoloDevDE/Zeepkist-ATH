@@ -139,7 +139,8 @@ public class ControlPanel : IZeepGUIDrawer
 
 		DrawMedals(gui, view);
 
-		foreach (RunHudView.HudRow row in view.Details) UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
+		foreach (RunHudView.HudRow row in view.Details)
+			UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
 
 		gui.AddSpacing();
 	}
