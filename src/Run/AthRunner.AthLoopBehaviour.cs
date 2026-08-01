@@ -1,17 +1,17 @@
 using UnityEngine;
 
-namespace AuthorTimeHunting.States.Ath.StateMachine;
+namespace AuthorTimeHunting.Run;
 
-public partial class AthStateMachine
+public partial class AthRunner
 {
 	/// <summary>
 	///     The only reason a GameObject is involved at all: Unity calls Update on
-	///     MonoBehaviours, and the state machine needs a per-frame tick. It owns no logic and
-	///     no state beyond the machine it reports back to.
+	///     MonoBehaviours, and the run needs a per-frame tick. It owns no logic and no state
+	///     beyond the runner it reports back to.
 	/// </summary>
 	private sealed class AthLoopBehaviour : MonoBehaviour
 	{
-		private AthStateMachine _owner;
+		private AthRunner _owner;
 
 		private void Update()
 		{
@@ -23,7 +23,7 @@ public partial class AthStateMachine
 			_owner.OnAthTimerTick();
 		}
 
-		public void Bind(AthStateMachine owner)
+		public void Bind(AthRunner owner)
 		{
 			_owner = owner;
 		}

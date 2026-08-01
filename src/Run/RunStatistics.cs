@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AuthorTimeHunting.Entities;
 
-namespace AuthorTimeHunting.States.Ath;
+namespace AuthorTimeHunting.Run;
 
 /// <summary>
 ///     The numbers behind the end-of-run summary, derived purely from the levels a run

@@ -1,5 +1,5 @@
 ﻿using AuthorTimeHunting.Gamemodes;
-using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Run;
 using AuthorTimeHunting.UI;
 
 namespace AuthorTimeHunting.Service;
@@ -18,7 +18,7 @@ namespace AuthorTimeHunting.Service;
 ///         </item>
 ///     </list>
 ///     Run-scoped state does NOT belong here. RandomLevelService is the counter-example: its
-///     level pool belongs to a single run and is therefore created by AthStateMachine.
+///     level pool belongs to a single run and is therefore created by AthRunner.
 /// </summary>
 public class ModServices
 {
@@ -75,7 +75,7 @@ public class ModServices
 	///     Tells the UI which run is in progress, or null when none is. One call rather than
 	///     two assignments, so a new drawer cannot be left reading a stale run.
 	/// </summary>
-	public void PublishRun(AthStateMachine run)
+	public void PublishRun(AthRunner run)
 	{
 		Control.ActiveRun = run;
 		LevelStats.ActiveRun = run;

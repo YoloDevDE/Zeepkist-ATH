@@ -4,7 +4,7 @@ using System.Linq;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Gamemodes;
 
-namespace AuthorTimeHunting.States.Ath;
+namespace AuthorTimeHunting.Run;
 
 /// <summary>
 ///     The state of a single run: which levels were played, how much of the time budget is
@@ -19,8 +19,8 @@ public class AthCtx
 	private bool _previousTimeRunningLowState;
 
 	/// <summary>
-	///     One AthCtx exists per run - it is created by AthStateMachine, and a fresh
-	///     AthStateMachine is built for every /ath start and /ath restart.
+	///     One AthCtx exists per run - it is created by AthRunner, and a fresh
+	///     AthRunner is built for every /ath start and /ath restart.
 	/// </summary>
 	/// <param name="settings">
 	///     The rules this run plays by, handed over by its gamemode. A snapshot, not live

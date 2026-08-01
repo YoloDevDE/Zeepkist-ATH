@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using AuthorTimeHunting.Entities;
 
-namespace AuthorTimeHunting.States.Ath;
+namespace AuthorTimeHunting.Run;
 
 /// <summary>How the level being played compares to the ones already beaten in this run.</summary>
 public enum LevelPace

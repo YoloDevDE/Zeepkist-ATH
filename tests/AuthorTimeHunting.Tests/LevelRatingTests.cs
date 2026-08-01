@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using AuthorTimeHunting.Entities;
-using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.Run;
 using Xunit;
 
 namespace AuthorTimeHunting.Tests;

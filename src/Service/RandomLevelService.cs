@@ -9,7 +9,7 @@ using ZeepkistNetworking;
 namespace AuthorTimeHunting.Service;
 
 /// <summary>
-///     The pool of levels a run draws from. One instance per run, created by AthStateMachine
+///     The pool of levels a run draws from. One instance per run, created by AthRunner
 ///     - the exclusions it tracks are a within-run rule, and a fresh run starts from a clean
 ///     pool.
 ///     This used to be a process-wide singleton with no way to clear it, which meant every

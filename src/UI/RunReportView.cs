@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using AuthorTimeHunting.Entities;
-using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.Run;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 

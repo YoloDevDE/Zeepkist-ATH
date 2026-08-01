@@ -1,6 +1,6 @@
 using System;
 using AuthorTimeHunting.Entities;
-using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.Run;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 

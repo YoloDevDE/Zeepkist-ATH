@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.Run;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 
@@ -10,7 +10,7 @@ namespace AuthorTimeHunting.UI;
 ///     What the control panel shows about the run as a whole, as data. Built from
 ///     <see cref="AthCtx" /> once per draw and handed to whatever renders it.
 ///     This is the seam the in-game UI is built on. The HUD used to exist only as a single
-///     40-line string of TextMeshPro colour tags inside AthStateMachine, which meant the
+///     40-line string of TextMeshPro colour tags inside AthRunner, which meant the
 ///     layout, the numbers and the colours were one inseparable thing. Splitting them lets
 ///     the same run be rendered as an Imui panel without touching the run at all.
 ///     Anything about the level being played is in <see cref="LevelStatsView" /> instead - the

@@ -1,7 +1,7 @@
 ﻿using System;
 using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Gamemodes;
-using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Run;
 using Imui.Controls;
 using Imui.Core;
 using ZeepSDK.Chat;
@@ -50,11 +50,11 @@ public class ControlPanel : IZeepGUIDrawer
 	private bool _mouseOverWindow;
 
 	/// <summary>
-	///     The run currently in progress, or null when ATH is idle. Set by StateMasterOn so
+	///     The run currently in progress, or null when ATH is idle. Set by AthMod so
 	///     the panel always reflects reality rather than caching its own copy.
 	///     Starting a run also shows the panel: once a hunt is on, its state is the point.
 	/// </summary>
-	public AthStateMachine ActiveRun
+	public AthRunner ActiveRun
 	{
 		get;
 		set
@@ -100,7 +100,7 @@ public class ControlPanel : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
-		AthStateMachine run = ActiveRun;
+		AthRunner run = ActiveRun;
 		RunHudView view = run == null ? null : RunHudView.From(run.Ctx, run.Ctx.IsPaused);
 
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
@@ -250,7 +250,7 @@ public class ControlPanel : IZeepGUIDrawer
 		gui.AddSpacing();
 	}
 
-	private static void DrawControls(ImGui gui, AthStateMachine run, RunHudView view)
+	private static void DrawControls(ImGui gui, AthRunner run, RunHudView view)
 	{
 		UiWidgets.Heading(gui, Row(gui, 0.85f), "CONTROLS");
 

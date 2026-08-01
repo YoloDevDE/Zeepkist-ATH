@@ -4,7 +4,7 @@ namespace AuthorTimeHunting.UI;
 
 /// <summary>
 ///     The HUD's colours in one place.
-///     They used to be roughly sixty hex string literals scattered through AthStateMachine
+///     They used to be roughly sixty hex string literals scattered through AthRunner
 ///     and AthCtx (finding M4). Anything the in-game UI draws picks its colour from here; the
 ///     old server message still carries its own literals until it is retired.
 /// </summary>

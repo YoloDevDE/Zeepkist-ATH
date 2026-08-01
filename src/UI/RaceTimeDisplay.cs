@@ -278,7 +278,7 @@ public class RaceTimeDisplay : IDisposable
 
 	/// <summary>
 	///     The frame hook. Separate because RaceTimeDisplay is a plain service and only a
-	///     MonoBehaviour gets a LateUpdate - the same split AthStateMachine uses.
+	///     MonoBehaviour gets a LateUpdate - the same split AthRunner uses.
 	/// </summary>
 	private sealed class RaceTimeBehaviour : MonoBehaviour
 	{

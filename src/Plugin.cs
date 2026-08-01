@@ -1,7 +1,6 @@
 ﻿using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Run;
 using AuthorTimeHunting.Service;
-using AuthorTimeHunting.States;
-using AuthorTimeHunting.States.Master.StateMachine;
 using AuthorTimeHunting.Util;
 using BepInEx;
 using HarmonyLib;
@@ -21,7 +20,7 @@ public class Plugin : BaseUnityPlugin
 	private const string ToastTag = "ATH";
 
 	private Harmony _harmony;
-	private StateMachineBase _masterStateMachine;
+	private AthMod _mod;
 
 	private Plugin()
 	{
@@ -42,7 +41,7 @@ public class Plugin : BaseUnityPlugin
 
 	/// <summary>
 	///     The session's services. Public because the chat commands are instantiated by
-	///     ZeepSDK and have nowhere else to reach them from - the state machines are handed
+	///     ZeepSDK and have nowhere else to reach them from - the mod itself is handed
 	///     theirs properly.
 	/// </summary>
 	public ModServices Services { get; private set; }
@@ -57,7 +56,7 @@ public class Plugin : BaseUnityPlugin
 		CommandAth.CommandTrigger += Services.ToggleUi;
 		InitializeHarmony();
 		RegisterChatCommands();
-		InitializeStateMachine();
+		InitializeMod();
 
 		Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 	}
@@ -73,6 +72,8 @@ public class Plugin : BaseUnityPlugin
 			UIApi.RemoveZeepGUIDrawer(Services.Results);
 		}
 
+		_mod?.Dispose();
+		_mod = null;
 		Services?.RaceTime.Dispose();
 		Services?.GameState.Dispose();
 		Services?.WorkshopDownloads.Dispose();
@@ -100,9 +101,9 @@ public class Plugin : BaseUnityPlugin
 		ChatCommandApi.RegisterLocalChatCommand<CommandAth>();
 	}
 
-	private void InitializeStateMachine()
+	private void InitializeMod()
 	{
-		_masterStateMachine = new MasterStateMachine(Services);
-		_masterStateMachine.Init();
+		_mod = new AthMod(Services);
+		_mod.Initialize();
 	}
 }

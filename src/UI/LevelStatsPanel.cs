@@ -1,5 +1,5 @@
 ﻿using System;
-using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Run;
 using Imui.Controls;
 using Imui.Core;
 using UnityEngine;
@@ -36,8 +36,8 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 	private bool _mouseOverWindow;
 
-	/// <summary>The run currently in progress, or null when ATH is idle. Set by StateMasterOn.</summary>
-	public AthStateMachine ActiveRun { get; set; }
+	/// <summary>The run currently in progress, or null when ATH is idle. Set by AthMod.</summary>
+	public AthRunner ActiveRun { get; set; }
 
 	/// <summary>
 	///     Toggled by /ath together with the control panel. There is nothing to show without a
@@ -47,7 +47,7 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 	public void OnZeepGUI(ImGui gui)
 	{
-		AthStateMachine run = ActiveRun;
+		AthRunner run = ActiveRun;
 
 		if (!Visible || run == null)
 		{
