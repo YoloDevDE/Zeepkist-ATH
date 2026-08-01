@@ -50,7 +50,7 @@ public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthSta
 		{
 			// async void - nothing above us can catch this.
 			Logger.LogError($"StateAthResolvingBrokenLevel: Could not draw a replacement level: {ex.Message}");
-			Messenger.Notify().LogError("Could not find a replacement for the broken level");
+			ToastNotification.Error("Could not find a replacement for the broken level");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}

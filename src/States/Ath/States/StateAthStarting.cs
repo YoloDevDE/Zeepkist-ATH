@@ -29,7 +29,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			// mode the lobby timer stayed live.
 			ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
 
-			if (!Plugin.Instance.MyConfig.RandomPlaylist.Value)
+			if (!AthStateMachine.Ctx.Settings.RandomPlaylist)
 			{
 				await Task.Delay(2500);
 				MultiplayerApi.UpdateServerPlaylist();
@@ -58,7 +58,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 
 					if (retryCount <= 0)
 					{
-						Messenger.Notify().LogError("Failed to start playlist after multiple attempts");
+						ToastNotification.Error("Failed to start playlist after multiple attempts");
 						// Weiter zum nächsten Schritt trotz Fehler
 					}
 
@@ -76,7 +76,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			catch (Exception ex)
 			{
 				Logger.LogError($"Failed to skip level: {ex.Message}");
-				Messenger.Notify().LogError("Error while skipping to the first level");
+				ToastNotification.Error("Error while skipping to the first level");
 			}
 
 			StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
@@ -84,7 +84,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		catch (Exception ex)
 		{
 			Logger.LogError($"Execute failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-			Messenger.Notify().LogError("Something went wrong while starting the hunt");
+			ToastNotification.Error("Something went wrong while starting the hunt");
 
 			// Optional: Transition zu einem Fehler-State oder Reset-State
 			// StateMachine.TransitionTo(new StateAthError(AthStateMachine));

@@ -41,28 +41,28 @@ public class StateAthEvaluateSkip(AthStateMachine stateMachine) : AthState(state
 	private void HandleBrokenSkip(AthCtx ctx)
 	{
 		ctx.CurrentLevel.LevelBroken = true;
-		Messenger.Notify().LogWarning("'Broken-Skip' used - spent time refunded");
+		ToastNotification.Warn("'Broken-Skip' used - spent time refunded");
 	}
 
 	private void HandleGoldSkip()
 	{
-		Messenger.Notify().LogSuccess("'Gold-Skip' used");
+		ToastNotification.Success("'Gold-Skip' used");
 	}
 
 	private void HandleFreeSkip(AthCtx ctx)
 	{
 		ctx.AvaiableFreeSkips -= 1;
 		ctx.CurrentLevel.FreeSkipped = true;
-		Messenger.Notify().LogSuccess("'Free-Skip' used");
+		ToastNotification.Success("'Free-Skip' used");
 	}
 
 	private void HandleTimeExpiredSkip()
 	{
-		Messenger.Notify().LogError("Well.. I tried to warn you.. Hunt is over once the level is loaded.", 10f);
+		ToastNotification.Error("Well.. I tried to warn you.. Hunt is over once the level is loaded.", 10f);
 	}
 
 	private void HandlePenaltySkip()
 	{
-		Messenger.Notify().LogError("'Penalty-Skip' used");
+		ToastNotification.Error("'Penalty-Skip' used");
 	}
 }

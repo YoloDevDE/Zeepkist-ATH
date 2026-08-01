@@ -1,4 +1,5 @@
 ﻿using System;
+using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
@@ -36,12 +37,13 @@ public partial class AthStateMachine : StateMachineBase
 	private DateTime _lastServerMessageTime = DateTime.MinValue;
 	private bool _timerStarted;
 
-	public AthStateMachine(ModServices services)
+	public AthStateMachine(ModServices services, IGamemode gamemode)
 	{
 		// One AthStateMachine per run, so this is the run's starting line: fresh context,
 		// and a level pool that does not carry the exclusions of previous runs.
 		Services = services;
-		Ctx = new AthCtx();
+		Gamemode = gamemode;
+		Ctx = new AthCtx(gamemode.CreateSettings());
 		RandomLevels = services.CreateRandomLevelService();
 		InitialState = new StateAthStarting(this);
 		FinalState = new StateAthStopping(this);
@@ -57,6 +59,12 @@ public partial class AthStateMachine : StateMachineBase
 	}
 
 	public AthCtx Ctx { get; }
+
+	/// <summary>
+	///     The mode this run is being played in. Held rather than looked up, so a mode change
+	///     between runs cannot rewrite the run that is already going.
+	/// </summary>
+	public IGamemode Gamemode { get; }
 
 	/// <summary>Session-scoped services shared with the rest of the mod.</summary>
 	public ModServices Services { get; }

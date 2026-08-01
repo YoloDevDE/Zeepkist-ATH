@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States;
 using AuthorTimeHunting.States.Master.StateMachine;
+using AuthorTimeHunting.Util;
 using BepInEx;
 using HarmonyLib;
 using ZeepSDK.ChatCommands;
@@ -13,13 +14,19 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
+	/// <summary>
+	///     Prefix shown on every toast notification. MyPluginInfo only carries the full
+	///     plugin name, which is too long for the corner of the screen.
+	/// </summary>
+	private const string ToastTag = "ATH";
+
 	private Harmony _harmony;
 	private StateMachineBase _masterStateMachine;
-	private ModServices _services;
 
 	private Plugin()
 	{
 		Util.Logger.Initialize(Logger);
+		ToastNotification.Initialize(ToastTag);
 		Instance = this;
 	}
 
@@ -33,14 +40,21 @@ public class Plugin : BaseUnityPlugin
 	/// </summary>
 	public PluginConfig MyConfig { get; private set; }
 
+	/// <summary>
+	///     The session's services. Public because the chat commands are instantiated by
+	///     ZeepSDK and have nowhere else to reach them from - the state machines are handed
+	///     theirs properly.
+	/// </summary>
+	public ModServices Services { get; private set; }
+
 	private void Awake()
 	{
 		InitializeConfig();
-		_services = new ModServices();
-		UIApi.AddZeepGUIDrawer(_services.Control);
-		UIApi.AddZeepGUIDrawer(_services.LevelStats);
-		UIApi.AddZeepGUIDrawer(_services.Results);
-		CommandAth.CommandTrigger += _services.ToggleUi;
+		Services = new ModServices();
+		UIApi.AddZeepGUIDrawer(Services.Control);
+		UIApi.AddZeepGUIDrawer(Services.LevelStats);
+		UIApi.AddZeepGUIDrawer(Services.Results);
+		CommandAth.CommandTrigger += Services.ToggleUi;
 		InitializeHarmony();
 		RegisterChatCommands();
 		InitializeStateMachine();
@@ -51,17 +65,17 @@ public class Plugin : BaseUnityPlugin
 
 	private void OnDestroy()
 	{
-		if (_services != null)
+		if (Services != null)
 		{
-			CommandAth.CommandTrigger -= _services.ToggleUi;
-			UIApi.RemoveZeepGUIDrawer(_services.Control);
-			UIApi.RemoveZeepGUIDrawer(_services.LevelStats);
-			UIApi.RemoveZeepGUIDrawer(_services.Results);
+			CommandAth.CommandTrigger -= Services.ToggleUi;
+			UIApi.RemoveZeepGUIDrawer(Services.Control);
+			UIApi.RemoveZeepGUIDrawer(Services.LevelStats);
+			UIApi.RemoveZeepGUIDrawer(Services.Results);
 		}
 
-		_services?.RaceTime.Dispose();
-		_services?.GameState.Dispose();
-		_services?.WorkshopDownloads.Dispose();
+		Services?.RaceTime.Dispose();
+		Services?.GameState.Dispose();
+		Services?.WorkshopDownloads.Dispose();
 		_harmony?.UnpatchSelf();
 		_harmony = null;
 	}
@@ -88,7 +102,7 @@ public class Plugin : BaseUnityPlugin
 
 	private void InitializeStateMachine()
 	{
-		_masterStateMachine = new MasterStateMachine(_services);
+		_masterStateMachine = new MasterStateMachine(Services);
 		_masterStateMachine.Init();
 	}
 }

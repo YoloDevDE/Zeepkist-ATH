@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Gamemodes;
 
 namespace AuthorTimeHunting.States.Ath;
 
@@ -18,18 +19,26 @@ public class AthCtx
 	private bool _previousTimeRunningLowState;
 
 	/// <summary>
-	///     One AthCtx exists per run - it is created in AthStateMachine.Awake(), and a fresh
+	///     One AthCtx exists per run - it is created by AthStateMachine, and a fresh
 	///     AthStateMachine is built for every /ath start and /ath restart.
 	/// </summary>
-	public AthCtx()
+	/// <param name="settings">
+	///     The rules this run plays by, handed over by its gamemode. A snapshot, not live
+	///     reads: these used to come from the config on every access, so opening the config
+	///     mid-run and raising Duration handed out extra time.
+	/// </param>
+	public AthCtx(RunSettings settings)
 	{
-		// Snapshot, not live reads: both values used to be read from the config on every
-		// access, so opening the config mid-run and raising Duration handed out extra time.
-		Duration = Plugin.Instance.MyConfig.Duration.Value * 1000;
-		PenaltyTimeInMilliseconds = Plugin.Instance.MyConfig.PenaltyTime.Value * 1000;
+		Settings = settings;
+		Duration = settings.DurationMs;
+		PenaltyTimeInMilliseconds = settings.PenaltyTimeMs;
+		AvaiableFreeSkips = settings.FreeSkips;
 	}
 
 	#region Run Settings
+
+	/// <summary>The rules this run started with. Fixed for its whole length.</summary>
+	public RunSettings Settings { get; }
 
 	/// <summary>Time budget for the whole run, in milliseconds. Fixed at run start.</summary>
 	public int Duration { get; }
@@ -50,7 +59,7 @@ public class AthCtx
 
 	public int ConsecutiveDuplicateCount { get; set; }
 
-	public int AvaiableFreeSkips { get; set; } = 1;
+	public int AvaiableFreeSkips { get; set; }
 
 	/// <summary>
 	///     True while the player has paused the run from the UI. The level clock is stopped

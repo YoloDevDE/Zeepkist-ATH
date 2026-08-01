@@ -31,6 +31,9 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
+	/// <summary>Height the content came to last frame, or 0 before the first one.</summary>
+	private float _contentHeight;
+
 	private bool _mouseOverWindow;
 
 	/// <summary>The run currently in progress, or null when ATH is idle. Set by StateMasterOn.</summary>
@@ -79,7 +82,7 @@ public class LevelStatsPanel : IZeepGUIDrawer
 	{
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, MeasureHeight(gui, view),
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.TopRight);
 
 		bool open = true;
@@ -95,6 +98,9 @@ public class LevelStatsPanel : IZeepGUIDrawer
 			DrawTargets(gui, view);
 			DrawEffort(gui, view);
 			DrawPace(gui, view);
+
+			// While the window's layout frame is still open, so it can report what it holds.
+			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
 		finally
 		{
@@ -186,16 +192,14 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * scale);
 	}
 
-	private static float MeasureHeight(ImGui gui, LevelStatsView view)
+	/// <summary>
+	///     Last frame's content plus the window's own chrome. See <see cref="UiMetrics.ContentHeight" />
+	///     for why this is measured rather than counted.
+	/// </summary>
+	private float Height(ImGui gui)
 	{
-		float row = gui.GetRowHeight();
-		float spacing = gui.Style.Layout.Spacing;
+		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 14f;
 
-		// Title, author, two medal rows, the personal best, the effort heading and its four
-		// rows, then the pace light.
-		float content = row * (TitleSize * 1.2f + 0.9f + MedalRowSize * 2f + 1f + 0.85f + 4f + 1.2f);
-
-		// One per row, plus the three AddSpacing calls between the sections.
-		return content + 14 * spacing + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
+		return content + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
 	}
 }

@@ -48,15 +48,26 @@ internal static class UiMetrics
 	}
 
 	/// <summary>
-	///     Head room added to every measured panel height.
-	///     A panel that measures a hair short grows a scrollbar, and a scrollbar on a HUD is
-	///     worse than a little empty space: it means the panel is now something you operate
-	///     rather than read. Counting rows by hand will drift again the next time one is
-	///     added, so the measurement is given a row to be wrong by.
+	///     Head room added to every measured panel height. A panel that measures a hair short
+	///     grows a scrollbar, and a scrollbar on a HUD is worse than a little empty space: it
+	///     means the panel is now something you operate rather than read.
 	/// </summary>
 	public static float Slack(ImGui gui)
 	{
-		return gui.GetRowHeight();
+		return gui.Style.Layout.Spacing;
+	}
+
+	/// <summary>
+	///     How tall the content drawn into the current layout frame actually turned out.
+	///     Must be read while the frame is still open - inside the window, before EndWindow.
+	///     This is the honest answer to "how tall should this panel be". Adding up rows by hand
+	///     is a second description of the layout that has to be kept in step with the first,
+	///     and it never is: one forgotten spacing is a scrollbar. Letting the layout report
+	///     itself costs a frame of lag on a size change and nothing else.
+	/// </summary>
+	public static float ContentHeight(ImGui gui)
+	{
+		return gui.Layout.GetFrame().Size.y;
 	}
 
 	/// <summary>

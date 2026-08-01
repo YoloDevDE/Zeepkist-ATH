@@ -137,6 +137,25 @@ Countdown oder ein Medaillentext aktiv ist.
 | `Misc / Save Playlist on Run End` | `false`                      | Run als `.zeeplist` sichern        |
 | `Backend / GraphQL URL`           | `https://graphql.zeepki.st/` | Endpoint                           |
 
+### 2.8 Gamemodes
+
+Die Regeln eines Runs stehen nicht mehr verstreut in den States, sondern in einem `RunSettings`-Objekt, das ein
+`IGamemode` beim Start liefert. `AthCtx` bekommt es im Konstruktor und hält es für die ganze Laufzeit fest.
+
+| Typ                | Rolle                                                                          |
+|--------------------|--------------------------------------------------------------------------------|
+| `IGamemode`        | Id, Anzeigename, Beschreibung, `CreateSettings()`                              |
+| `RunSettings`      | Dauer, Strafzeit, Zufallslevels, Free Skips, Duplikate ablehnen                |
+| `GamemodeRegistry` | kennt alle Modi, hält die Auswahl für den nächsten Run (`ModServices`)         |
+| `ClassicGamemode`  | `classic` — „ATH Solo Hunt (Classic)", der einzige Modus, der die Config liest |
+
+Ein neuer Modus ist eine Datei plus eine Zeile in der Registry. Ausgewählt wird über `/ath start <id>` oder den
+Cycle-Button im Control Panel (erscheint erst ab zwei Modi). Ein laufender Run trägt seinen Modus selbst, eine
+Umstellung zwischendurch erreicht ihn also nicht.
+
+Bewusst nur Einstellungen, keine Verhaltens-Hooks: die geplanten Modi Custom/Ranked/Duel ändern nur Zahlen, und für
+Survival und WR-Hunt sollen die Hooks nach ihren echten Regeln geschnitten werden, nicht nach einer Vermutung von heute.
+
 ---
 
 ## 3. Diagramme

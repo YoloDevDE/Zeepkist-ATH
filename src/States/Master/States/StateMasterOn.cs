@@ -1,4 +1,5 @@
 ﻿using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.States.Master.StateMachine;
@@ -21,12 +22,22 @@ public class StateMasterOn : StateBase
 	/// </summary>
 	private bool _shuttingDown;
 
-	public StateMasterOn(MasterStateMachine stateMachine) : base(stateMachine)
+	/// <param name="stateMachine">The mod's lifecycle machine.</param>
+	/// <param name="gamemode">
+	///     The mode this run plays by. Passed in rather than read from the registry, so a
+	///     restart repeats the mode the run was started with even if the selection has since
+	///     been changed.
+	/// </param>
+	public StateMasterOn(MasterStateMachine stateMachine, IGamemode gamemode) : base(stateMachine)
 	{
-		AthStateMachine = new AthStateMachine(stateMachine.Services);
+		Gamemode = gamemode;
+		AthStateMachine = new AthStateMachine(stateMachine.Services, gamemode);
 	}
 
 	public static bool IsActive { get; private set; }
+
+	/// <summary>The mode the current run is being played in.</summary>
+	public IGamemode Gamemode { get; }
 
 	/// <summary>The run's machine, created fresh for every /ath start and /ath restart.</summary>
 	public AthStateMachine AthStateMachine { get; }
@@ -56,13 +67,13 @@ public class StateMasterOn : StateBase
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
 		Master.Services.PublishRun(AthStateMachine);
 		AthStateMachine.StartTimer();
-		Messenger.Notify().LogSuccess("Hunt started");
+		ToastNotification.Success($"{Gamemode.DisplayName} started");
 	}
 
 	public override void Exit()
 	{
 		IsActive = false;
-		Messenger.Notify().Log("Hunt stopped");
+		ToastNotification.Info("Hunt stopped");
 		Master.Services.PublishRun(null);
 		AthStateMachine.StopTimer();
 		AthStateMachine.Dispose();
@@ -90,7 +101,7 @@ public class StateMasterOn : StateBase
 
 		if (GameStateObserver.IsRacing)
 		{
-			StateMachine.TransitionTo(new StateMasterOn(Master));
+			StateMachine.TransitionTo(new StateMasterOn(Master, Gamemode));
 			return;
 		}
 
@@ -100,8 +111,8 @@ public class StateMasterOn : StateBase
 		// No race condition between the check and the transition: IsRacing is derived from
 		// game state that only changes between frames, and nothing here yields.
 		Logger.LogInfo("StateMasterOn: Restart requested outside a running race, deferring the new run.");
-		Messenger.Notify().Log("ATH restarts as soon as the level is loaded");
-		StateMachine.TransitionTo(new StateMasterOff(Master, true));
+		ToastNotification.Info("ATH restarts as soon as the level is loaded");
+		StateMachine.TransitionTo(new StateMasterOff(Master, Gamemode));
 	}
 
 	private void SkipBrokenLevel()
@@ -115,7 +126,7 @@ public class StateMasterOn : StateBase
 
 	private void Start()
 	{
-		Messenger.Notify().LogWarning("ATH is already running");
+		ToastNotification.Warn("ATH is already running");
 	}
 
 	private void Stop()

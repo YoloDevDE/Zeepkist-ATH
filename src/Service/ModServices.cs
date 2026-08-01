@@ -1,4 +1,5 @@
-﻿using AuthorTimeHunting.States.Ath.StateMachine;
+﻿using AuthorTimeHunting.Gamemodes;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI;
 
 namespace AuthorTimeHunting.Service;
@@ -25,6 +26,12 @@ public class ModServices
 	{
 		Playlist = new PlaylistService(WorkshopDownloads);
 	}
+
+	/// <summary>
+	///     The modes ATH can be played in, and which one the next run will use. Session-scoped
+	///     because the choice outlives a run - stopping a hunt should not forget what was picked.
+	/// </summary>
+	public GamemodeRegistry Gamemodes { get; } = new();
 
 	public LocalLevelCacheService LocalLevelCache { get; } = new();
 	public GraphQLService GraphQL { get; } = new();

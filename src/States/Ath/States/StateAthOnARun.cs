@@ -63,7 +63,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (runMedalStatus == Level.LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
 		{
-			Messenger.Notify().Log("Gold medal claimed!<br>You can now skip without penalty");
+			ToastNotification.Info("Gold medal claimed!<br>You can now skip without penalty");
 		}
 
 		StateMachine.TransitionTo(new StateAthPausing(AthStateMachine));
@@ -87,7 +87,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
 		{
-			Messenger.Notify().Log("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
+			ToastNotification.Info("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
 		}
 	}
 

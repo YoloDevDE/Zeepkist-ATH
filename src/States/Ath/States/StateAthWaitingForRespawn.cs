@@ -20,7 +20,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 		if (!_hasShownAuthorMedal)
 		{
-			Messenger.Notify().Log("Author time claimed!<br>[Respawn to continue]");
+			ToastNotification.Info("Author time claimed!<br>[Respawn to continue]");
 
 			double lastRunTime = AthStateMachine.Ctx.LastRunTime;
 

@@ -14,7 +14,7 @@ public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(state
 
 	public override void OnLevelLoaded()
 	{
-		if (!AthStateMachine.Ctx.IsTimeOver() && (Plugin.Instance.MyConfig.RandomPlaylist.Value ||
+		if (!AthStateMachine.Ctx.IsTimeOver() && (AthStateMachine.Ctx.Settings.RandomPlaylist ||
 		                                          AthStateMachine.Ctx.Levels.Count <
 		                                          ZeepkistNetwork.CurrentLobby.Playlist.Count))
 		{

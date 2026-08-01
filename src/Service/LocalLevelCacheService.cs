@@ -207,7 +207,7 @@ public class LocalLevelCacheService
 	{
 		try
 		{
-			Messenger.Notify().LogSuccess(message);
+			ToastNotification.Success(message);
 		}
 		catch (Exception ex)
 		{
@@ -219,7 +219,7 @@ public class LocalLevelCacheService
 	{
 		try
 		{
-			Messenger.Notify().LogWarning(message);
+			ToastNotification.Warn(message);
 		}
 		catch (Exception ex)
 		{

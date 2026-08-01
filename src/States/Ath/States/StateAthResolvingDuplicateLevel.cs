@@ -34,7 +34,7 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 		{
 			// async void - nothing above us can catch this.
 			Logger.LogError($"StateAthResolvingDuplicateLevel: Could not draw a replacement level: {ex.Message}");
-			Messenger.Notify().LogError("Could not find another level to play");
+			ToastNotification.Error("Could not find another level to play");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}

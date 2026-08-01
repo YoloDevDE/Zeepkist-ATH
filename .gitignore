@@ -1,13 +1,34 @@
+# Build output. Holds copies of the game's own assemblies - Assembly-CSharp.dll,
+# Facepunch.Steamworks.dll and friends - which have no business in a repository.
+[Bb]in/
+[Oo]bj/
+/packages/
+
+# Packed by the release workflow, never committed.
+*.zip
+
+# Generated on every build
+FodyWeavers.xsd
+costura_files.txt
+
+# JetBrains Rider
 /.idea/
+riderModule.iml
+/_ReSharper.Caches/
+*.DotSettings.user
+*.sln.DotSettings.user
+
+# Visual Studio user state
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Local secrets. The release pipeline reads its token from GitHub, not from a file,
+# but this keeps an experiment from becoming a leak.
+.env
+# This repo only
 *.sln
 *.slnf
 *.slnx
-
-# Build-Output. Enthält u. a. Assembly-CSharp.dll, Facepunch.Steamworks.dll,
-# FMODUnity.dll und Crosstales.dll — Spiel-Assemblies gehören nicht ins Repo.
-[Bb]in/
-[Oo]bj/
-
-# Von Fody bei jedem Build generiert
-FodyWeavers.xsd
-/docs/chat-d2dcaf22-68d0-4b34-b416-40ea73e9a3eb.txt
+/docs/

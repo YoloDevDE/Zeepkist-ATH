@@ -1,5 +1,6 @@
 ﻿using System;
 using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
 using Imui.Core;
@@ -39,6 +40,12 @@ public class ControlPanel : IZeepGUIDrawer
 	// No resizing: the height is recomputed from the content every frame, so a dragged
 	// corner would spring back on the next one.
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
+
+	/// <summary>
+	///     Height the content came to last frame, or 0 before the first one. See
+	///     <see cref="UiMetrics.ContentHeight" /> for why this is measured rather than counted.
+	/// </summary>
+	private float _contentHeight;
 
 	private bool _mouseOverWindow;
 
@@ -99,7 +106,7 @@ public class ControlPanel : IZeepGUIDrawer
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 
 		// Auto-sized: the panel is as tall as what it has to say and no taller.
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, MeasureHeight(gui, view),
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.TopLeft);
 
 		bool open = true;
@@ -120,6 +127,9 @@ public class ControlPanel : IZeepGUIDrawer
 				DrawRun(gui, view);
 				DrawControls(gui, run, view);
 			}
+
+			// While the window's layout frame is still open, so it can report what it holds.
+			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
 		finally
 		{
@@ -193,11 +203,9 @@ public class ControlPanel : IZeepGUIDrawer
 			Row(gui, 1f));
 		gui.AddSpacing();
 
-		ImRect row = ButtonRow(gui);
-
 		if (starting)
 		{
-			if (UiWidgets.Button(gui, row, "Stop"))
+			if (UiWidgets.Button(gui, ButtonRow(gui), "Stop"))
 			{
 				CommandStop.Raise();
 			}
@@ -205,10 +213,41 @@ public class ControlPanel : IZeepGUIDrawer
 			return;
 		}
 
-		if (UiWidgets.Button(gui, row, "Start Hunt"))
+		DrawGamemodePicker(gui);
+
+		if (UiWidgets.Button(gui, ButtonRow(gui), "Start Hunt"))
 		{
 			CommandStart.Raise();
 		}
+	}
+
+	/// <summary>
+	///     Which mode Start will run. A cycling button rather than a dropdown: there is no
+	///     list control in Imui worth the trouble for a handful of entries, and the mode has
+	///     to be readable at a glance anyway - a collapsed dropdown reads the same but costs
+	///     a click to change. The button only appears once there is something to cycle to.
+	/// </summary>
+	private static void DrawGamemodePicker(ImGui gui)
+	{
+		GamemodeRegistry registry = Plugin.Instance.Services.Gamemodes;
+
+		UiWidgets.Heading(gui, Row(gui, 0.85f), "GAMEMODE");
+		UiText.Left(gui, registry.Selected.DisplayName, HudPalette.Author, Row(gui, 1f));
+		UiText.Draw(gui, registry.Selected.Description, HudPalette.Muted, Row(gui, 0.9f),
+			gui.Style.Layout.TextSize * 0.85f, 0f);
+
+		if (registry.All.Count < 2)
+		{
+			gui.AddSpacing();
+			return;
+		}
+
+		if (UiWidgets.Button(gui, ButtonRow(gui), "Next Gamemode"))
+		{
+			registry.SelectNext();
+		}
+
+		gui.AddSpacing();
 	}
 
 	private static void DrawControls(ImGui gui, AthStateMachine run, RunHudView view)
@@ -264,27 +303,15 @@ public class ControlPanel : IZeepGUIDrawer
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
 	}
 
-	private static float MeasureHeight(ImGui gui, RunHudView view)
+	/// <summary>
+	///     Last frame's content plus the window's own chrome. Before the first frame there is
+	///     nothing to go on, so it opens generously - too tall is a moment of empty space, too
+	///     short is a moment of scrollbar.
+	/// </summary>
+	private float Height(ImGui gui)
 	{
-		float row = gui.GetRowHeight();
-		float spacing = gui.Style.Layout.Spacing;
-		float buttonHeight = UiMetrics.ButtonHeight(gui);
-		float chrome = UiMetrics.WindowChrome(gui);
+		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 16f;
 
-		if (view == null)
-		{
-			// One line of status plus a single button.
-			return row + buttonHeight + 4 * spacing + chrome + UiMetrics.Slack(gui);
-		}
-
-		// Clock, bar, budget footer, medals, the controls heading, then three button rows.
-		float content = row * (ClockSize * 1.15f + BarSize + FooterSize * 1.4f + MedalRowSize + 0.85f)
-		                + row * view.Details.Count
-		                + 3 * buttonHeight;
-
-		// Five rows, the detail rows, two AddSpacing calls and three buttons.
-		int gaps = 10 + view.Details.Count;
-
-		return content + gaps * spacing + chrome + UiMetrics.Slack(gui);
+		return content + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
 	}
 }

@@ -9,16 +9,16 @@ using Object = UnityEngine.Object;
 namespace AuthorTimeHunting.UI;
 
 /// <summary>
-///     Rewrites the game's own running-time display into three aligned lines: the time itself,
-///     how much room is left to the gold time, and how much to the author time.
+///     Rewrites the game's own running-time display into two aligned lines: the time itself,
+///     and under it the best medal still within reach with the time it needs.
 ///     <code>
-///     00:12.480
-///       +02.130
-///       -00.940
+///        00:43.123          00:45.444        00:49.000
+///     AT 00:45.423     GOLD 00:48.345        missed
 ///     </code>
-///     A plus means headroom - that much of the target is still unspent. It flips to a minus
-///     the moment the target goes past, which is the reading a hunter actually wants: not "how
-///     far off am I" but "do I still have it".
+///     The target line is static - it names a medal and its time, and only changes when a
+///     medal drops out of reach. That is the whole reading: the number above is chasing the
+///     number below, and how far apart they are is visible without doing the subtraction.
+///     Deltas came before this and were too much to take in mid-run.
 ///     No Harmony patch. The game writes this label from ReadyToReset.Update, and Unity runs
 ///     every LateUpdate after every Update, so writing from a LateUpdate of our own wins the
 ///     frame deterministically. It also means there is nothing to undo: stop writing and the
@@ -32,11 +32,12 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private const string MonoSpace = "0.62em";
 
-	/// <summary>
-	///     Indent on the delta lines, in monospaced characters. Two, so a delta sits under the
-	///     seconds of the time above it rather than under its minutes.
-	/// </summary>
-	private const string DeltaIndent = "  ";
+	// Words rather than the game's medal sprites: a TMP sprite tag only resolves against a
+	// sprite asset assigned to the label, and the running-time label has none. Assigning one
+	// means borrowing another mod's asset bundle, which ATH does not depend on.
+	private const string AuthorLabel = "AT";
+	private const string GoldLabel = "GOLD";
+	private const string MissedLabel = "missed";
 
 	private readonly RaceTimeBehaviour _behaviour;
 
@@ -165,35 +166,29 @@ public class RaceTimeDisplay : IDisposable
 			? Hex(TimeColour(elapsed, goldTime, authorTime))
 			: Hex(HudPalette.White);
 
-		string block = Line(TimeFormatter.FormatTime(elapsed), colour);
+		string time = TimeFormatter.FormatTime(elapsed);
 
-		if (config.RaceTimeShowGold.Value)
+		if (!config.RaceTimeShowTarget.Value)
 		{
-			block += "\n" + Delta(goldTime - elapsed, HudPalette.Gold);
+			return Line(time, colour);
 		}
 
-		if (config.RaceTimeShowAuthor.Value)
+		if (elapsed >= goldTime)
 		{
-			block += "\n" + Delta(authorTime - elapsed, HudPalette.Author);
+			// Nothing left to chase. No indent either - there is no label to clear.
+			return Line(time, colour) + "\n" + Line(MissedLabel, Hex(HudPalette.Danger));
 		}
 
-		return block;
-	}
+		bool author = elapsed < authorTime;
+		string label = author ? AuthorLabel : GoldLabel;
+		Color32 medal = author ? HudPalette.Author : HudPalette.Gold;
+		string target = TimeFormatter.FormatTime(author ? authorTime : goldTime);
 
-	/// <summary>
-	///     Headroom, not lateness: positive while the target is still ahead, negative once it
-	///     has gone by. The sign is always written, so the column never shifts.
-	/// </summary>
-	private static string Delta(double headroom, Color32 colour)
-	{
-		string sign = headroom >= 0 ? "+" : "-";
-		TimeSpan span = TimeSpan.FromSeconds(Math.Abs(headroom));
+		// The running time is pushed right by the label plus its separating space, so the two
+		// times sit in the same column. Monospacing is what makes counting characters legal.
+		string indent = new(' ', label.Length + 1);
 
-		// Seconds, not minutes: a delta of over a minute is not a delta any more, and the
-		// two-character indent is what puts these under the seconds of the line above.
-		string magnitude = $"{(int)span.TotalSeconds:D2}.{span.Milliseconds:D3}";
-
-		return Line($"{DeltaIndent}{sign}{magnitude}", Hex(colour));
+		return Line(indent + time, colour) + "\n" + Line($"{label} {target}", Hex(medal));
 	}
 
 	private static string Line(string text, string colour)

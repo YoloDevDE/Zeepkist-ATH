@@ -1,21 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <!-- General Project Properties -->
     <PropertyGroup>
-        <TargetFramework>net472</TargetFramework>
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
-        <Version>2.0.0</Version>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <LangVersion>latest</LangVersion>
-        <PackageId>Author Time Hunting</PackageId>
-        <RestoreAdditionalProjectSources>
-            https://api.nuget.org/v3/index.json;
-            https://nuget.bepinex.dev/v3/index.json;
-            https://nuget.samboy.dev/v3/index.json
-        </RestoreAdditionalProjectSources>
-        <Authors>Hi Im Yolo</Authors>
         <Title>Author Time Hunting</Title>
-        <ImplicitUsings>disable</ImplicitUsings>
+        <PackageId>Author Time Hunting</PackageId>
     </PropertyGroup>
 
     <!--
@@ -27,25 +15,15 @@
         <None Remove="tests\**"/>
     </ItemGroup>
 
-    <!-- Package References -->
     <ItemGroup>
-        <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
-        <PackageReference Include="BepInEx.Core" Version="5.*"/>
-        <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all"/>
         <PackageReference Include="ZeepSDK" Version="2.6.1" PrivateAssets="all"/>
-        <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/> <!-- Fody package -->
-        <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all"/> <!-- Costura package -->
-    </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Reference Include="Microsoft.CSharp"/>
+        <!-- Costura embeds the dependencies above into the plugin DLL. -->
+        <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/>
+        <PackageReference Include="Costura.Fody" Version="6.2.0" PrivateAssets="all"/>
     </ItemGroup>
 
     <!--
@@ -63,48 +41,4 @@
         </ItemGroup>
     </Target>
 
-    <!--
-        Deploy-Ziel. Überschreibbar per `dotnet build -p:ZeepkistDir=...`
-        oder per Umgebungsvariable ZeepkistDir, damit der Build auf anderen
-        Maschinen und im CI nicht bricht.
-    -->
-    <PropertyGroup>
-        <ZeepkistDir Condition="'$(ZeepkistDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Zeepkist</ZeepkistDir>
-        <ZeepkistPluginDir>$(ZeepkistDir)\BepInEx\plugins\Sideloaded\Plugins</ZeepkistPluginDir>
-    </PropertyGroup>
-
-    <!--
-        Deploy is best-effort: while the game is running BepInEx holds the deployed DLL
-        open, so the copy fails. That must not take a build down — least of all a
-        `dotnet test` run, which drags this project in as a reference and has no interest
-        in deploying at all. Set -p:SkipZeepkistDeploy=true to opt out entirely.
-    -->
-    <Target Name="DeployToZeepkist" AfterTargets="PostBuildEvent"
-            Condition="Exists('$(ZeepkistDir)') And '$(SkipZeepkistDeploy)' != 'true'">
-        <PropertyGroup>
-            <_AthDeployDir>$(ZeepkistPluginDir)\$(ProjectName)</_AthDeployDir>
-            <_AthZipPath>$(ZeepkistPluginDir)\$(ProjectName)-$(Version).zip</_AthZipPath>
-        </PropertyGroup>
-
-        <RemoveDir Directories="$(_AthDeployDir)" ContinueOnError="WarnAndContinue"/>
-        <MakeDir Directories="$(_AthDeployDir)" ContinueOnError="WarnAndContinue"/>
-
-        <Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFiles="$(_AthDeployDir)\$(ProjectName)-$(Version).dll"
-              ContinueOnError="WarnAndContinue">
-            <Output TaskParameter="CopiedFiles" ItemName="_AthCopiedFiles"/>
-        </Copy>
-
-        <Delete Files="$(_AthZipPath)" ContinueOnError="WarnAndContinue"/>
-        <ZipDirectory SourceDirectory="$(_AthDeployDir)" DestinationFile="$(_AthZipPath)" Overwrite="true"
-                      ContinueOnError="WarnAndContinue" Condition="'@(_AthCopiedFiles)' != ''"/>
-
-        <Message Importance="high" Text="ATH: deployed $(ProjectName)-$(Version).dll -> $(_AthDeployDir)"
-                 Condition="'@(_AthCopiedFiles)' != ''"/>
-        <Message Importance="high" Text="ATH: deploy skipped, could not write to $(_AthDeployDir) (game running?)"
-                 Condition="'@(_AthCopiedFiles)' == ''"/>
-    </Target>
-
-    <Target Name="_AthDeploySkipped" AfterTargets="PostBuildEvent" Condition="!Exists('$(ZeepkistDir)')">
-        <Message Importance="high" Text="ATH: Zeepkist nicht gefunden unter '$(ZeepkistDir)' — Deploy übersprungen. Override: -p:ZeepkistDir=&lt;pfad&gt;"/>
-    </Target>
 </Project>
