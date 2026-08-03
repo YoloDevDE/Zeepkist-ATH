@@ -1,8 +1,11 @@
 ﻿using System;
 using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Gamemodes;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using Imui.Controls;
 using Imui.Core;
+using UnityEngine;
 using ZeepSDK.Chat;
 using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
@@ -24,21 +27,21 @@ public class ControlPanel : IZeepGUIDrawer
 	private const string WindowTitle = "Author Time Hunting";
 
 	/// <summary>Share of the screen width, before the clamp below.</summary>
-	private const float WidthFraction = 0.21f;
+	private const float WidthFraction = 0.15f;
 
-	private const float MinWidth = 320f;
-	private const float MaxWidth = 440f;
+	private const float MinWidth = 210f;
+	private const float MaxWidth = 300f;
 
-	// Multiples of the theme's body text size, so the panel keeps its proportions whatever
-	// the game's UI scale is set to.
-	private const float ClockSize = 2.4f;
-	private const float MedalRowSize = 1.8f;
-	private const float BarSize = 0.3f;
-	private const float FooterSize = 0.85f;
+	// Neither resizing nor moving: the height is recomputed from the content every frame, so
+	// a dragged corner would spring back on the next one, and the panel's position is not its
+	// own either - it hangs under the level panel, which is the one that can be dragged.
+	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoMovingAndResizing;
 
-	// No resizing: the height is recomputed from the content every frame, so a dragged
-	// corner would spring back on the next one.
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
+	/// <summary>
+	///     Height the content came to last frame, or 0 before the first one. See
+	///     <see cref="UiMetrics.ContentHeight" /> for why this is measured rather than counted.
+	/// </summary>
+	private float _contentHeight;
 
 	private bool _mouseOverWindow;
 
@@ -67,9 +70,18 @@ public class ControlPanel : IZeepGUIDrawer
 	/// </summary>
 	public bool Visible { get; set; }
 
+	/// <summary>
+	///     Whether the player can actually reach the buttons. Zeepkist hides the hardware cursor
+	///     the moment you are driving, and a panel of buttons that cannot be clicked is just
+	///     something in the way - so it goes away with the cursor and comes back with it.
+	///     The cursor is the game's own signal, not a guess: it is what "Where is my Cursor?"
+	///     surfaces too, and both agree because both read the same flag.
+	/// </summary>
+	private static bool CursorIsUsable => Cursor.visible;
+
 	public void OnZeepGUI(ImGui gui)
 	{
-		if (!Visible)
+		if (!Visible || !CursorIsUsable)
 		{
 			return;
 		}
@@ -93,14 +105,28 @@ public class ControlPanel : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
+		using (UiScale.Push(gui))
+		{
+			DrawScaled(gui);
+		}
+	}
+
+	private void DrawScaled(ImGui gui)
+	{
 		AthStateMachine run = ActiveRun;
 		RunHudView view = run == null ? null : RunHudView.From(run.Ctx, run.Ctx.IsPaused);
 
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 
-		// Auto-sized: the panel is as tall as what it has to say and no taller.
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, MeasureHeight(gui, view),
-			ImWindowAnchor.TopLeft);
+		// Under the level panel when there is one, in the same column and at the same width:
+		// what the level is and what you can do about it is one thought, and it was split
+		// across two corners of the screen. Auto-sized either way - the panel is as tall as
+		// what it has to say and no taller.
+		ImRect above = Plugin.Instance.Services.LevelStats.LastRect;
+
+		ImRect rect = above.W > 0f ?
+			ImWindowPlacement.Stack(gui, above, Height(gui)) :
+			ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui), ImWindowAnchor.TopRight);
 
 		bool open = true;
 
@@ -117,70 +143,16 @@ public class ControlPanel : IZeepGUIDrawer
 			}
 			else
 			{
-				DrawRun(gui, view);
 				DrawControls(gui, run, view);
 			}
+
+			// While the window's layout frame is still open, so it can report what it holds.
+			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
 		finally
 		{
 			gui.EndWindow();
 		}
-	}
-
-	private static void DrawRun(ImGui gui, RunHudView view)
-	{
-		float text = gui.Style.Layout.TextSize;
-
-		UiText.Centre(gui, view.TimeLeft, view.TimeColour, Row(gui, ClockSize * 1.15f), text * ClockSize);
-		UiWidgets.Bar(gui, Row(gui, BarSize), view.RemainingFraction, view.TimeColour);
-
-		DrawBudgetFooter(gui, view, text);
-		gui.AddSpacing();
-
-		DrawMedals(gui, view);
-
-		foreach (RunHudView.HudRow row in view.Details)
-			UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
-
-		gui.AddSpacing();
-	}
-
-	/// <summary>
-	///     What the run was given and what a mistake costs, on one muted line. Both are fixed
-	///     for the whole run, so they are context rather than news - hence the small type.
-	/// </summary>
-	private static void DrawBudgetFooter(ImGui gui, RunHudView view, float text)
-	{
-		ImRect footer = Row(gui, FooterSize * 1.4f);
-		float size = text * FooterSize;
-
-		ImRect left = footer.TakeLeft(footer.W * 0.5f, out ImRect right);
-
-		UiText.Draw(gui, $"of {view.Duration}", HudPalette.Muted, left, size, 0f);
-
-		if (view.Paused)
-		{
-			UiText.Right(gui, "PAUSED", HudPalette.Warning, right, size);
-			return;
-		}
-
-		UiText.Right(gui, view.SkipType, view.SkipColour, right, size);
-	}
-
-	/// <summary>
-	///     The score, as the game's own medals. Sprites rather than words because this is the
-	///     line a player checks mid-run, and three shapes are read faster than three labels.
-	/// </summary>
-	private static void DrawMedals(ImGui gui, RunHudView view)
-	{
-		ImRect row = Row(gui, MedalRowSize);
-
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 0, 3), GameSprites.AuthorMedal, view.AuthorMedals,
-			HudPalette.Author);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 1, 3), GameSprites.GoldMedal, view.GoldMedals,
-			HudPalette.Gold);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 2, 3), GameSprites.YouTriedMedal, view.Penalties,
-			HudPalette.Penalty);
 	}
 
 	/// <summary>
@@ -193,11 +165,9 @@ public class ControlPanel : IZeepGUIDrawer
 			Row(gui, 1f));
 		gui.AddSpacing();
 
-		ImRect row = ButtonRow(gui);
-
 		if (starting)
 		{
-			if (UiWidgets.Button(gui, row, "Stop"))
+			if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Stop, "Stop", HudPalette.ActionStop))
 			{
 				CommandStop.Raise();
 			}
@@ -205,32 +175,72 @@ public class ControlPanel : IZeepGUIDrawer
 			return;
 		}
 
-		if (UiWidgets.Button(gui, row, "Start Hunt"))
+		DrawGamemodePicker(gui);
+
+		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Play, "Start Hunt", HudPalette.ActionResume))
 		{
 			CommandStart.Raise();
 		}
+	}
+
+	/// <summary>
+	///     Which mode Start will run. A cycling button rather than a dropdown: there is no
+	///     list control in Imui worth the trouble for a handful of entries, and the mode has
+	///     to be readable at a glance anyway - a collapsed dropdown reads the same but costs
+	///     a click to change. The button only appears once there is something to cycle to.
+	/// </summary>
+	private static void DrawGamemodePicker(ImGui gui)
+	{
+		GamemodeRegistry registry = Plugin.Instance.Services.Gamemodes;
+
+		UiWidgets.Heading(gui, Row(gui, 0.85f), "GAMEMODE");
+		UiText.Left(gui, registry.Selected.DisplayName, HudPalette.Author, Row(gui, 1f));
+		UiText.Draw(gui, registry.Selected.Description, HudPalette.Muted, Row(gui, 0.9f),
+			gui.Style.Layout.TextSize * 0.85f, 0f);
+
+		if (registry.All.Count < 2)
+		{
+			gui.AddSpacing();
+			return;
+		}
+
+		if (UiWidgets.Button(gui, ButtonRow(gui), "Next Gamemode"))
+		{
+			registry.SelectNext();
+		}
+
+		gui.AddSpacing();
 	}
 
 	private static void DrawControls(ImGui gui, AthStateMachine run, RunHudView view)
 	{
 		UiWidgets.Heading(gui, Row(gui, 0.85f), "CONTROLS");
 
+		// Both of these skip the level out from under the lobby. Off the track - on the podium,
+		// between levels, in a lobby that is not racing - the game has no level to skip and the
+		// run's own bookkeeping has already moved on, so the skip lands on the wrong level or on
+		// nothing at all. Not a warning afterwards: the button simply is not there to press.
+		bool racing = GameStateObserver.IsRacing;
+
 		ImRect first = ButtonRow(gui);
 
-		if (UiWidgets.Button(gui, UiWidgets.Column(gui, first, 0, 2), "Skip"))
+		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, first, 0, 2), UiIcon.Skip, "Skip", HudPalette.ActionSkip,
+			    racing))
 		{
 			// The game's own skip, the same thing typing /fs does.
 			ChatApi.SendMessage("/fs");
 		}
 
-		if (UiWidgets.Button(gui, UiWidgets.Column(gui, first, 1, 2), "Broken Level"))
+		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, first, 1, 2), UiIcon.Warning, "Broken",
+			    HudPalette.ActionBroken, racing))
 		{
 			CommandSkipBroken.Raise();
 		}
 
 		ImRect second = ButtonRow(gui);
 
-		if (UiWidgets.Button(gui, UiWidgets.Column(gui, second, 0, 2), view.Paused ? "Resume" : "Pause"))
+		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, second, 0, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
+			    view.Paused ? "Resume" : "Pause", view.Paused ? HudPalette.ActionResume : HudPalette.ActionPause))
 		{
 			if (view.Paused)
 			{
@@ -242,12 +252,13 @@ public class ControlPanel : IZeepGUIDrawer
 			}
 		}
 
-		if (UiWidgets.Button(gui, UiWidgets.Column(gui, second, 1, 2), "Restart"))
+		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, second, 1, 2), UiIcon.Restart, "Restart",
+			    HudPalette.ActionRestart))
 		{
 			CommandRestart.Raise();
 		}
 
-		if (UiWidgets.Button(gui, ButtonRow(gui), "Stop Hunt"))
+		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Stop, "Stop Hunt", HudPalette.ActionStop))
 		{
 			CommandStop.Raise();
 		}
@@ -264,27 +275,15 @@ public class ControlPanel : IZeepGUIDrawer
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
 	}
 
-	private static float MeasureHeight(ImGui gui, RunHudView view)
+	/// <summary>
+	///     Last frame's content plus the window's own chrome. Before the first frame there is
+	///     nothing to go on, so it opens generously - too tall is a moment of empty space, too
+	///     short is a moment of scrollbar.
+	/// </summary>
+	private float Height(ImGui gui)
 	{
-		float row = gui.GetRowHeight();
-		float spacing = gui.Style.Layout.Spacing;
-		float buttonHeight = UiMetrics.ButtonHeight(gui);
-		float chrome = UiMetrics.WindowChrome(gui);
+		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 8f;
 
-		if (view == null)
-		{
-			// One line of status plus a single button.
-			return row + buttonHeight + 4 * spacing + chrome + UiMetrics.Slack(gui);
-		}
-
-		// Clock, bar, budget footer, medals, the controls heading, then three button rows.
-		float content = row * (ClockSize * 1.15f + BarSize + FooterSize * 1.4f + MedalRowSize + 0.85f)
-		                + row * view.Details.Count
-		                + 3 * buttonHeight;
-
-		// Five rows, the detail rows, two AddSpacing calls and three buttons.
-		int gaps = 10 + view.Details.Count;
-
-		return content + gaps * spacing + chrome + UiMetrics.Slack(gui);
+		return content + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
 	}
 }

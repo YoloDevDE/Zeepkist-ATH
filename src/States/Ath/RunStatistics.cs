@@ -101,7 +101,10 @@ public class RunStatistics
 		{
 			TimeSpan total = TimeSpan.Zero;
 
-			foreach (Level level in _levels) total = total.Add(level.TimeWasted);
+			foreach (Level level in _levels)
+			{
+				total = total.Add(level.TimeWasted);
+			}
 
 			return total;
 		}

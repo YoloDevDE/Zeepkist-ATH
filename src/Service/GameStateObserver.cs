@@ -23,14 +23,18 @@ public partial class GameStateObserver
 	private ObserverBehaviour _behaviour;
 	private bool _lastIsRacing;
 	private bool _lastKnownStateValid;
-	private ZeepkistLobbyState _lastLobbyState;
+
+	/// <summary>
+	///     Nullable, because "no lobby" is a state the observer has to be able to remember. It
+	///     used to be stored as Racing, so every frame outside a lobby compared unequal to the
+	///     null it had just read and reported a change that had not happened - a few thousand
+	///     identical lines per session.
+	/// </summary>
+	private ZeepkistLobbyState? _lastLobbyState;
 
 	public GameStateObserver()
 	{
-		GameObject host = new(nameof(GameStateObserver))
-		{
-			hideFlags = HideFlags.HideAndDontSave
-		};
+		GameObject host = new(nameof(GameStateObserver)) { hideFlags = HideFlags.HideAndDontSave };
 
 		Object.DontDestroyOnLoad(host);
 		_behaviour = host.AddComponent<ObserverBehaviour>();
@@ -98,7 +102,7 @@ public partial class GameStateObserver
 		if (!_lastKnownStateValid || state != _lastLobbyState)
 		{
 			_lastKnownStateValid = true;
-			_lastLobbyState = state ?? ZeepkistLobbyState.Racing;
+			_lastLobbyState = state;
 			Logger.LogInfo(
 				$"GameStateObserver: Lobby state is now {(state.HasValue ? state.Value.ToString() : "no lobby")}.");
 			Raise(() => LobbyStateChanged?.Invoke(state), nameof(LobbyStateChanged));

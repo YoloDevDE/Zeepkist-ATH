@@ -110,9 +110,13 @@ public class GraphQLService
 
 				levelItems.Add(new LevelItem
 				{
-					Name = node.Name, ValidationTimeAuthor = node.ValidationTimeAuthor,
-					ValidationTimeGold = node.ValidationTimeGold, FileAuthor = node.FileAuthor, FileUid = node.FileUid,
-					AuthorId = authorId, WorkshopId = workshopId
+					Name = node.Name,
+					ValidationTimeAuthor = node.ValidationTimeAuthor,
+					ValidationTimeGold = node.ValidationTimeGold,
+					FileAuthor = node.FileAuthor,
+					FileUid = node.FileUid,
+					AuthorId = authorId,
+					WorkshopId = workshopId
 				});
 			}
 

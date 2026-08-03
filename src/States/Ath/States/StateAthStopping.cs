@@ -1,4 +1,5 @@
 ﻿using System;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI;
 using AuthorTimeHunting.Util;
@@ -10,15 +11,23 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 {
 	// Properties
 
-	public override void Execute()
+	public override void Enter()
 	{
 		try
 		{
 			// Null when the run is stopped before the first level was ever loaded.
 			AthStateMachine.Ctx.CurrentLevel?.Stop();
 
+			// The run report is about to take the screen; a level card behind it is noise.
+			AthStateMachine.Services.LevelSummary.Hide();
+
+			// Recorded before the report is built, so the run that just ended is the first
+			// line of its own history rather than missing from it.
+			AthStateMachine.Services.History.Add(BuildRecord());
+
 			// A snapshot, taken here because everything below this state tears the run down.
-			AthStateMachine.Services.Results.Show(RunReportView.From(AthStateMachine.Ctx));
+			AthStateMachine.Services.Results.Show(RunReportView.From(AthStateMachine.Ctx, PlayerName(),
+				AthStateMachine.Services.History.Records));
 			AthStateMachine.SetServerMessage(true);
 			SavePlaylistIfConfigured();
 		}
@@ -42,6 +51,40 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 				Logger.LogError(e);
 			}
 		}
+	}
+
+	/// <summary>
+	///     The run, flattened into the shape that goes on disk. Built here rather than in the
+	///     history service because this is the last moment the run still exists - one state
+	///     further down, AthCtx is gone.
+	/// </summary>
+	private RunRecord BuildRecord()
+	{
+		AthCtx ctx = AthStateMachine.Ctx;
+
+		return new RunRecord
+		{
+			EndedAt = DateTime.Now,
+			PlayerName = PlayerName(),
+			Gamemode = AthStateMachine.Gamemode?.DisplayName,
+			LevelsPlayed = ctx.Levels.Count,
+			AuthorMedals = ctx.AuthorMedals,
+			GoldMedals = ctx.GoldMedals,
+			Penalties = ctx.Penalties,
+			TotalAttempts = new RunStatistics(ctx.Levels).TotalAttempts,
+			DurationMs = ctx.Duration,
+			DrivenMs = ctx.GetTotalLevelPlayDuration().TotalMilliseconds,
+			RanOutOfTime = ctx.IsTimeOver()
+		};
+	}
+
+	/// <summary>
+	///     Whoever was driving, or null when the lobby is already gone - stopping a run and
+	///     leaving the server in the same breath is an ordinary thing to do.
+	/// </summary>
+	private static string PlayerName()
+	{
+		return ZeepkistNetwork.LocalPlayer?.Username;
 	}
 
 	private void SavePlaylistIfConfigured()

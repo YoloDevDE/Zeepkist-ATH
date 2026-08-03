@@ -111,28 +111,28 @@ package "States.Ath" #FFE9D6 {
 
   class StateAthStarting
   class StateAthLoadingLevel
-  class StateAthProcessingLevel
-  class StateAthResolvingBrokenLevel
-  class StateAthResolvingDuplicateLevel
-  class StateAthStartLevelFirstTime
-  class StateAthOnARun
-  class StateAthPausing
+  class StateAthWaitingForLevelData
+  class StateAthWaitingForReplacementLevel
+  class StateAthWaitingForExtraLevel
+  class StateAthWaitingForFirstRun
+  class StateAthWaitingForFinish
+  class StateAthWaitingForNextRun
   class StateAthWaitingForRespawn
-  class StateAthEvaluateSkip
+  class StateAthSkippingLevel
   class StateAthLevelSummary
   class StateAthStopping
 }
 
 AthState <|-- StateAthStarting
 AthState <|-- StateAthLoadingLevel
-AthState <|-- StateAthProcessingLevel
-AthState <|-- StateAthResolvingBrokenLevel
-AthState <|-- StateAthResolvingDuplicateLevel
-AthState <|-- StateAthStartLevelFirstTime
-AthState <|-- StateAthOnARun
-AthState <|-- StateAthPausing
+AthState <|-- StateAthWaitingForLevelData
+AthState <|-- StateAthWaitingForReplacementLevel
+AthState <|-- StateAthWaitingForExtraLevel
+AthState <|-- StateAthWaitingForFirstRun
+AthState <|-- StateAthWaitingForFinish
+AthState <|-- StateAthWaitingForNextRun
 AthState <|-- StateAthWaitingForRespawn
-AthState <|-- StateAthEvaluateSkip
+AthState <|-- StateAthSkippingLevel
 AthState <|-- StateAthLevelSummary
 AthState <|-- StateAthStopping
 

@@ -20,10 +20,10 @@ ASM -> Ctx : IsTimeOver()?
 alt Zeit vorbei
   ASM -> ASM : -> StateAthStopping
 else Zeit übrig
-  ASM -> ASM : -> StateAthProcessingLevel
+  ASM -> ASM : -> StateAthWaitingForLevelData
   ASM -> ASM : UID-Vergleich Playlist[idx] vs. geladenes Level
   ASM -> ASM : Duplikat-Check (nur RTM)
-  ASM -> ASM : -> StateAthStartLevelFirstTime
+  ASM -> ASM : -> StateAthWaitingForFirstRun
   ASM -> Ctx : InitializingNewLevel(LevelScriptableObject)
   Ctx -> Lvl : new Level(...)  (AuthorTime / GoldTime)
   Ctx -> Lvl : Start() — TimeStamps.Clear(), Attempt = 1
@@ -32,10 +32,10 @@ end
 
 == Runde startet ==
 Racing -> ASM : RoundStarted
-ASM -> ASM : StateAthStartLevelFirstTime.OnRoundStarted()
+ASM -> ASM : StateAthWaitingForFirstRun.OnRoundStarted()
 ASM -> PS : _ = AddLevelAsync()  <b>fire & forget</b>\n(nur RTM: nächstes Level anhängen)
 ASM -> MTH : ClearMedalText()
-ASM -> ASM : -> StateAthOnARun
+ASM -> ASM : -> StateAthWaitingForFinish
 ASM -> Lvl : AddTimeStamp()  <b>[Uhr läuft]</b>
 ASM -> CMS : MessageOnARun()
 
@@ -63,16 +63,16 @@ alt Status == AUTHOR
 else GOLD zum ersten Mal
   ASM -> MTH : SetMedalText("New Medal Claimed: Gold")
   ASM -> CMS : MessageGoldMedalClaimed()
-  ASM -> ASM : -> StateAthPausing  <b>[Uhr stoppt]</b>
+  ASM -> ASM : -> StateAthWaitingForNextRun  <b>[Uhr stoppt]</b>
   ASM -> CMS : MessageCrossedFinishLine()
 else keine Medaille
-  ASM -> ASM : -> StateAthPausing  <b>[Uhr stoppt]</b>
+  ASM -> ASM : -> StateAthWaitingForNextRun  <b>[Uhr stoppt]</b>
   ASM -> CMS : MessageCrossedFinishLine()
 end
 
 == Skip / Rundenende ==
 Racing -> ASM : RoundEnded  (z. B. durch "/fs")
-ASM -> ASM : -> StateAthEvaluateSkip
+ASM -> ASM : -> StateAthSkippingLevel
 ASM -> Ctx : Skip-Typ bestimmen (Diagramm 07)
 ASM -> Lvl : Skipped = true, Stop()
 ASM -> ASM : -> StateAthLevelSummary

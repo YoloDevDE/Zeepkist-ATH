@@ -16,7 +16,11 @@ public class LevelItem
 	{
 		return new OnlineZeeplevel
 		{
-			UID = FileUid, WorkshopID = WorkshopId, Name = Name, Author = FileAuthor, played = false
+			UID = FileUid,
+			WorkshopID = WorkshopId,
+			Name = Name,
+			Author = FileAuthor,
+			played = false
 		};
 	}
 }

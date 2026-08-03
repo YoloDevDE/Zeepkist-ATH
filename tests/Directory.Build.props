@@ -1,0 +1,7 @@
+<!--
+    MSBuild walks up from every project until it finds a Directory.Build.props and stops
+    there. Without this file the test project would inherit the plugin's - net472, the
+    BepInEx packages, and a post-build step that copies a DLL into the game. This empty one
+    is the stop sign; the test project keeps deciding for itself.
+-->
+<Project/>

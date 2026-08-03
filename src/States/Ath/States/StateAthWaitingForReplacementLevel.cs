@@ -7,18 +7,18 @@ using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForReplacementLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	// Properties
 
-	public override async void Execute()
+	public override async void Enter()
 	{
 		OnlineZeeplevel brokenLevel;
 
 		// The playlist entry at the current index is the one that failed to load - the
 		// game silently fell back to another level, which is exactly how
-		// StateAthProcessingLevel.IsBrokenLevel() detected the breakage. Ctx.CurrentLevel
-		// is NOT this level: only StateAthStartLevelFirstTime writes into the context, so
+		// StateAthWaitingForLevelData.IsBrokenLevel() detected the breakage. Ctx.CurrentLevel
+		// is NOT this level: only StateAthWaitingForFirstRun writes into the context, so
 		// on this path it still holds the previous level.
 		try
 		{
@@ -27,7 +27,7 @@ public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthSta
 		}
 		catch (Exception ex)
 		{
-			Logger.LogError($"StateAthResolvingBrokenLevel: Could not read the broken playlist entry: {ex.Message}");
+			Logger.LogError($"StateAthWaitingForReplacementLevel: Could not read the broken playlist entry: {ex.Message}");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 			return;
 		}
@@ -37,20 +37,32 @@ public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthSta
 		}
 		catch (Exception ex)
 		{
-			Logger.LogWarning($"StateAthResolvingBrokenLevel: Could not send broken level message: {ex.Message}");
+			Logger.LogWarning($"StateAthWaitingForReplacementLevel: Could not send broken level message: {ex.Message}");
 		}
 
 		try
 		{
 			OnlineZeeplevel newLevel = await RandomLevels.DrawRandomLevelAsync();
 			PlaylistService.ReplaceLevelInCurrentPlaylist(brokenLevel, newLevel);
+
+			// Restarting into a level Steam has not finished writing is what made the last one
+			// look broken. Doing it again here is how one bad moment turned into a loop that
+			// ate the level pool a level at a time.
+			await AthStateMachine.Services.WorkshopDownloads.WaitUntilReadyAsync(newLevel);
+
+			// The wait is seconds long, and the run can be stopped inside it.
+			if (StateMachine.CurrentState != this)
+			{
+				return;
+			}
+
 			PlaylistService.RestartCurrentLevel();
 		}
 		catch (Exception ex)
 		{
 			// async void - nothing above us can catch this.
-			Logger.LogError($"StateAthResolvingBrokenLevel: Could not draw a replacement level: {ex.Message}");
-			Messenger.Notify().LogError("Could not find a replacement for the broken level");
+			Logger.LogError($"StateAthWaitingForReplacementLevel: Could not draw a replacement level: {ex.Message}");
+			ToastNotification.Error("Could not find a replacement for the broken level");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}
@@ -58,6 +70,6 @@ public class StateAthResolvingBrokenLevel(AthStateMachine stateMachine) : AthSta
 
 	public override void OnLevelLoaded()
 	{
-		StateMachine.TransitionTo(new StateAthProcessingLevel(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthWaitingForLevelData(AthStateMachine));
 	}
 }

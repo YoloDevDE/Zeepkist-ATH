@@ -20,7 +20,7 @@ public partial class AthStateMachine
 				return;
 			}
 
-			_owner.OnAthTimerTick();
+			_owner.Update();
 		}
 
 		public void Bind(AthStateMachine owner)

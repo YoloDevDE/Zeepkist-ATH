@@ -12,15 +12,12 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 	public override void Enter()
 	{
 		_hasShownAuthorMedal = false;
-	}
 
-	public override void Execute()
-	{
 		AthStateMachine.Ctx.CurrentLevel.Stop();
 
 		if (!_hasShownAuthorMedal)
 		{
-			Messenger.Notify().Log("Author time claimed!<br>[Respawn to continue]");
+			ToastNotification.Author("Author time claimed!<br>[Respawn to continue]");
 
 			double lastRunTime = AthStateMachine.Ctx.LastRunTime;
 
@@ -39,7 +36,7 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 		AthStateMachine.SetServerMessage(true);
 	}
 
-	public override void OnAthTimerTick()
+	public override void Update()
 	{
 		AthStateMachine.SetServerMessage(true);
 	}

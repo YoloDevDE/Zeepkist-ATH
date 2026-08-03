@@ -22,13 +22,13 @@ public abstract class StateBase
 	/// </summary>
 	public virtual StateMachineBase SubStateMachine => null;
 
-	/// <summary>Called once when the state is entered, before <see cref="Execute" />.</summary>
+	/// <summary>Called once when the state is entered. The state's actual work happens here.</summary>
 	public virtual void Enter()
 	{
 	}
 
-	/// <summary>Called once right after <see cref="Enter" />. The state's actual work.</summary>
-	public virtual void Execute()
+	/// <summary>Called every frame while the state is current.</summary>
+	public virtual void Update()
 	{
 	}
 

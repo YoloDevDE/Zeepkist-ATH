@@ -55,6 +55,39 @@ public static class HudPalette
 	/// <summary>Time lost, penalties paid.</summary>
 	public static readonly Color32 Bad = new(255, 90, 90, 255);
 
+	/// <summary>
+	///     What each control button is tinted with. Colour rather than position is what makes a
+	///     button findable mid-run: the panel is glanced at with a kart in the air, and by then
+	///     "the red one" has been read and "Stop Hunt" has not.
+	/// </summary>
+	public static readonly Color32 ActionSkip = new(46, 104, 168, 255);
+
+	public static readonly Color32 ActionBroken = new(168, 106, 34, 255);
+	public static readonly Color32 ActionPause = new(140, 118, 26, 255);
+	public static readonly Color32 ActionResume = new(46, 132, 60, 255);
+	public static readonly Color32 ActionRestart = new(78, 78, 122, 255);
+	public static readonly Color32 ActionStop = new(150, 46, 46, 255);
+
+	/// <summary>
+	///     The running time's warning ladder, walked as a medal is closed in on and then lost.
+	///     One colour per tier rather than a gradient: the number is read at a glance while
+	///     driving, and a smooth fade tells you nothing at a glance - a colour that has clearly
+	///     changed does. Five tiers is as many as can still be told apart in peripheral vision.
+	/// </summary>
+	public static readonly Color32 PaceSafe = new(255, 255, 255, 255);
+
+	/// <summary>The medal is still ahead, but not by much.</summary>
+	public static readonly Color32 PaceClose = new(255, 226, 84, 255);
+
+	/// <summary>The author time is gone. The next medal down is still comfortably ahead.</summary>
+	public static readonly Color32 PaceLost = new(255, 146, 48, 255);
+
+	/// <summary>The last medal left is about to go too.</summary>
+	public static readonly Color32 PaceCritical = new(255, 74, 74, 255);
+
+	/// <summary>Nothing left to chase on this attempt.</summary>
+	public static readonly Color32 PaceGone = new(150, 40, 40, 255);
+
 	public static readonly Color32 Command = new(122, 255, 122, 255);
 	public static readonly Color32 Info = new(170, 170, 170, 255);
 	public static readonly Color32 Alert = new(255, 0, 0, 255);

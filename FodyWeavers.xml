@@ -1,14 +1,31 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
+    <!--
+        An allow list, not a block list. Everything the compiler sees is copy-local here: the
+        game's own assemblies through GameLibs, and the net472 reference assemblies through
+        Microsoft.NETFramework.ReferenceAssemblies. Naming those to exclude them means every
+        GameLibs update can quietly add another one to the plugin - and the reference
+        assemblies are facades with no method bodies, so shipping those is worse than bloat.
+
+        So the rule is inverted: name the handful of packages that are genuinely ours to carry,
+        and nothing else can get in. Everything left out is already loaded by the game.
+    -->
     <Costura>
-        <ExcludeAssemblies>
-            UnityEngine
-            UnityEngine.*
-            Unity.*
-            Zeepkist
-            Zeepkist.*
-            ZeepSDK
-            Assembly-CSharp
-        </ExcludeAssemblies>
+        <IncludeAssemblies>
+            GraphQL.Client
+            GraphQL.Client.Abstractions
+            GraphQL.Client.Abstractions.Websocket
+            GraphQL.Client.Serializer.Newtonsoft
+            GraphQL.Primitives
+            Newtonsoft.Json
+            System.Reactive
+            System.Net.WebSockets.Client.Managed
+            System.Buffers
+            System.Memory
+            System.Numerics.Vectors
+            System.Runtime.CompilerServices.Unsafe
+            System.Threading.Tasks.Extensions
+            System.IO.Hashing
+        </IncludeAssemblies>
     </Costura>
 </Weavers>

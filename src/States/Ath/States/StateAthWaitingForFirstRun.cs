@@ -7,22 +7,19 @@ using ZeepSDK.Level;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForFirstRun(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-	public override void Execute()
+	public override void Enter()
 	{
 		try
 		{
-			Logger.LogInfo(
-				$"Plugin.Instance.MyConfig.RandomPlaylist.Value : {Plugin.Instance.MyConfig.RandomPlaylist.Value}");
-
 			AthStateMachine.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
 			AthStateMachine.SetServerMessage(true);
 		}
 		catch (Exception e)
 		{
 			Logger.LogError(
-				$"StateAthStartLevelFirstTime: Failed to start level: {e.Message}\nStack trace: {e.StackTrace}");
+				$"StateAthWaitingForFirstRun: Failed to start level: {e.Message}\nStack trace: {e.StackTrace}");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}
@@ -35,7 +32,7 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 	/// </summary>
 	private async Task AddLevelAsync()
 	{
-		if (!Plugin.Instance.MyConfig.RandomPlaylist.Value)
+		if (!AthStateMachine.Ctx.Settings.RandomPlaylist)
 		{
 			return;
 		}
@@ -48,8 +45,8 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 		}
 		catch (Exception e)
 		{
-			Logger.LogError($"StateAthStartLevelFirstTime: Could not pre-load the next level: {e.Message}");
-			Messenger.Notify().LogWarning("Could not load the next level - the playlist may run out");
+			Logger.LogError($"StateAthWaitingForFirstRun: Could not pre-load the next level: {e.Message}");
+			ToastNotification.Warn("Could not load the next level - the playlist may run out");
 		}
 	}
 
@@ -57,6 +54,6 @@ public class StateAthStartLevelFirstTime(AthStateMachine stateMachine) : AthStat
 	public override void OnRoundStarted()
 	{
 		_ = AddLevelAsync();
-		StateMachine.TransitionTo(new StateAthOnARun(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthWaitingForFinish(AthStateMachine));
 	}
 }

@@ -7,6 +7,7 @@ namespace AuthorTimeHunting.UI;
 public enum ImWindowAnchor
 {
 	TopLeft,
+	TopCenter,
 	TopRight,
 	MiddleLeft,
 	BottomRight
@@ -40,6 +41,21 @@ public static class ImWindowPlacement
 		return Place(gui, title, width, height, anchor, false);
 	}
 
+	/// <summary>
+	///     Hangs a window directly under another one, every frame, with no memory of its own.
+	///     For panels that are one thing split in two - the level and what you can do about it -
+	///     where letting them drift apart is worse than not being able to drag them. The caller
+	///     is expected to pass NoMoving, so the title bar does not offer a drag that snaps back.
+	/// </summary>
+	public static ImRect Stack(ImGui gui, ImRect above, float height)
+	{
+		ImRect screen = gui.Canvas.SafeScreenRect;
+
+		// above.Y is its bottom edge - the canvas is y-up.
+		return Clamp(new ImRect(above.X, above.Y - height - gui.Style.Layout.Spacing, above.W, height), screen,
+			UiMetrics.Margin(gui));
+	}
+
 	private static ImRect Place(ImGui gui, ReadOnlySpan<char> title, float width, float height, ImWindowAnchor anchor,
 		bool keepUserSize)
 	{
@@ -60,6 +76,8 @@ public static class ImWindowPlacement
 		ImRect placed = anchor switch
 		{
 			ImWindowAnchor.TopLeft => new ImRect(screen.Left + margin, screen.Top - height - margin, width, height),
+			ImWindowAnchor.TopCenter => new ImRect(screen.X + (screen.W - width) * 0.5f, screen.Top - height - margin,
+				width, height),
 			ImWindowAnchor.TopRight => new ImRect(screen.Right - width - margin, screen.Top - height - margin, width,
 				height),
 			ImWindowAnchor.BottomRight => new ImRect(screen.Right - width - margin, screen.Bottom + margin, width,

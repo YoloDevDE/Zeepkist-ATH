@@ -5,20 +5,20 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-	public override void Execute()
+	public override void Enter()
 	{
-		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null
-			? $"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>"
-			: "Good Luck Have Fun!";
+		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null ?
+			$"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>" :
+			"Good Luck Have Fun!";
 	}
 
 	public override void OnLevelLoaded()
 	{
-		if (!AthStateMachine.Ctx.IsTimeOver() && (Plugin.Instance.MyConfig.RandomPlaylist.Value ||
+		if (!AthStateMachine.Ctx.IsTimeOver() && (AthStateMachine.Ctx.Settings.RandomPlaylist ||
 		                                          AthStateMachine.Ctx.Levels.Count <
 		                                          ZeepkistNetwork.CurrentLobby.Playlist.Count))
 		{
-			StateMachine.TransitionTo(new StateAthProcessingLevel(AthStateMachine));
+			StateMachine.TransitionTo(new StateAthWaitingForLevelData(AthStateMachine));
 			return;
 		}
 

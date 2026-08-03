@@ -4,6 +4,12 @@ namespace AuthorTimeHunting.Util;
 
 public abstract class TimeFormatter
 {
+	/// <summary>
+	///     A countdown, written at the precision the moment deserves. Milliseconds only appear
+	///     in the last minute: for the other fifty-nine they are three digits that change too
+	///     fast to read and never mean anything, and the eye keeps going back to them anyway.
+	///     Under a minute they are the whole point.
+	/// </summary>
 	public static string FormatDuration(int durationInMilliseconds)
 	{
 		// Return "none" if time is below 0
@@ -14,19 +20,14 @@ public abstract class TimeFormatter
 
 		TimeSpan timeSpan = TimeSpan.FromMilliseconds(durationInMilliseconds);
 
-		// Round to nearest second
-		// int totalSeconds = (int)Math.Round(timeSpan.TotalSeconds);
-		// int hours = totalSeconds / 3600;
-		// int minutes = totalSeconds % 3600 / 60;
-		// int seconds = totalSeconds % 60;
-		// int totalSeconds = (int)Math.Round(timeSpan.TotalSeconds);
-		int hours = TimeSpan.FromMilliseconds(durationInMilliseconds).Hours;
-		int minutes = TimeSpan.FromMilliseconds(durationInMilliseconds).Minutes;
-		int seconds = TimeSpan.FromMilliseconds(durationInMilliseconds).Seconds;
-		int millis = timeSpan.Milliseconds;
+		if (timeSpan.TotalHours >= 1)
+		{
+			return $"{(int)timeSpan.TotalHours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+		}
 
-		// Check if hours are present
-		return hours >= 1 ? $"{hours:D2}:{minutes:D2}:{seconds:D2}" : $"{minutes:D2}:{seconds:D2}.{millis:D3}";
+		return timeSpan.TotalSeconds >= 60 ?
+			$"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}" :
+			$"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}.{timeSpan.Milliseconds:D3}";
 	}
 
 	/// <summary>
@@ -42,9 +43,9 @@ public abstract class TimeFormatter
 
 		TimeSpan span = TimeSpan.FromSeconds(seconds);
 
-		return span.TotalHours >= 1
-			? $"{(int)span.TotalHours:D2}:{span.Minutes:D2}:{span.Seconds:D2}.{span.Milliseconds:D3}"
-			: $"{span.Minutes:D2}:{span.Seconds:D2}.{span.Milliseconds:D3}";
+		return span.TotalHours >= 1 ?
+			$"{(int)span.TotalHours:D2}:{span.Minutes:D2}:{span.Seconds:D2}.{span.Milliseconds:D3}" :
+			$"{span.Minutes:D2}:{span.Seconds:D2}.{span.Milliseconds:D3}";
 	}
 
 	/// <summary>

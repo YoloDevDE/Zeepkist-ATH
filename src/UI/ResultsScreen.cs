@@ -37,6 +37,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
 
+	private int _historyPage;
 	private bool _mouseOverWindow;
 	private int _page;
 	private RunReportView _report;
@@ -68,6 +69,7 @@ public class ResultsScreen : IZeepGUIDrawer
 	{
 		_report = report;
 		_page = 0;
+		_historyPage = 0;
 	}
 
 	public void Close()
@@ -111,11 +113,18 @@ public class ResultsScreen : IZeepGUIDrawer
 		}
 	}
 
+	/// <summary>
+	///     Kicker, name, then the number. In that order because the screen appears unannounced -
+	///     "RUN OVER" is what a player who looked away for a minute needs first, and the name
+	///     makes the report theirs rather than a readout.
+	/// </summary>
 	private static void DrawHeadline(ImGui gui, RunReportView report)
 	{
 		float text = gui.Style.Layout.TextSize;
 
-		UiText.Centre(gui, report.Headline, HudPalette.Author, Row(gui, HeadlineSize * 1.2f), text * HeadlineSize);
+		UiText.Centre(gui, report.Kicker, HudPalette.Muted, Row(gui, 1f), text * 0.9f);
+		UiText.Centre(gui, report.PlayerName, HudPalette.White, Row(gui, HeadlineSize * 1.2f), text * HeadlineSize);
+		UiText.Centre(gui, report.Headline, HudPalette.Author, Row(gui, 1.4f), text * 1.2f);
 
 		ImRect medals = Row(gui, MedalRowSize);
 
@@ -156,6 +165,12 @@ public class ResultsScreen : IZeepGUIDrawer
 				DrawRows(gui, report.Records);
 				gui.EndTab();
 			}
+
+			if (gui.BeginTab("History".AsSpan()))
+			{
+				DrawHistory(gui, report);
+				gui.EndTab();
+			}
 		}
 		finally
 		{
@@ -166,7 +181,9 @@ public class ResultsScreen : IZeepGUIDrawer
 	private static void DrawRows(ImGui gui, IReadOnlyList<RunReportView.ReportRow> rows)
 	{
 		foreach (RunReportView.ReportRow row in rows)
+		{
 			UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
+		}
 	}
 
 	private void DrawLevels(ImGui gui, RunReportView report)
@@ -187,12 +204,89 @@ public class ResultsScreen : IZeepGUIDrawer
 		int first = _page * LevelsPerPage;
 		int last = Mathf.Min(first + LevelsPerPage, levels.Count);
 
-		for (int i = first; i < last; i++) DrawLevelRow(gui, levels[i]);
+		for (int i = first; i < last; i++)
+		{
+			DrawLevelRow(gui, levels[i]);
+		}
 
 		if (pages > 1)
 		{
-			DrawPager(gui, pages);
+			DrawPager(gui, pages, ref _page);
 		}
+	}
+
+	/// <summary>
+	///     Every run this machine has ever finished, newest first, with the one just played
+	///     marked. Paged like the level list and for the same reason: the window is a fixed size
+	///     and a history is only ever going to get longer.
+	/// </summary>
+	private void DrawHistory(ImGui gui, RunReportView report)
+	{
+		IReadOnlyList<RunReportView.HistoryRow> history = report.History;
+
+		if (history.Count == 0)
+		{
+			UiText.Left(gui, "No runs recorded yet. This one is the first.", HudPalette.Muted, Row(gui, 1f));
+			return;
+		}
+
+		int pages = Mathf.CeilToInt(history.Count / (float)LevelsPerPage);
+		_historyPage = Mathf.Clamp(_historyPage, 0, pages - 1);
+
+		DrawHistoryHeader(gui);
+
+		int first = _historyPage * LevelsPerPage;
+		int last = Mathf.Min(first + LevelsPerPage, history.Count);
+
+		for (int i = first; i < last; i++)
+		{
+			DrawHistoryRow(gui, history[i]);
+		}
+
+		if (pages > 1)
+		{
+			DrawPager(gui, pages, ref _historyPage);
+		}
+	}
+
+	private static void DrawHistoryHeader(ImGui gui)
+	{
+		ImRect row = Row(gui, 0.9f);
+		float size = gui.Style.Layout.TextSize * 0.8f;
+
+		UiText.Draw(gui, "WHEN", HudPalette.Muted, HistoryCell(row, 0), size, 0f);
+		UiText.Draw(gui, "MODE", HudPalette.Muted, HistoryCell(row, 1), size, 0f);
+		UiText.Draw(gui, "AT / GOLD / PEN", HudPalette.Muted, HistoryCell(row, 2), size, 0f);
+		UiText.Draw(gui, "LEVELS", HudPalette.Muted, HistoryCell(row, 3), size, 1f);
+		UiText.Draw(gui, "DRIVEN", HudPalette.Muted, HistoryCell(row, 4), size, 1f);
+	}
+
+	private static void DrawHistoryRow(ImGui gui, RunReportView.HistoryRow record)
+	{
+		ImRect row = Row(gui, 1f);
+
+		// The run just played, picked out so it can be compared against the rest at a glance.
+		Color32 when = record.IsCurrent ? HudPalette.Positive : HudPalette.Muted;
+
+		UiText.Left(gui, record.When, when, HistoryCell(row, 0));
+		UiText.Left(gui, record.Gamemode, HudPalette.Default, HistoryCell(row, 1));
+		UiText.Left(gui, $"{record.AuthorMedals} / {record.GoldMedals} / {record.Penalties}", HudPalette.Author,
+			HistoryCell(row, 2));
+		UiText.Right(gui, record.Levels, HudPalette.Default, HistoryCell(row, 3), gui.Style.Layout.TextSize);
+		UiText.Right(gui, record.Driven, HudPalette.Default, HistoryCell(row, 4), gui.Style.Layout.TextSize);
+	}
+
+	private static ImRect HistoryCell(ImRect row, int column)
+	{
+		float[] weights = [0.26f, 0.24f, 0.24f, 0.11f, 0.15f];
+		float offset = 0f;
+
+		for (int i = 0; i < column; i++)
+		{
+			offset += weights[i];
+		}
+
+		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
 	}
 
 	private static void DrawLevelHeader(ImGui gui)
@@ -227,12 +321,15 @@ public class ResultsScreen : IZeepGUIDrawer
 		float[] weights = [0.06f, 0.44f, 0.2f, 0.12f, 0.18f];
 		float offset = 0f;
 
-		for (int i = 0; i < column; i++) offset += weights[i];
+		for (int i = 0; i < column; i++)
+		{
+			offset += weights[i];
+		}
 
 		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
 	}
 
-	private void DrawPager(ImGui gui, int pages)
+	private static void DrawPager(ImGui gui, int pages, ref int page)
 	{
 		gui.AddSpacing();
 
@@ -241,16 +338,16 @@ public class ResultsScreen : IZeepGUIDrawer
 		ImRect label = UiWidgets.Column(gui, row, 1, 3);
 		ImRect next = UiWidgets.Column(gui, row, 2, 3);
 
-		if (_page > 0 && UiWidgets.Button(gui, previous, "< Previous"))
+		if (page > 0 && UiWidgets.Button(gui, previous, "< Previous"))
 		{
-			_page--;
+			page--;
 		}
 
-		UiText.Centre(gui, $"Page {_page + 1} / {pages}", HudPalette.Muted, label, gui.Style.Layout.TextSize);
+		UiText.Centre(gui, $"Page {page + 1} / {pages}", HudPalette.Muted, label, gui.Style.Layout.TextSize);
 
-		if (_page < pages - 1 && UiWidgets.Button(gui, next, "Next >"))
+		if (page < pages - 1 && UiWidgets.Button(gui, next, "Next >"))
 		{
-			_page++;
+			page++;
 		}
 	}
 

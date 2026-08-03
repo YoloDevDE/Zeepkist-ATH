@@ -25,6 +25,9 @@ public class RunHudView
 
 	public bool Paused { get; private set; }
 
+	/// <summary>True only while the budget is actually draining. Drives the clock's colour.</summary>
+	public bool Running { get; private set; }
+
 	/// <summary>What skipping right now would cost. The most decision-relevant value here.</summary>
 	public string SkipType { get; private set; }
 
@@ -49,11 +52,17 @@ public class RunHudView
 
 		double remaining = ctx.GetRemainingTime().TotalMilliseconds;
 
+		// The budget only drains while the level clock is counting, so anything else - the
+		// podium, a loading screen, an explicit pause - is a clock that is not moving. Showing
+		// it in the running colour made a stopped number look like a falling one.
+		bool running = !paused && ctx.CurrentLevel.IsTiming;
+
 		return new RunHudView
 		{
 			Paused = paused,
+			Running = running,
 			TimeLeft = TimeFormatter.FormatDuration((int)remaining),
-			TimeColour = TimeLeftColour(ctx, paused),
+			TimeColour = TimeLeftColour(ctx, running),
 			RemainingFraction = ctx.Duration <= 0 ? 0f : Mathf.Clamp01((float)(remaining / ctx.Duration)),
 			Duration = TimeSpan.FromMilliseconds(ctx.Duration).ToFormattedString(),
 			PenaltyTime = TimeSpan.FromMilliseconds(ctx.PenaltyTimeInMilliseconds).ToFormattedString(),
@@ -84,9 +93,9 @@ public class RunHudView
 		];
 	}
 
-	private static Color32 TimeLeftColour(AthCtx ctx, bool paused)
+	private static Color32 TimeLeftColour(AthCtx ctx, bool running)
 	{
-		if (paused)
+		if (!running)
 		{
 			return HudPalette.Muted;
 		}

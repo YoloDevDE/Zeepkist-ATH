@@ -1,4 +1,5 @@
-﻿using AuthorTimeHunting.States.Ath.StateMachine;
+﻿using AuthorTimeHunting.Gamemodes;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI;
 
 namespace AuthorTimeHunting.Service;
@@ -24,7 +25,20 @@ public class ModServices
 	public ModServices()
 	{
 		Playlist = new PlaylistService(WorkshopDownloads);
+		Toolbar = new AthToolbar(this);
 	}
+
+	/// <summary>
+	///     ATH's menu in the game's top bar. Holds a reference back to the services because it
+	///     is a view over all of them rather than a thing of its own.
+	/// </summary>
+	public AthToolbar Toolbar { get; }
+
+	/// <summary>
+	///     The modes ATH can be played in, and which one the next run will use. Session-scoped
+	///     because the choice outlives a run - stopping a hunt should not forget what was picked.
+	/// </summary>
+	public GamemodeRegistry Gamemodes { get; } = new();
 
 	public LocalLevelCacheService LocalLevelCache { get; } = new();
 	public GraphQLService GraphQL { get; } = new();
@@ -53,16 +67,47 @@ public class ModServices
 	public LevelStatsPanel LevelStats { get; } = new();
 
 	/// <summary>
+	///     The run's clock, score and budget, across the top of the screen. Not part of the
+	///     control panel: it is read constantly and clicked never, which is the opposite of
+	///     everything the panel holds.
+	/// </summary>
+	public RunOverlay RunOverlay { get; } = new();
+
+	/// <summary>
+	///     The developer panel. Off unless the config switch is on - it can hand out medals and
+	///     redraw the level pool, which is not something a hunt should be able to do by accident.
+	/// </summary>
+	public DebugPanel Debug { get; } = new();
+
+	/// <summary>
+	///     The card between two levels: what the last one came to, and the run so far. Shows
+	///     itself when a level ends and takes itself down when the next one starts.
+	/// </summary>
+	public LevelSummaryOverlay LevelSummary { get; } = new();
+
+	/// <summary>
 	///     Rewrites the game's own running-time label while a hunt is on. Not a drawer - it
 	///     writes into the game's UI rather than ours, so it is not registered with UIApi.
 	/// </summary>
 	public RaceTimeDisplay RaceTime { get; } = new();
 
 	/// <summary>
+	///     Sorts the author and gold times into the game's own small leaderboard. Not a drawer
+	///     either, and for the same reason as <see cref="RaceTime" />.
+	/// </summary>
+	public LeaderboardOverlay Leaderboard { get; } = new();
+
+	/// <summary>
 	///     The end-of-run report. Session-scoped and holding a snapshot, because the run it
 	///     reports on is torn down the moment it stops.
 	/// </summary>
 	public ResultsScreen Results { get; } = new();
+
+	/// <summary>
+	///     Every run that ever finished, kept on disk. Session-scoped so the file is read once
+	///     rather than on every results screen.
+	/// </summary>
+	public MatchHistoryService History { get; } = new();
 
 	/// <summary>
 	///     Tells the UI which run is in progress, or null when none is. One call rather than
@@ -73,14 +118,19 @@ public class ModServices
 		Control.ActiveRun = run;
 		LevelStats.ActiveRun = run;
 		LevelStats.Visible = run != null;
-		RaceTime.Enabled = run != null;
+		RunOverlay.ActiveRun = run;
+		RunOverlay.Visible = run != null;
+		Debug.ActiveRun = run;
+		RaceTime.ActiveRun = run;
+		Leaderboard.ActiveRun = run;
 	}
 
-	/// <summary>What /ath does: shows or hides the mod, both panels together.</summary>
+	/// <summary>What /ath does: shows or hides the mod, all of it together.</summary>
 	public void ToggleUi()
 	{
 		Control.Toggle();
 		LevelStats.Visible = Control.Visible && LevelStats.ActiveRun != null;
+		RunOverlay.Visible = Control.Visible && RunOverlay.ActiveRun != null;
 	}
 
 	/// <summary>

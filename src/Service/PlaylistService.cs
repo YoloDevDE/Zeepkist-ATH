@@ -26,6 +26,15 @@ public class PlaylistService
 	{
 		CurrentLobbyPlaylist.Clear();
 		CurrentLobbyPlaylist.Add(initialLevel);
+
+		// The lobby is still pointing wherever the last run left it. After a run that played
+		// three levels that is index 2, and the playlist it indexes into is now one entry
+		// long - every read of Playlist[CurrentPlaylistIndex] throws until the server's own
+		// skip catches up. That window was long enough to kill the second run of a session
+		// the moment its first level finished loading. The /fs 0 that follows moves the
+		// server; this moves us, now, so nothing has to survive the gap.
+		ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
+
 		_workshopDownloads.EnsureDownloaded(initialLevel);
 		QueueServerPlaylistUpdate();
 	}

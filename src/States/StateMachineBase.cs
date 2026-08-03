@@ -56,14 +56,27 @@ public abstract class StateMachineBase
 		Logger.LogDebug($"StateMachine: Entering state {CurrentState.GetType().Name}");
 		CurrentState.Enter();
 
-		Logger.LogDebug($"StateMachine: Executing state {CurrentState.GetType().Name}");
-		CurrentState.Execute();
-
 		if (CurrentState.SubStateMachine != null)
 		{
 			Logger.LogDebug($"StateMachine: Initializing sub-state machine in {CurrentState.GetType().Name}");
 			CurrentState.SubStateMachine.Init();
 		}
+	}
+
+	/// <summary>
+	///     One frame of the machine: ticks the current state and whatever machine is nested
+	///     inside it. Nothing calls this on its own - a machine that needs a frame loop is
+	///     driven from a MonoBehaviour, or by the parent machine it hangs under.
+	/// </summary>
+	public virtual void Update()
+	{
+		if (CurrentState == null)
+		{
+			return;
+		}
+
+		CurrentState.Update();
+		CurrentState.SubStateMachine?.Update();
 	}
 
 	/// <summary>

@@ -1,4 +1,5 @@
-﻿using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Commands;
+using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Master.StateMachine;
 using AuthorTimeHunting.Util;
@@ -8,19 +9,21 @@ namespace AuthorTimeHunting.States.Master.States;
 public class StateMasterOff : StateBase
 {
 	/// <summary>
-	///     Set when a start was requested while no race was running. The observer's
-	///     BecameRacing then starts the run, instead of the command doing it directly.
+	///     The mode a queued start is waiting to run, or null when nothing is queued. This
+	///     used to be a bare bool: now that a start carries a mode, remembering that one was
+	///     requested is not enough - the mode has to survive the wait too, or a queued Ranked
+	///     start would come back as whatever happens to be selected when the race begins.
 	/// </summary>
-	private bool _startPending;
+	private IGamemode _pendingGamemode;
 
 	/// <param name="stateMachine">The mod's lifecycle machine.</param>
-	/// <param name="startPending">
-	///     True when a start was already requested and only the race is missing - used by
+	/// <param name="pendingGamemode">
+	///     Set when a start was already requested and only the race is missing - used by
 	///     /ath restart outside a running race.
 	/// </param>
-	public StateMasterOff(MasterStateMachine stateMachine, bool startPending = false) : base(stateMachine)
+	public StateMasterOff(MasterStateMachine stateMachine, IGamemode pendingGamemode = null) : base(stateMachine)
 	{
-		_startPending = startPending;
+		_pendingGamemode = pendingGamemode;
 	}
 
 	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
@@ -39,14 +42,18 @@ public class StateMasterOff : StateBase
 		CommandStart.CommandTrigger -= StartChallenge;
 		CommandRestart.CommandTrigger -= StartChallenge;
 		Master.Services.GameState.BecameRacing -= OnBecameRacing;
-		_startPending = false;
+		_pendingGamemode = null;
 	}
 
 	private void StartChallenge()
 	{
+		// Read once, here: the run is committed to a mode the moment it is requested, so a
+		// selection changed during the wait below does not reach into a start already made.
+		IGamemode gamemode = Master.Services.Gamemodes.Selected;
+
 		if (!GameStateObserver.IsInOnlineLobby)
 		{
-			Messenger.Notify().LogWarning("ATH only runs in an online lobby");
+			ToastNotification.Warn("ATH only runs in an online lobby");
 			return;
 		}
 
@@ -55,35 +62,36 @@ public class StateMasterOff : StateBase
 		// playlist the game is in the middle of switching.
 		if (!GameStateObserver.IsRacing)
 		{
-			_startPending = true;
-			Messenger.Notify().Log("ATH starts as soon as the level is loaded");
+			_pendingGamemode = gamemode;
+			ToastNotification.Info($"{gamemode.DisplayName} starts as soon as the level is loaded");
 			Logger.LogInfo($"StateMasterOff: Start requested while {DescribeWait()}, waiting for the race to start.");
 			return;
 		}
 
-		BeginRun();
+		BeginRun(gamemode);
 	}
 
 	private void OnBecameRacing()
 	{
-		if (!_startPending)
+		if (_pendingGamemode == null)
 		{
 			return;
 		}
 
-		_startPending = false;
-		Logger.LogInfo("StateMasterOff: Race is running, starting the pending run.");
-		BeginRun();
+		IGamemode gamemode = _pendingGamemode;
+		_pendingGamemode = null;
+		Logger.LogInfo($"StateMasterOff: Race is running, starting the pending {gamemode.Id} run.");
+		BeginRun(gamemode);
 	}
 
-	private void BeginRun()
+	private void BeginRun(IGamemode gamemode)
 	{
 		if (!IsHudReady())
 		{
 			return;
 		}
 
-		StateMachine.TransitionTo(new StateMasterOn(Master));
+		StateMachine.TransitionTo(new StateMasterOn(Master, gamemode));
 	}
 
 	/// <summary>
@@ -96,7 +104,7 @@ public class StateMasterOff : StateBase
 		if (PlayerManager.Instance == null || PlayerManager.Instance.currentMaster == null ||
 		    PlayerManager.Instance.currentMaster.OnlineGameplayUI == null)
 		{
-			Messenger.Notify().LogWarning("Online HUD not ready yet, try again in a moment");
+			ToastNotification.Warn("Online HUD not ready yet, try again in a moment");
 			return false;
 		}
 
@@ -105,20 +113,18 @@ public class StateMasterOff : StateBase
 
 	private static string DescribeWait()
 	{
-		return !GameStateObserver.IsLevelReady
-			? "the level is loading"
-			: $"the lobby is in {GameStateObserver.LobbyState}";
+		return !GameStateObserver.IsLevelReady ? "the level is loading" : $"the lobby is in {GameStateObserver.LobbyState}";
 	}
 
 	private void StopChallenge()
 	{
-		if (_startPending)
+		if (_pendingGamemode != null)
 		{
-			_startPending = false;
-			Messenger.Notify().Log("Pending start cancelled");
+			_pendingGamemode = null;
+			ToastNotification.Info("Pending start cancelled");
 			return;
 		}
 
-		Messenger.Notify().LogWarning("ATH is not running");
+		ToastNotification.Warn("ATH is not running");
 	}
 }

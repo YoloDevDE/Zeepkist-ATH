@@ -6,12 +6,12 @@ using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForExtraLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	private const int MaxConsecutiveDuplicates = 3;
 
 
-	public override async void Execute()
+	public override async void Enter()
 	{
 		AthStateMachine.Ctx.ConsecutiveDuplicateCount++;
 
@@ -19,7 +19,7 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 		{
 			int retries = AthStateMachine.Ctx.ConsecutiveDuplicateCount;
 			Logger.LogWarning(
-				$"StateAthResolvingDuplicateLevel: Duplicate limit reached after {retries} retries. Ending run.");
+				$"StateAthWaitingForExtraLevel: Duplicate limit reached after {retries} retries. Ending run.");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 			return;
 		}
@@ -33,14 +33,14 @@ public class StateAthResolvingDuplicateLevel(AthStateMachine stateMachine) : Ath
 		catch (Exception ex)
 		{
 			// async void - nothing above us can catch this.
-			Logger.LogError($"StateAthResolvingDuplicateLevel: Could not draw a replacement level: {ex.Message}");
-			Messenger.Notify().LogError("Could not find another level to play");
+			Logger.LogError($"StateAthWaitingForExtraLevel: Could not draw a replacement level: {ex.Message}");
+			ToastNotification.Error("Could not find another level to play");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}
 
 	public override void OnLevelLoaded()
 	{
-		StateMachine.TransitionTo(new StateAthProcessingLevel(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthWaitingForLevelData(AthStateMachine));
 	}
 }

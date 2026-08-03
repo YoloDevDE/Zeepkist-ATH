@@ -16,7 +16,14 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{yml,yaml,json,md}]
+# Not a preference: the YAML spec forbids a tab as indentation, so a GitHub workflow
+# indented with tabs is a file the runner refuses to parse. Rider will happily write one
+# if this section is missing, because the [*] rule above says tabs.
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{json,md}]
 indent_style = space
 indent_size = 2
 

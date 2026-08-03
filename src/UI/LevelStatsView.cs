@@ -37,7 +37,16 @@ public class LevelStatsView
 
 	public LevelPace Pace { get; private set; }
 
-	public static LevelStatsView From(AthCtx ctx)
+	/// <summary>
+	///     True while the attempt counter is about to move. The counter is bumped on the frame
+	///     the player respawns into a running level, so between attempts it names the attempt
+	///     that has just ended rather than the one about to start - which read as the panel
+	///     having missed the crash. Saying "(+1)" is the honest version: the number is right,
+	///     it is simply one respawn behind.
+	/// </summary>
+	public bool AttemptPending { get; private set; }
+
+	public static LevelStatsView From(AthCtx ctx, bool attemptPending)
 	{
 		Level level = ctx?.CurrentLevel;
 
@@ -48,11 +57,12 @@ public class LevelStatsView
 
 		LevelStatsView view = new()
 		{
+			AttemptPending = attemptPending,
 			Name = level.Name,
 			Author = level.Author,
 			AuthorTime = TimeFormatter.FormatTime(level.AuthorTime),
 			GoldTime = TimeFormatter.FormatTime(level.GoldTime),
-			Attempts = level.Attempt.ToString(),
+			Attempts = attemptPending ? $"{level.Attempt} (+1)" : level.Attempt.ToString(),
 			Crashes = level.Crashes.ToString(),
 			WheelsLost = level.WheelsLost.ToString(),
 			TimeOnLevel = TimeFormatter.FormatDuration((int)level.GetPlayDuration().TotalMilliseconds),
@@ -68,11 +78,9 @@ public class LevelStatsView
 
 		view.PersonalBest = TimeFormatter.FormatTime(level.PersonalBestTime);
 		view.AuthorDelta = $"{(delta <= 0 ? "-" : "+")}{TimeFormatter.FormatTime(Math.Abs(delta))}";
-		view.PersonalBestColour = level.AuthorTimeAcquired
-			? HudPalette.Author
-			: level.GoldMedalAcquired
-				? HudPalette.Gold
-				: HudPalette.Default;
+		view.PersonalBestColour = level.AuthorTimeAcquired ? HudPalette.Author
+			: level.GoldMedalAcquired ? HudPalette.Gold
+			: HudPalette.Default;
 
 		return view;
 	}

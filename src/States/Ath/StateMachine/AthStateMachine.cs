@@ -1,4 +1,5 @@
 ﻿using System;
+using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.Util;
@@ -36,20 +37,18 @@ public partial class AthStateMachine : StateMachineBase
 	private DateTime _lastServerMessageTime = DateTime.MinValue;
 	private bool _timerStarted;
 
-	public AthStateMachine(ModServices services)
+	public AthStateMachine(ModServices services, IGamemode gamemode)
 	{
 		// One AthStateMachine per run, so this is the run's starting line: fresh context,
 		// and a level pool that does not carry the exclusions of previous runs.
 		Services = services;
-		Ctx = new AthCtx();
+		Gamemode = gamemode;
+		Ctx = new AthCtx(gamemode.CreateSettings());
 		RandomLevels = services.CreateRandomLevelService();
 		InitialState = new StateAthStarting(this);
 		FinalState = new StateAthStopping(this);
 
-		GameObject host = new(nameof(AthStateMachine))
-		{
-			hideFlags = HideFlags.HideAndDontSave
-		};
+		GameObject host = new(nameof(AthStateMachine)) { hideFlags = HideFlags.HideAndDontSave };
 
 		Object.DontDestroyOnLoad(host);
 		_behaviour = host.AddComponent<AthLoopBehaviour>();
@@ -57,6 +56,12 @@ public partial class AthStateMachine : StateMachineBase
 	}
 
 	public AthCtx Ctx { get; }
+
+	/// <summary>
+	///     The mode this run is being played in. Held rather than looked up, so a mode change
+	///     between runs cannot rewrite the run that is already going.
+	/// </summary>
+	public IGamemode Gamemode { get; }
 
 	/// <summary>Session-scoped services shared with the rest of the mod.</summary>
 	public ModServices Services { get; }
@@ -66,6 +71,15 @@ public partial class AthStateMachine : StateMachineBase
 
 	public override StateBase InitialState { get; }
 	public override StateBase FinalState { get; }
+
+	/// <summary>
+	///     True while the player is off the track between two attempts on the same level - after
+	///     a crash, a finish, or an author time waiting to be respawned out of. The level's
+	///     attempt counter is bumped when the next one actually starts, so this is what tells the
+	///     panel that the number it is showing is one respawn behind.
+	/// </summary>
+	public bool IsBetweenAttempts =>
+		Ctx.CurrentLevel != null && CurrentState is StateAthWaitingForNextRun or StateAthWaitingForRespawn;
 
 	/// <summary>
 	///     Refreshes the run HUD. Either renders it into the game's server message area or
@@ -88,31 +102,34 @@ public partial class AthStateMachine : StateMachineBase
 
 		var colors = new
 		{
-			State = paused ? "#999999" : "#42b336", TimeLeft = paused
-				? "#999999"
-				: Ctx.IsTimeRunningLow
-					? "#bf3939"
-					: Ctx.IsTimeAfterSkipRunningLow
-						? "#b3b300"
-						: "#42b336",
-			Author = ColorDefinitions.Author.CTToHexRGB(), Default = "#e6e6e6", AuthorSkip = "#e600e6",
-			GoldSkip = "#FFD600", FreeSkip = "#00ffff", EndRunSkip = "#0f0f0f", PenaltySkip = "#bf3939",
+			State = paused ? "#999999" : "#42b336",
+			TimeLeft = paused ? "#999999"
+				: Ctx.IsTimeRunningLow ? "#bf3939"
+				: Ctx.IsTimeAfterSkipRunningLow ? "#b3b300"
+				: "#42b336",
+			Author = ColorDefinitions.Author.CTToHexRGB(),
+			Default = "#e6e6e6",
+			AuthorSkip = "#e600e6",
+			GoldSkip = "#FFD600",
+			FreeSkip = "#00ffff",
+			EndRunSkip = "#0f0f0f",
+			PenaltySkip = "#bf3939",
 			Section = "#ffd4a6"
 		};
 
-		string skipText = Ctx.CurrentLevel.AuthorTimeAcquired
-			? $"<color={colors.AuthorSkip}>Author Skip</color>"
-			: Ctx.CurrentLevel.GoldMedalAcquired
-				? $"<color={colors.GoldSkip}>Gold Skip</color>"
-				: Ctx.AvaiableFreeSkips > 0
-					? $"<color={colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)</color>"
-					: Ctx.IsTimeRunningLow
-						? $"<color={colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\"></color>"
-						: $"<color={colors.PenaltySkip}>Penalty Skip!</color>";
+		string skipText = Ctx.CurrentLevel.AuthorTimeAcquired ?
+			$"<color={colors.AuthorSkip}>Author Skip</color>" :
+			Ctx.CurrentLevel.GoldMedalAcquired ?
+				$"<color={colors.GoldSkip}>Gold Skip</color>" :
+				Ctx.AvaiableFreeSkips > 0 ?
+					$"<color={colors.FreeSkip}>Free Skip ({Ctx.AvaiableFreeSkips}x left)</color>" :
+					Ctx.IsTimeRunningLow ?
+						$"<color={colors.EndRunSkip}><sprite=\"Zeepkist\" name=\"Skull\"> FATAL SKIP <sprite=\"Zeepkist\" name=\"Skull\"></color>" :
+						$"<color={colors.PenaltySkip}>Penalty Skip!</color>";
 
-		string punishmentText = Ctx.Penalties == 0
-			? ""
-			: $"(<color={colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - <color=#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds * Ctx.Penalties).ToFormattedString()}</color>)";
+		string punishmentText = Ctx.Penalties == 0 ?
+			"" :
+			$"(<color={colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - <color=#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds * Ctx.Penalties).ToFormattedString()}</color>)";
 
 		// string message = $"/servermessage white 0 " +
 		string message =
@@ -193,7 +210,7 @@ public partial class AthStateMachine : StateMachineBase
 
 		Ctx.IsPaused = false;
 
-		if (CurrentState is StateAthOnARun)
+		if (CurrentState is StateAthWaitingForFinish)
 		{
 			Ctx.CurrentLevel?.ResumeTiming();
 		}
@@ -201,11 +218,12 @@ public partial class AthStateMachine : StateMachineBase
 		Logger.LogInfo("AthStateMachine: Run resumed.");
 	}
 
-	public void OnAthTimerTick()
+	public override void Update()
 	{
-		if (TryForward(nameof(OnAthTimerTick), state => state.OnAthTimerTick()))
+		if (TryForward(nameof(Update), state => state.Update()))
 		{
 			_consecutiveTickFailures = 0;
+			CurrentState?.SubStateMachine?.Update();
 			return;
 		}
 

@@ -35,6 +35,25 @@ public class RandomLevelService
 	private List<LevelItem> PlayedLevels { get; } = new();
 
 	/// <summary>
+	///     How the pool is doing, for the debug panel. Counts rather than the lists themselves:
+	///     the pool's contents are its own business, and handing them out would let a caller
+	///     reach past <see cref="DrawRandomLevelAsync" /> and take a level without it being
+	///     recorded as played.
+	/// </summary>
+	public int CachedCount => CachedLevels.Count;
+
+	public int PlayedCount => PlayedLevels.Count;
+
+	/// <summary>Every level UID this run has ever seen, drawn or not.</summary>
+	public int FetchedCount => FetchedLevelUids.Count;
+
+	/// <summary>Where the last batch came from, or null before the first fetch.</summary>
+	public string LastSource { get; private set; }
+
+	/// <summary>The level handed out last, so a draw can be checked without reading the log.</summary>
+	public string LastDrawn { get; private set; }
+
+	/// <summary>
 	///     Draws a random level from the cached playlist and returns it as an
 	///     <see cref="OnlineZeeplevel" />. Acts as a black box: if the cached list is
 	///     currently empty it fetches until levels are available, then always takes the
@@ -61,6 +80,7 @@ public class RandomLevelService
 		LevelItem level = CachedLevels[0];
 		CachedLevels.RemoveAt(0);
 		PlayedLevels.Add(level);
+		LastDrawn = level.Name;
 
 		Logger.LogInfo(
 			$"RandomLevelService: Drew level '{level.Name}' (UID: {level.FileUid}). Cached remaining: {CachedLevels.Count}, played: {PlayedLevels.Count}.");
@@ -76,11 +96,13 @@ public class RandomLevelService
 	public async Task<List<LevelItem>> GetRandomLevelsAsync()
 	{
 		List<LevelItem> newLevels = await TryFetchFromGraphQlAsync();
+		LastSource = "GraphQL";
 
 		if (newLevels.Count == 0)
 		{
 			Logger.LogWarning("RandomLevelService: GraphQL unavailable or empty. Falling back to local playlists.");
 			newLevels = FetchFromLocalPlaylists();
+			LastSource = "local playlists";
 		}
 
 		if (newLevels.Count == 0)
@@ -131,6 +153,9 @@ public class RandomLevelService
 
 	private void Track(IEnumerable<LevelItem> levels)
 	{
-		foreach (LevelItem level in levels) FetchedLevelUids.Add(level.FileUid);
+		foreach (LevelItem level in levels)
+		{
+			FetchedLevelUids.Add(level.FileUid);
+		}
 	}
 }

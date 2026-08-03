@@ -26,11 +26,6 @@ public abstract class AthState : StateBase
 	/// <summary>Shorthand for this run's level pool.</summary>
 	public RandomLevelService RandomLevels => AthStateMachine.RandomLevels;
 
-	/// <summary>Every frame while the run's timer is running.</summary>
-	public virtual void OnAthTimerTick()
-	{
-	}
-
 	/// <summary>A lobby round has started.</summary>
 	public virtual void OnRoundStarted()
 	{

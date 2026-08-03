@@ -1,0 +1,94 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Util;
+using BepInEx;
+using Newtonsoft.Json;
+
+namespace AuthorTimeHunting.Service;
+
+/// <summary>
+///     Every run that ever finished on this machine, kept in one JSON file next to the mod's
+///     config.
+///     A run is an hour, and until now an hour left nothing behind but a results screen that
+///     was closed and gone. The point of a history is the comparison: whether this run was
+///     better than the last one is a question the results screen cannot answer on its own.
+///     Loaded once and held in memory - the file is a few kilobytes after a hundred runs, and
+///     reading it on every open would put disk IO inside a GUI pass.
+/// </summary>
+public class MatchHistoryService
+{
+	private const string FileName = "AuthorTimeHunting.history.json";
+
+	/// <summary>
+	///     How many runs are kept. Old runs are dropped from the end rather than the file being
+	///     allowed to grow forever, because nothing reads past the first screenful anyway.
+	/// </summary>
+	private const int MaxRecords = 200;
+
+	private List<RunRecord> _records;
+
+	private static string Path => System.IO.Path.Combine(Paths.ConfigPath, FileName);
+
+	/// <summary>Newest first. Empty when nothing has been recorded or the file could not be read.</summary>
+	public IReadOnlyList<RunRecord> Records => _records ??= Load();
+
+	/// <summary>
+	///     Records a finished run and writes the file straight away. Not batched: the next thing
+	///     that usually happens after a run ends is the game being closed.
+	/// </summary>
+	public void Add(RunRecord record)
+	{
+		if (record == null)
+		{
+			return;
+		}
+
+		List<RunRecord> records = _records ??= Load();
+
+		records.Insert(0, record);
+
+		if (records.Count > MaxRecords)
+		{
+			records.RemoveRange(MaxRecords, records.Count - MaxRecords);
+		}
+
+		Save(records);
+	}
+
+	private static List<RunRecord> Load()
+	{
+		try
+		{
+			if (!File.Exists(Path))
+			{
+				return [];
+			}
+
+			List<RunRecord> records = JsonConvert.DeserializeObject<List<RunRecord>>(File.ReadAllText(Path));
+
+			// A record written by a future version can deserialise to nulls rather than throw.
+			return records?.Where(record => record != null).OrderByDescending(record => record.EndedAt).ToList() ?? [];
+		}
+		catch (Exception e)
+		{
+			// A corrupt history is not worth losing a run over - it starts again from empty.
+			Logger.LogError($"MatchHistoryService: Could not read {Path}: {e.Message}");
+			return [];
+		}
+	}
+
+	private static void Save(List<RunRecord> records)
+	{
+		try
+		{
+			File.WriteAllText(Path, JsonConvert.SerializeObject(records, Formatting.Indented));
+		}
+		catch (Exception e)
+		{
+			Logger.LogError($"MatchHistoryService: Could not write {Path}: {e.Message}");
+		}
+	}
+}

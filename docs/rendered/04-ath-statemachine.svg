@@ -2,669 +2,695 @@
 <svg xmlns="http://www.w3.org/2000/svg" contentStyleType="text/css" data-diagram-type="STATE" height="1634px"
      preserveAspectRatio="none" style="width:1698px;height:1634px;background:#FFFFFF;" version="1.1"
      viewBox="0 0 1698 1634" width="1698px" zoomAndPan="magnify">
-    <title>AthStateMachine &#8212; Run-Ablauf (IST, 12 States)</title>
-    <defs/>
-    <g>
-        <g class="title" data-source-line="1">
-            <text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing"
-                  textLength="315.4717" x="684.5811" y="24.5332">AthStateMachine &#8212; Run-Ablauf (IST, 12 States)
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Starting" id="ent0002">
-            <rect fill="#E3F2FD" height="188.5469" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="278.1523" x="1110" y="649.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="1110" x2="1388.1523" y1="677.2188" y2="677.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="101.9512"
-                  x="1198.1006" y="669.1426">StateAthStarting
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="130.0547"
-                  x="1115" y="694.6758">Chat: MessageStarting()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="11.9883"
-                  x="1115" y="709.7695">---
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="67.0195" x="1115" y="724.8633">RTM = false
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="185.1152"
-                  x="1115" y="739.957">CurrentLobby.RoundTime = 86400
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="258.1523"
-                  x="1115" y="755.0508">delay 2500 -&gt; UpdateServerPlaylist -&gt; delay 500
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="107.0566"
-                  x="1115" y="770.1445">Countdown 5s -&gt; /fs
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="11.9883"
-                  x="1115" y="785.2383">---
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="62.3379" x="1115" y="800.332">RTM = true
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="87.3691"
-                  x="1180.6719" y="800.332">(bis 3 Versuche)
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="255.7383"
-                  x="1115" y="815.4258">DrawRandomLevelAsync() -&gt; StartNewPlaylist()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="117.0645"
-                  x="1115" y="830.5195">Countdown 5s -&gt; /fs 0
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Loading" id="ent0003">
-            <rect fill="#E3F2FD" height="67.7969" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="302.123" x="968" y="932.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="968" x2="1270.123" y1="960.2188" y2="960.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="136.999"
-                  x="1050.562" y="952.1426">StateAthLoadingLevel
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="282.123"
-                  x="973" y="977.6758">RoundOverText = ATH-Header + letzter Level-Status
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="182.7891"
-                  x="973" y="992.7695">wartet auf RacingApi.LevelLoaded
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Processing" id="ent0004">
-            <rect fill="#F1F1F1" height="67.7969" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="182.75" x="742.5" y="1094.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="742.5" x2="925.25" y1="1122.2188" y2="1122.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="156.4268"
-                  x="755.6616" y="1114.1426">StateAthProcessingLevel
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="162.75"
-                  x="747.5" y="1139.6758">validiert LevelApi.CurrentLevel
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="158.7715"
-                  x="747.5" y="1154.7695">null? -&gt; broken? -&gt; duplicate?
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Broken" id="ent0005">
-            <rect fill="#FFE0E0" height="97.9844" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="213.0059" x="497.5" y="1256.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="497.5" x2="710.5059" y1="1284.2188" y2="1284.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="193.0059"
-                  x="507.5" y="1276.1426">StateAthResolvingBrokenLevel
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="155.4082"
-                  x="502.5" y="1301.6758">Chat: MessageBrokenLevel()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="142.7168"
-                  x="502.5" y="1316.7695">DrawRandomLevelAsync()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.7383"
-                  x="502.5" y="1331.8633">ReplaceLevelInCurrentPlaylist()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="50.0098"
-                  x="502.5" y="1346.957">/fs restart
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Duplicate" id="ent0006">
-            <rect fill="#FFE0E0" height="97.9844" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="227.0127" x="1241.5" y="1256.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="1241.5" x2="1468.5127" y1="1284.2188" y2="1284.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="207.0127"
-                  x="1251.5" y="1276.1426">StateAthResolvingDuplicateLevel
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="162.0996"
-                  x="1246.5" y="1301.6758">ConsecutiveDuplicateCount++
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="142.7168"
-                  x="1246.5" y="1316.7695">DrawRandomLevelAsync()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="150.0586"
-                  x="1246.5" y="1331.8633">AddLevelToCurrentPlaylist()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="38.6836"
-                  x="1246.5" y="1346.957">/fs next
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="FirstTime" id="ent0007">
-            <rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="272.7793" x="59.5" y="1264.1094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="59.5" x2="332.2793" y1="1291.7188" y2="1291.7188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="175.0615"
-                  x="108.3589" y="1283.6426">StateAthStartLevelFirstTime
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="252.7793"
-                  x="64.5" y="1309.1758">Ctx.InitializingNewLevel(LevelApi.CurrentLevel)
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="222.4219"
-                  x="64.5" y="1324.2695">-&gt; new Level(), Levels.Add(), Level.Start()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="183.7617"
-                  x="64.5" y="1339.3633">SetServerMessage(paused = true)
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="OnARun" id="ent0008">
-            <rect fill="#FFF0C2" height="97.9844" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="303.0898" x="333.5" y="49.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="333.5" x2="636.5898" y1="77.2188" y2="77.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="107.3994"
-                  x="431.3452" y="69.1426">StateAthOnARun
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="38.666" x="338.5" y="94.6758">Enter()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="122.7129"
-                  x="380.5" y="94.6758">Level.AddTimeStamp()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="57.3223" x="509.8809" y="94.6758">[Uhr l&#228;uft]
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="30" x="338.5" y="109.7695">Exit()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="122.7129"
-                  x="375.168" y="109.7695">Level.AddTimeStamp()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="68.6484" x="504.5488" y="109.7695">[Uhr stoppt]
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="134.7246"
-                  x="338.5" y="124.8633">Chat: MessageOnARun()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="283.0898"
-                  x="338.5" y="139.957">Tick: SetServerMessage(false) + Low-Time-Warnung
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Pausing" id="ent0009">
-            <rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="203.7617" x="471" y="246.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="471" x2="674.7617" y1="274.2188" y2="274.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="104.2959"
-                  x="520.7329" y="266.1426">StateAthPausing
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.0469"
-                  x="476" y="291.6758">Medal-Progress-Text (einmalig)
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="98.6836"
-                  x="476" y="306.7695">Ctx.ResetRetries()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="183.7617"
-                  x="476" y="321.8633">SetServerMessage(paused = true)
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="WaitRespawn" id="ent0010">
-            <rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="220.7539" x="929.5" y="359.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="929.5" x2="1150.2539" y1="387.2188" y2="387.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="179.751"
-                  x="950.0015" y="379.1426">StateAthWaitingForRespawn
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="64.6992"
-                  x="934.5" y="404.6758">Level.Stop()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="155.9297"
-                  x="934.5" y="419.7695">Popup "Author time claimed!"
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="200.7539"
-                  x="934.5" y="434.8633">Chat: MessageAuthorMedalClaimed()
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Evaluate" id="ent0011">
-            <rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="234.7227" x="734.5" y="472.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="734.5" x2="969.2227" y1="500.2188" y2="500.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="135.4199"
-                  x="784.1514" y="492.1426">StateAthEvaluateSkip
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="214.7227"
-                  x="739.5" y="517.6758">bestimmt Skip-Typ (siehe Diagramm 07)
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="109.7402"
-                  x="739.5" y="532.7695">Level.Skipped = true
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="64.6992"
-                  x="739.5" y="547.8633">Level.Stop()
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Summary" id="ent0012">
-            <rect fill="#F1F1F1" height="52.7031" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="188.7266" x="885.5" y="717.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="885.5" x2="1074.2266" y1="745.2188" y2="745.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="147.0684"
-                  x="906.3291" y="737.1426">StateAthLevelSummary
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.7266"
-                  x="890.5" y="762.6758">Chat: MessageLevelSummary()
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="Stopping" id="ent0013">
-            <rect fill="#E8E8E8" height="113.0781" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
-                  width="252.0781" x="729" y="1432.6094"/>
-            <line style="stroke:#181818;stroke-width:0.5;" x1="729" x2="981.0781" y1="1460.2188" y2="1460.2188"/>
-            <text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="108.9717"
-                  x="800.5532" y="1452.1426">StateAthStopping
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="92.6895"
-                  x="734" y="1477.6758">ClearMedalText()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
-                  textLength="81.3398" x="734" y="1492.7695">InvokeFinish()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="135.0527"
-                  x="822.0078" y="1492.7695">-&gt; Master schaltet auf Off
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="104.7129"
-                  x="734" y="1507.8633">CurrentLevel.Stop()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="110.0508"
-                  x="734" y="1522.957">Chat: MessageEnd()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="232.0781"
-                  x="734" y="1538.0508">optional: Playlist als ATH-RUN-... speichern
-            </text>
-        </g>
-        <g class="start_entity" data-qualified-name=".start." data-source-line="12" id="ent0002">
-            <ellipse cx="1249" cy="514.1094" fill="#222222" rx="10" ry="10" style="stroke:#222222;stroke-width:1;"/>
-        </g>
-        <g class="end_entity" data-qualified-name=".end." data-source-line="133" id="ent0030">
-            <ellipse cx="855" cy="1617.6094" fill="none" rx="11" ry="11" style="stroke:#222222;stroke-width:1;"/>
-            <ellipse cx="855" cy="1617.6094" fill="#222222" rx="6" ry="6" style="stroke:#222222;stroke-width:1;"/>
-        </g>
-        <g class="entity" data-qualified-name="GMN2" data-source-line="136" id="ent0003">
-            <path d="M807.5,44.6094 L807.5,94.6094 L636.71,98.6094 L807.5,102.6094 L807.5,152.7188 A0,0 0 0 0 807.5,152.7188 L1060.4116,152.7188 A0,0 0 0 0 1060.4116,152.7188 L1060.4116,54.6094 L1050.4116,44.6094 L807.5,44.6094 A0,0 0 0 0 807.5,44.6094"
-                  fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/>
-            <path d="M1050.4116,44.6094 L1050.4116,54.6094 L1060.4116,54.6094 L1050.4116,44.6094" fill="#FEFFDD"
-                  style="stroke:#181818;stroke-width:0.5;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing"
-                  textLength="85.96" x="813.5" y="63.1045">Uhr-Mechanik
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="186.4053"
-                  x="813.5" y="79.4561">Die Run-Zeit l&#228;uft ausschlie&#223;lich
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="218.9497"
-                  x="813.5" y="95.8076">in StateAthOnARun. Enter/Exit setzen
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="231.9116"
-                  x="813.5" y="112.1592">Timestamp-Paare in Level.TimeStamps;
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="223.9707"
-                  x="813.5" y="128.5107">GetPlayDuration() summiert die Paare.
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="197.2471"
-                  x="813.5" y="144.8623">Ziel-/Pausenbildschirm z&#228;hlt nicht.
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="GMN5" data-source-line="145" id="ent0006">
-            <path d="M981.5,1268.1094 L981.5,1343.5156 A0,0 0 0 0 981.5,1343.5156 L1206.2852,1343.5156 A0,0 0 0 0 1206.2852,1343.5156 L1206.2852,1309.6094 L1241.43,1305.6094 L1206.2852,1301.6094 L1206.2852,1278.1094 L1196.2852,1268.1094 L981.5,1268.1094 A0,0 0 0 0 981.5,1268.1094"
-                  fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/>
-            <path d="M1196.2852,1268.1094 L1196.2852,1278.1094 L1206.2852,1278.1094 L1196.2852,1268.1094" fill="#FEFFDD"
-                  style="stroke:#181818;stroke-width:0.5;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="187.8716"
-                  x="987.5" y="1286.6045">ConsecutiveDuplicateCount wird
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing"
-                  textLength="109.0845" x="987.5" y="1302.9561">nie zur&#252;ckgesetzt
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="75.8608"
-                  x="1100.1963" y="1302.9561">&#8212; der Z&#228;hler
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="203.7852"
-                  x="987.5" y="1319.3076">ist kumulativ &#252;ber den ganzen Run,
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="112.563"
-                  x="987.5" y="1335.6592">nicht "consecutive".
-            </text>
-        </g>
-        <g class="entity" data-qualified-name="GMN8" data-source-line="152" id="ent0009">
-            <path d="M745.5,1268.1094 L745.5,1301.6094 L710.82,1305.6094 L745.5,1309.6094 L745.5,1343.5156 A0,0 0 0 0 745.5,1343.5156 L946.4053,1343.5156 A0,0 0 0 0 946.4053,1343.5156 L946.4053,1278.1094 L936.4053,1268.1094 L745.5,1268.1094 A0,0 0 0 0 745.5,1268.1094"
-                  fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/>
-            <path d="M936.4053,1268.1094 L936.4053,1278.1094 L946.4053,1278.1094 L936.4053,1268.1094" fill="#FEFFDD"
-                  style="stroke:#181818;stroke-width:0.5;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="139.4326"
-                  x="751.5" y="1286.6045">Ersetzt wird die UID von
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="179.9053"
-                  x="751.5" y="1302.9561">Ctx.CurrentLevel &#8212; das ist das
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing"
-                  textLength="59.2427" x="751.5" y="1319.3076">vorherige
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="90.3335"
-                  x="814.3545" y="1319.3076">Level, nicht das
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="161.8843"
-                  x="751.5" y="1335.6592">gerade als broken erkannte.
-            </text>
-        </g><!--link *start* to Starting-->
-        <g class="link" data-entity-1="ent0002" data-entity-2="ent0002" data-link-type="dependency"
-           data-source-line="12" id="lnk3">
-            <path d="M1249,524.3294 C1249,545.6194 1249,594.1394 1249,643.4294" fill="none" id="*start*-to-Starting"
-                  style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818" points="1249,649.4294,1253,640.4294,1249,644.4294,1245,640.4294,1249,649.4294"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="130.7681"
-                  x="1250" y="600.1045">StateMasterOn.Enter()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="41.5327"
-                  x="1294.6177" y="616.4561">-&gt; Init()
-            </text>
-        </g><!--link Starting to Loading-->
-        <g class="link" data-entity-1="ent0002" data-entity-2="ent0003" data-link-type="dependency"
-           data-source-line="95" id="lnk4">
-            <path d="M1133.2,838.9294 C1126.42,848.2994 1120.53,858.2094 1116,868.6094 C1107.31,888.5294 1107.2341,907.0782 1110.1941,926.4582"
-                  fill="none" id="Starting-to-Loading" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="1111.1,932.3894,1113.6953,922.8886,1110.3451,927.4467,1105.787,924.0965,1111.1,932.3894"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="88.1436"
-                  x="1117" y="891.1045">Execute() fertig
-            </text>
-        </g><!--link Starting to Loading-->
-        <g class="link" data-entity-1="ent0002" data-entity-2="ent0003" data-link-type="dependency"
-           data-source-line="96" id="lnk5">
-            <path d="M1237.41,838.9594 C1231.62,861.1694 1222.96,883.8294 1210,902.6094 C1202.14,913.9994 1196.3064,920.3546 1185.0764,928.7946"
-                  fill="none" id="Starting-to-Loading-1" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="1180.28,932.3994,1189.8778,930.1898,1184.277,929.3954,1185.0714,923.7946,1180.28,932.3994"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
-                  x="1227" y="891.1045">OnRoundEnded()
-            </text>
-        </g><!--link Loading to Processing-->
-        <g class="link" data-entity-1="ent0003" data-entity-2="ent0004" data-link-type="dependency"
-           data-source-line="99" id="lnk6">
-            <path d="M1059.95,1000.7594 C1011.03,1028.2194 947.1018,1064.1119 898.2118,1091.5619" fill="none"
-                  id="Loading-to-Processing" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="892.98,1094.4994,902.786,1093.581,897.3398,1092.0515,898.8693,1086.6054,892.98,1094.4994"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
-                  x="1076.2393" y="1045.1045">OnLevelLoaded()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="246.9365"
-                  x="1003" y="1061.4561">[!IsTimeOver &amp;&amp; (RTM || Levels &lt; Playlist)]
-            </text>
-        </g><!--link Loading to Stopping-->
-        <g class="link" data-entity-1="ent0003" data-entity-2="ent0013" data-link-type="dependency"
-           data-source-line="100" id="lnk7">
-            <path d="M1204.66,1000.6494 C1222.93,1009.2594 1241.64,1019.3394 1258,1030.6094 C1403,1130.5094 1590.35,1212.7794 1486,1354.6094 C1427.23,1434.4894 1153.6921,1467.276 987.0321,1480.186"
-                  fill="none" id="Loading-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="981.05,1480.6494,990.332,1483.9423,986.0351,1480.2632,989.7142,1475.9662,981.05,1480.6494"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
-                  x="1547.0879" y="1207.1045">OnLevelLoaded()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="186.6338"
-                  x="1504" y="1223.4561">[IsTimeOver || Playlist ersch&#246;pft]
-            </text>
-        </g><!--link Processing to Processing-->
-        <g class="link" data-entity-1="ent0004" data-entity-2="ent0004" data-link-type="dependency"
-           data-source-line="103" id="lnk8">
-            <path d="M925.54,1114.0094 C945.77,1115.3894 960.5,1120.2494 960.5,1128.6094 C960.5,1136.9694 951.7561,1141.421 931.5261,1142.801"
-                  fill="none" id="Processing-to-Processing" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="925.54,1143.2094,934.7914,1146.5876,930.5284,1142.8691,934.2469,1138.6061,925.54,1143.2094"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="170.5488"
-                  x="966.5" y="1126.1045">LevelApi.CurrentLevel == null
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164.7217"
-                  x="969.4136" y="1142.4561">(delay 100 ms, Selbst-Retry)
-            </text>
-        </g><!--link Processing to Broken-->
-        <g class="link" data-entity-1="ent0004" data-entity-2="ent0005" data-link-type="dependency"
-           data-source-line="104" id="lnk9">
-            <path d="M742.33,1142.7894 C684.91,1153.1394 618.58,1169.6494 601,1192.6094 C587.34,1210.4494 585.7068,1229.0593 589.0268,1250.6193"
-                  fill="none" id="Processing-to-Broken" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="589.94,1256.5494,592.5236,1247.0454,589.179,1251.6076,584.6168,1248.263,589.94,1256.5494"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="188.9443"
-                  x="602" y="1215.1045">Playlist[idx].UID != geladene UID
-            </text>
-        </g><!--link Broken to Processing-->
-        <g class="link" data-entity-1="ent0005" data-entity-2="ent0004" data-link-type="dependency"
-           data-source-line="109" id="lnk13">
-            <path d="M710.69,1263.0094 C752.46,1246.3694 791.37,1230.2594 795,1226.6094 C812.15,1209.3694 820.4779,1189.3952 826.0079,1168.7452"
-                  fill="none" id="Broken-to-Processing" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="827.56,1162.9494,821.368,1170.6083,826.2666,1167.7792,829.0957,1172.6778,827.56,1162.9494"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
-                  x="817" y="1215.1045">OnLevelLoaded()
-            </text>
-        </g><!--link Processing to Duplicate-->
-        <g class="link" data-entity-1="ent0004" data-entity-2="ent0006" data-link-type="dependency"
-           data-source-line="105" id="lnk10">
-            <path d="M925.63,1142.7094 C985.44,1152.7794 1064.63,1169.0094 1132,1192.6094 C1180.04,1209.4394 1225.6773,1231.5646 1266.7173,1253.6646"
-                  fill="none" id="Processing-to-Duplicate" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="1272,1256.5094,1265.9724,1248.7204,1267.5977,1254.1387,1262.1794,1255.7641,1272,1256.5094"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="180.6162"
-                  x="1208" y="1215.1045">RTM &amp;&amp; Levels.Contains(level)
-            </text>
-        </g><!--link Duplicate to Processing-->
-        <g class="link" data-entity-1="ent0006" data-entity-2="ent0004" data-link-type="dependency"
-           data-source-line="110" id="lnk14">
-            <path d="M1241.48,1261.4394 C1235.6,1259.6994 1229.75,1258.0694 1224,1256.6094 C1136.04,1234.2094 1108.38,1254.4594 1022,1226.6094 C973.94,1211.1094 928.4425,1187.3199 891.8325,1165.7999"
-                  fill="none" id="Duplicate-to-Processing" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="886.66,1162.7594,892.3918,1170.7685,890.9705,1165.2931,896.4458,1163.8718,886.66,1162.7594"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
-                  x="1023" y="1215.1045">OnLevelLoaded()
-            </text>
-        </g><!--link Processing to FirstTime-->
-        <g class="link" data-entity-1="ent0004" data-entity-2="ent0007" data-link-type="dependency"
-           data-source-line="106" id="lnk11">
-            <path d="M742.39,1134.6694 C617.04,1142.6594 399.38,1160.6794 327,1192.6094 C290.18,1208.8494 260.0771,1234.6519 235.8171,1259.5519"
-                  fill="none" id="Processing-to-FirstTime" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="231.63,1263.8494,240.7756,1260.1945,235.1192,1260.2681,235.0456,1254.6117,231.63,1263.8494"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="48.4199"
-                  x="328" y="1215.1045">Level ok
-            </text>
-        </g><!--link Processing to Stopping-->
-        <g class="link" data-entity-1="ent0004" data-entity-2="ent0013" data-link-type="dependency"
-           data-source-line="107" id="lnk12">
-            <path d="M742.41,1144.2194 C632.14,1163.9694 457.21,1202.9894 421,1256.6094 C396.62,1292.6994 395.12,1319.5794 421,1354.6094 C457.97,1404.6594 608.5138,1442.5864 723.0038,1465.2064"
-                  fill="none" id="Processing-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="728.89,1466.3694,720.836,1460.7008,723.9848,1465.4002,719.2854,1468.5491,728.89,1466.3694"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="57.0908"
-                  x="422" y="1311.1045">Exception
-            </text>
-        </g><!--link Duplicate to Stopping-->
-        <g class="link" data-entity-1="ent0006" data-entity-2="ent0013" data-link-type="dependency"
-           data-source-line="111" id="lnk15">
-            <path d="M1241.4,1348.2694 C1235.52,1350.4094 1229.69,1352.5394 1224,1354.6094 C1143.18,1384.0394 1057.9733,1414.8714 986.6433,1440.6314"
-                  fill="none" id="Duplicate-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="981,1442.6694,990.8236,1443.3746,985.7027,1440.971,988.1062,1435.8502,981,1442.6694"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="190.0615"
-                  x="1133" y="1399.1045">ConsecutiveDuplicateCount &gt;= 3
-            </text>
-        </g><!--link FirstTime to OnARun-->
-        <g class="link" data-entity-1="ent0007" data-entity-2="ent0008" data-link-type="dependency"
-           data-source-line="114" id="lnk16">
-            <path d="M184.63,1263.9494 C175.79,1228.7094 165,1176.1994 165,1129.6094 C165,287.1094 165,287.1094 165,287.1094 C165,238.1294 164.68,216.5494 200,182.6094 C236.04,147.9694 279.8668,129.1151 327.6368,117.2551"
-                  fill="none" id="FirstTime-to-OnARun" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="333.46,115.8094,323.7613,114.0959,328.6073,117.0142,325.689,121.8601,333.46,115.8094"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.2217"
-                  x="199.4172" y="741.6045">OnRoundStarted()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="173.0562"
-                  x="166" y="757.9561">(+ fire&amp;forget AddLevelAsync)
-            </text>
-        </g><!--link OnARun to OnARun-->
-        <g class="link" data-entity-1="ent0008" data-entity-2="ent0008" data-link-type="dependency"
-           data-source-line="116" id="lnk17">
-            <path d="M636.84,81.9294 C657.63,84.6994 671.5,90.2594 671.5,98.6094 C671.5,106.9594 663.5774,111.727 642.7874,114.497"
-                  fill="none" id="OnARun-to-OnARun" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="636.84,115.2894,646.2894,118.0657,641.7962,114.629,645.2329,110.1358,636.84,115.2894"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.2217"
-                  x="677.5" y="96.1045">OnRoundStarted()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.209"
-                  x="677.5063" y="112.4561">Attempt++ (Reset)
-            </text>
-        </g><!--link OnARun to Pausing-->
-        <g class="link" data-entity-1="ent0008" data-entity-2="ent0009" data-link-type="dependency"
-           data-source-line="117" id="lnk18">
-            <path d="M333.15,118.3994 C252.16,134.7794 177.19,164.3994 220,216.6094 C251.26,254.7294 372.0529,272.1152 464.7629,280.2452"
-                  fill="none" id="OnARun-to-Pausing" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="470.74,280.7694,462.1238,275.9984,465.7591,280.3326,461.425,283.9679,470.74,280.7694"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.6626"
-                  x="221" y="197.1045">OnCrossedFinishLine()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="51.2954"
-                  x="262.1836" y="213.4561">[kein AT]
-            </text>
-        </g><!--link OnARun to Pausing-->
-        <g class="link" data-entity-1="ent0008" data-entity-2="ent0009" data-link-type="dependency"
-           data-source-line="119" id="lnk20">
-            <path d="M415.11,147.6194 C393.55,168.4094 379.16,193.2894 395,216.6094 C412.65,242.5894 435.8709,257.0059 465.2809,267.3659"
-                  fill="none" id="OnARun-to-Pausing-1" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="470.94,269.3594,463.7803,262.5964,466.224,267.6981,461.1223,270.1419,470.94,269.3594"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.6626"
-                  x="396" y="197.1045">OnCrossedFinishLine()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="130.0635"
-                  x="397.7996" y="213.4561">[CurrentResult == null]
-            </text>
-        </g><!--link Pausing to OnARun-->
-        <g class="link" data-entity-1="ent0009" data-entity-2="ent0008" data-link-type="dependency"
-           data-source-line="123" id="lnk23">
-            <path d="M559.71,246.4794 C552.82,226.8394 543.8,203.1494 534,182.6094 C528.52,171.1294 524.9977,164.3352 518.4977,153.1652"
-                  fill="none" id="Pausing-to-OnARun" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="515.48,147.9794,516.5494,157.77,517.9948,152.3009,523.4639,153.7464,515.48,147.9794"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.2217"
-                  x="550" y="205.1045">OnRoundStarted()
-            </text>
-        </g><!--link Pausing to OnARun-->
-        <g class="link" data-entity-1="ent0009" data-entity-2="ent0008" data-link-type="dependency"
-           data-source-line="124" id="lnk24">
-            <path d="M641.73,246.5094 C663.95,228.0594 679.53,205.3094 665,182.6094 C656.19,168.8394 649.3073,160.8517 636.0273,151.2217"
-                  fill="none" id="Pausing-to-OnARun-1" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="631.17,147.6994,636.1078,156.221,635.2178,150.6346,640.8042,149.7446,631.17,147.6994"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="138.0234"
-                  x="671" y="205.1045">OnPhotoModeEntered()
-            </text>
-        </g><!--link OnARun to WaitRespawn-->
-        <g class="link" data-entity-1="ent0008" data-entity-2="ent0010" data-link-type="dependency"
-           data-source-line="118" id="lnk19">
-            <path d="M636.52,125.7694 C748.14,145.6194 884.74,171.3594 910,182.6094 C953.2,201.8494 968.09,207.7194 995,246.6094 C1018.47,280.5194 1028.873,320.8195 1034.293,353.6595"
-                  fill="none" id="OnARun-to-WaitRespawn" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="1035.27,359.5794,1037.7511,350.0481,1034.4558,354.6461,1029.8578,351.3509,1035.27,359.5794"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.6626"
-                  x="970" y="197.1045">OnCrossedFinishLine()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="121.3735"
-                  x="976.1445" y="213.4561">[Status == AUTHOR]
-            </text>
-        </g><!--link OnARun to Evaluate-->
-        <g class="link" data-entity-1="ent0008" data-entity-2="ent0011" data-link-type="dependency"
-           data-source-line="120" id="lnk21">
-            <path d="M636.67,121.8794 C711.67,135.8594 791.68,156.2694 818,182.6094 C894.86,259.5194 878.2099,396.4889 863.4299,466.4689"
-                  fill="none" id="OnARun-to-Evaluate" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="862.19,472.3394,867.9635,464.3602,863.2232,467.4473,860.1361,462.7071,862.19,472.3394"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
-                  x="875" y="293.6045">OnRoundEnded()
-            </text>
-        </g><!--link OnARun to Stopping-->
-        <g class="link" data-entity-1="ent0008" data-entity-2="ent0013" data-link-type="dependency"
-           data-source-line="121" id="lnk22">
-            <path d="M333.44,128.7994 C193.11,160.2894 6,215.6694 6,287.1094 C6,287.1094 6,287.1094 6,1306.6094 C6,1452.6294 486.3116,1481.4514 722.8116,1486.8914"
-                  fill="none" id="OnARun-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="728.81,1487.0294,719.9044,1482.8235,723.8113,1486.9144,719.7204,1490.8214,728.81,1487.0294"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="102.5591"
-                  x="7" y="883.1045">OnAthTimerTick()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="74.3945"
-                  x="21.0823" y="899.4561">[IsTimeOver]
-            </text>
-        </g><!--link Pausing to Evaluate-->
-        <g class="link" data-entity-1="ent0009" data-entity-2="ent0011" data-link-type="dependency"
-           data-source-line="125" id="lnk25">
-            <path d="M619.37,329.8094 C655.7,361.3094 707.82,405.6494 755,442.6094 C767.7,452.5594 776.7533,459.4125 789.9633,469.0525"
-                  fill="none" id="Pausing-to-Evaluate" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="794.81,472.5894,789.8979,464.0529,790.7711,469.642,785.182,470.5152,794.81,472.5894"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
-                  x="756" y="406.6045">OnRoundEnded()
-            </text>
-        </g><!--link WaitRespawn to WaitRespawn-->
-        <g class="link" data-entity-1="ent0010" data-entity-2="ent0010" data-link-type="dependency"
-           data-source-line="127" id="lnk26">
-            <path d="M1150.71,381.2294 C1171.14,383.7094 1185.5,390.3394 1185.5,401.1094 C1185.5,411.8794 1177.0963,417.7863 1156.6663,420.2663"
-                  fill="none" id="WaitRespawn-to-WaitRespawn" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="1150.71,420.9894,1160.1264,423.8757,1155.6736,420.3868,1159.1624,415.934,1150.71,420.9894"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="117.0571"
-                  x="1191.5" y="398.6045">OnPlayerSpawned()
-            </text>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="29.2563"
-                  x="1235.4004" y="414.9561">-&gt; /fs
-            </text>
-        </g><!--link WaitRespawn to Summary-->
-        <g class="link" data-entity-1="ent0010" data-entity-2="ent0012" data-link-type="dependency"
-           data-source-line="128" id="lnk27">
-            <path d="M1032.82,442.8994 C1020.32,513.9694 995.9298,652.6002 985.5798,711.4202" fill="none"
-                  id="WaitRespawn-to-Summary" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="984.54,717.3294,990.0392,709.1587,985.4065,712.405,982.1602,707.7724,984.54,717.3294"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
-                  x="1028" y="519.6045">OnRoundEnded()
-            </text>
-        </g><!--link Evaluate to Summary-->
-        <g class="link" data-entity-1="ent0011" data-entity-2="ent0012" data-link-type="dependency"
-           data-source-line="130" id="lnk28">
-            <path d="M874.88,555.8694 C901.2,602.7494 940.6729,673.0574 962.7129,712.3174" fill="none"
-                  id="Evaluate-to-Summary" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="965.65,717.5494,964.7323,707.7434,963.2024,713.1894,957.7563,711.6596,965.65,717.5494"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36.1055"
-                  x="909" y="608.1045">immer
-            </text>
-        </g><!--link Summary to Loading-->
-        <g class="link" data-entity-1="ent0012" data-entity-2="ent0003" data-link-type="dependency"
-           data-source-line="131" id="lnk29">
-            <path d="M991.17,770.7394 C1005.67,802.8294 1032.73,858.9094 1063,902.6094 C1070.08,912.8394 1074.6556,918.7333 1082.9156,928.0333"
-                  fill="none" id="Summary-to-Loading" style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818"
-                     points="1086.9,932.5194,1083.9141,923.134,1083.5797,928.781,1077.9327,928.4466,1086.9,932.5194"
-                     style="stroke:#181818;stroke-width:1;"/>
-            <text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36.1055"
-                  x="1064" y="891.1045">immer
-            </text>
-        </g><!--link Stopping to *end*-->
-        <g class="link" data-entity-1="ent0013" data-entity-2="ent0030" data-link-type="dependency"
-           data-source-line="133" id="lnk31">
-            <path d="M855,1545.9594 C855,1568.9994 855,1587.3594 855,1600.5994" fill="none" id="Stopping-to-*end*"
-                  style="stroke:#181818;stroke-width:1;"/>
-            <polygon fill="#181818" points="855,1606.5994,859,1597.5994,855,1601.5994,851,1597.5994,855,1606.5994"
-                     style="stroke:#181818;stroke-width:1;"/>
-        </g>
-        <?plantuml-src bLZDRXit4BxhAIOka4gsLr6IfWrSsuLYMuq1EpPaEG6I-43jKbf2A-w2vCe_JO4-HE-zv1bwoirlqYVf3Bd_MZUDVV0k-Srm_ZZphOqm4OUX2IyCC_oK-Q6G7FxvuqyOfz8RJYEMpg1xV37PXgVFm89qhzFH2o4JfjWITCY2-5h8ESnOf7brXy3mMmVW5VCNSnMdCZY8erZjxeQnsTy7-_FTQ3GQ73nhGodknokkRX6AgAF1qQ0DPRXQ2iaYGXszfDysb8Zp0n7rVFHiTDZvlHEAW0DV9kOM0gvz9H8ZOjdfVDYy0i_R9tUL8TTs80kFnjFEPFz8ujzkxwD4qB4KfaiXiUvkMA2BfvNT0APBHPaX59IAyeEGcHquvLgpES_NKMSDv7bUVM5pSpmvXJqNzytDXifKAIxDIJoTtlR758Y9M794l_pnXy6WZWrun6xXsOl10D2VooH03owumj2VuqOajA5rXthH53v0tGOhGC8BJR0dC_q_xJOgHREXEnKQdiDRhdJgXxpXzQ5YrsCcWtXvmbSy6kfRwNTxa2Vd3R_ERMp6gyKm663IcuawYLc04bQzJLQsKCrLlhG3DfHd69e9lp7en73osdlDMS0LR474pHqM1bXT7XsGwfhqDLh73T2T6ZCVruQ9w5iqONZGOjwvYdqiZ9g5vPgrhlAw0oiMYK1mPPmLT41U2_JUXCiqYdwXy4nLlE3IFWPf4WaVZ_-bnPunrt6qGk5NLg0qohr3xThQo-_M6rLUaRQ9Ar3j2QyYnZo9cC_jzh7CdAjLGG6bd2kkgIZ-ovN3tE7Ics9ftQ5oYufCQkwdHgnuiMmBRskhWNpGhofe60HsTnAtkLL5acSIIx35BNi7h9gHKDhGlRSk5M_MY_8DlJ0tVMfZ0cld3kE1jyfbfhM4UWrfe9gH_1goR6wx1zr7RugtlhMgsvIzuCPrcgmikWbBDG-oxj1hyUvC3d4oMOVS8-JZXBpAbgZ9P3qQEump0AsXGr7FCi4E0hlJ_G-NeOBe_dCwCrUxJwRx3GKtrDXH_YiAj8cJP5r1hTpTgdM_04o4lsY9W6tdFUmc9_6rHmTwxvYIgPotDGUCLZvZicVN4R9dEZzWaOTNVextG7ksQtMva4jCzRnNWr8Lu9NWPioD4bntwzlVdgftJ50l7iKArIRiscMDLhDtQslrVQSebZYnnzStp-CaJM1Zc9emLc2eXFo8uP_WqSOQk1P_9sA3SU0akcqM7s7tJ6dwBKHYZSqNhAN5omvCiQc8vT808Rt9RG9TBNZ8uL2mEPAV9Gn-wjL5CiyGdnHHQqKutri65MrVfCibKxUELRXdnoQovuRVLPbMfNHQKj8Kzm8rLkN8IhQ3-YFEN2IfcBAfM-nkRXxB5NRVaP12X-xwO7jmp0cq7x8edu1dirb3SwN9b2LG1LHTEv91Sp-s_8r5M2avSS7BP6Vq-FADr-_tGITS8CjGacBnFP6JxCTHXoHacbTMEmMX83vO3lAZ6-hw7Dl034Ujc3-4EvEMCA2jjkBg9vxWo5yxC9SbFRL9VIOhH86uvuT7nvhw0x4HUFmOkaIhFdtAkY_i5a7eNTMq5W5hLLhHYRgAE28xyyFxlnFib0qltcQ48xNg2pygjg-vqZfMO6_Fif6FikkevbFaeqkzZOqdcchZKLUwxJNrPgEUVigiVn31pLN_ylWG7kt179K573zgyBqfNKvKuXKOFWnZDhnmiXicfEv6RkOr9CiXbli3yQ89AYDjIyRdsVT5QVJNijmfBVn6QEti1saAxE_1yqP2Hop4f5HpMJfBcei1bXMtBNrNFTqjc0d57yzYDSTRdjCPItQm-ZF9Yf8iSUkQXiRGXzdM5fOrpQHULJWVIhdmWOerZYBNSqxm0zPMyWB77DxzgwfaVKGy9EcOEnNay7Bo-cnyzUs7PvMDPwMHoKkxfgTe_DK8v8sYWgiaqkAmQLCg5D67net5gvbRLulnUe0VnfqZcOfFuu1R_hI6hOohPc-hnhOjrdGxkRgWTvVZx6knAPUFijR0T0e3gj0Tm67CLQSGhNTXjzaf8acx-8tVwSWO5Ian3mt4iomE7SliaDXvfnp7bHIBZDaT2cx_AVAU2vEnHfnZ6ljY9FZzNtYhGaHXpTMfQXzi99yGdGIiv3jEHr3AD359xvmnnKdCpRs2OkgV4VOhjvy0XwbYr3fmtcXqqNxUOSy5Azj7t7k17vnFA55SJaKKe552BU7k_dE8vIVHDDFlS1a0UPpv7V6PTRle2AZduKPnBLJWGYFnuBjKtN_n5tEwcdU60cJ_PqIVmU_fJ0mtXWBdnY9TfX7QleBxBrFSnKuCSoOn21JBRKHPus33Bq_UM3ErI97hd4IRb3tPccL3GTr-5TCMyTZQOB6M8RqXU_2lys8LAwG1OiwjyHQudTdYC7EkiB5Q0k6-ZN46BfZ4N5RC-nS0?>
-    </g>
+	<title>AthStateMachine &#8212; Run-Ablauf (IST, 12 States)</title>
+	<defs/>
+	<g>
+		<g class="title" data-source-line="1">
+			<text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing"
+			      textLength="315.4717" x="684.5811" y="24.5332">AthStateMachine &#8212; Run-Ablauf (IST, 12 States)
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Starting" id="ent0002">
+			<rect fill="#E3F2FD" height="188.5469" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="278.1523" x="1110" y="649.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="1110" x2="1388.1523" y1="677.2188" y2="677.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="101.9512"
+			      x="1198.1006" y="669.1426">StateAthStarting
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="130.0547"
+			      x="1115" y="694.6758">Chat: MessageStarting()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="11.9883"
+			      x="1115" y="709.7695">---
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="67.0195" x="1115" y="724.8633">RTM = false
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="185.1152"
+			      x="1115" y="739.957">CurrentLobby.RoundTime = 86400
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="258.1523"
+			      x="1115" y="755.0508">delay 2500 -&gt; UpdateServerPlaylist -&gt; delay 500
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="107.0566"
+			      x="1115" y="770.1445">Countdown 5s -&gt; /fs
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="11.9883"
+			      x="1115" y="785.2383">---
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="62.3379" x="1115" y="800.332">RTM = true
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="87.3691"
+			      x="1180.6719" y="800.332">(bis 3 Versuche)
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="255.7383"
+			      x="1115" y="815.4258">DrawRandomLevelAsync() -&gt; StartNewPlaylist()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="117.0645"
+			      x="1115" y="830.5195">Countdown 5s -&gt; /fs 0
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Loading" id="ent0003">
+			<rect fill="#E3F2FD" height="67.7969" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="302.123" x="968" y="932.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="968" x2="1270.123" y1="960.2188" y2="960.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="136.999"
+			      x="1050.562" y="952.1426">StateAthLoadingLevel
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="282.123"
+			      x="973" y="977.6758">RoundOverText = ATH-Header + letzter Level-Status
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="182.7891"
+			      x="973" y="992.7695">wartet auf RacingApi.LevelLoaded
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Processing" id="ent0004">
+			<rect fill="#F1F1F1" height="67.7969" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="182.75" x="742.5" y="1094.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="742.5" x2="925.25" y1="1122.2188" y2="1122.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="156.4268"
+			      x="755.6616" y="1114.1426">StateAthProcessingLevel
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="162.75"
+			      x="747.5" y="1139.6758">validiert LevelApi.CurrentLevel
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="158.7715"
+			      x="747.5" y="1154.7695">null? -&gt; broken? -&gt; duplicate?
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Broken" id="ent0005">
+			<rect fill="#FFE0E0" height="97.9844" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="213.0059" x="497.5" y="1256.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="497.5" x2="710.5059" y1="1284.2188" y2="1284.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="193.0059"
+			      x="507.5" y="1276.1426">StateAthResolvingBrokenLevel
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="155.4082"
+			      x="502.5" y="1301.6758">Chat: MessageBrokenLevel()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="142.7168"
+			      x="502.5" y="1316.7695">DrawRandomLevelAsync()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.7383"
+			      x="502.5" y="1331.8633">ReplaceLevelInCurrentPlaylist()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="50.0098"
+			      x="502.5" y="1346.957">/fs restart
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Duplicate" id="ent0006">
+			<rect fill="#FFE0E0" height="97.9844" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="227.0127" x="1241.5" y="1256.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="1241.5" x2="1468.5127" y1="1284.2188" y2="1284.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="207.0127"
+			      x="1251.5" y="1276.1426">StateAthResolvingDuplicateLevel
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="162.0996"
+			      x="1246.5" y="1301.6758">ConsecutiveDuplicateCount++
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="142.7168"
+			      x="1246.5" y="1316.7695">DrawRandomLevelAsync()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="150.0586"
+			      x="1246.5" y="1331.8633">AddLevelToCurrentPlaylist()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="38.6836"
+			      x="1246.5" y="1346.957">/fs next
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="FirstTime" id="ent0007">
+			<rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="272.7793" x="59.5" y="1264.1094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="59.5" x2="332.2793" y1="1291.7188" y2="1291.7188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="175.0615"
+			      x="108.3589" y="1283.6426">StateAthStartLevelFirstTime
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="252.7793"
+			      x="64.5" y="1309.1758">Ctx.InitializingNewLevel(LevelApi.CurrentLevel)
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="222.4219"
+			      x="64.5" y="1324.2695">-&gt; new Level(), Levels.Add(), Level.Start()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="183.7617"
+			      x="64.5" y="1339.3633">SetServerMessage(paused = true)
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="OnARun" id="ent0008">
+			<rect fill="#FFF0C2" height="97.9844" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="303.0898" x="333.5" y="49.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="333.5" x2="636.5898" y1="77.2188" y2="77.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="107.3994"
+			      x="431.3452" y="69.1426">StateAthOnARun
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="38.666" x="338.5" y="94.6758">Enter()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="122.7129"
+			      x="380.5" y="94.6758">Level.AddTimeStamp()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="57.3223" x="509.8809" y="94.6758">[Uhr l&#228;uft]
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="30" x="338.5" y="109.7695">Exit()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="122.7129"
+			      x="375.168" y="109.7695">Level.AddTimeStamp()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="68.6484" x="504.5488" y="109.7695">[Uhr stoppt]
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="134.7246"
+			      x="338.5" y="124.8633">Chat: MessageOnARun()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="283.0898"
+			      x="338.5" y="139.957">Tick: SetServerMessage(false) + Low-Time-Warnung
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Pausing" id="ent0009">
+			<rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="203.7617" x="471" y="246.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="471" x2="674.7617" y1="274.2188" y2="274.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="104.2959"
+			      x="520.7329" y="266.1426">StateAthPausing
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.0469"
+			      x="476" y="291.6758">Medal-Progress-Text (einmalig)
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="98.6836"
+			      x="476" y="306.7695">Ctx.ResetRetries()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="183.7617"
+			      x="476" y="321.8633">SetServerMessage(paused = true)
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="WaitRespawn" id="ent0010">
+			<rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="220.7539" x="929.5" y="359.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="929.5" x2="1150.2539" y1="387.2188" y2="387.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="179.751"
+			      x="950.0015" y="379.1426">StateAthWaitingForRespawn
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="64.6992"
+			      x="934.5" y="404.6758">Level.Stop()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="155.9297"
+			      x="934.5" y="419.7695">Popup "Author time claimed!"
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="200.7539"
+			      x="934.5" y="434.8633">Chat: MessageAuthorMedalClaimed()
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Evaluate" id="ent0011">
+			<rect fill="#F1F1F1" height="82.8906" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="234.7227" x="734.5" y="472.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="734.5" x2="969.2227" y1="500.2188" y2="500.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="135.4199"
+			      x="784.1514" y="492.1426">StateAthEvaluateSkip
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="214.7227"
+			      x="739.5" y="517.6758">bestimmt Skip-Typ (siehe Diagramm 07)
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="109.7402"
+			      x="739.5" y="532.7695">Level.Skipped = true
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="64.6992"
+			      x="739.5" y="547.8633">Level.Stop()
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Summary" id="ent0012">
+			<rect fill="#F1F1F1" height="52.7031" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="188.7266" x="885.5" y="717.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="885.5" x2="1074.2266" y1="745.2188" y2="745.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="147.0684"
+			      x="906.3291" y="737.1426">StateAthLevelSummary
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="168.7266"
+			      x="890.5" y="762.6758">Chat: MessageLevelSummary()
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="Stopping" id="ent0013">
+			<rect fill="#E8E8E8" height="113.0781" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;"
+			      width="252.0781" x="729" y="1432.6094"/>
+			<line style="stroke:#181818;stroke-width:0.5;" x1="729" x2="981.0781" y1="1460.2188" y2="1460.2188"/>
+			<text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="108.9717"
+			      x="800.5532" y="1452.1426">StateAthStopping
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="92.6895"
+			      x="734" y="1477.6758">ClearMedalText()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" font-weight="bold" lengthAdjust="spacing"
+			      textLength="81.3398" x="734" y="1492.7695">InvokeFinish()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="135.0527"
+			      x="822.0078" y="1492.7695">-&gt; Master schaltet auf Off
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="104.7129"
+			      x="734" y="1507.8633">CurrentLevel.Stop()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="110.0508"
+			      x="734" y="1522.957">Chat: MessageEnd()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="232.0781"
+			      x="734" y="1538.0508">optional: Playlist als ATH-RUN-... speichern
+			</text>
+		</g>
+		<g class="start_entity" data-qualified-name=".start." data-source-line="12" id="ent0002">
+			<ellipse cx="1249" cy="514.1094" fill="#222222" rx="10" ry="10" style="stroke:#222222;stroke-width:1;"/>
+		</g>
+		<g class="end_entity" data-qualified-name=".end." data-source-line="133" id="ent0030">
+			<ellipse cx="855" cy="1617.6094" fill="none" rx="11" ry="11" style="stroke:#222222;stroke-width:1;"/>
+			<ellipse cx="855" cy="1617.6094" fill="#222222" rx="6" ry="6" style="stroke:#222222;stroke-width:1;"/>
+		</g>
+		<g class="entity" data-qualified-name="GMN2" data-source-line="136" id="ent0003">
+			<path
+				d="M807.5,44.6094 L807.5,94.6094 L636.71,98.6094 L807.5,102.6094 L807.5,152.7188 A0,0 0 0 0 807.5,152.7188 L1060.4116,152.7188 A0,0 0 0 0 1060.4116,152.7188 L1060.4116,54.6094 L1050.4116,44.6094 L807.5,44.6094 A0,0 0 0 0 807.5,44.6094"
+				fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/>
+			<path d="M1050.4116,44.6094 L1050.4116,54.6094 L1060.4116,54.6094 L1050.4116,44.6094" fill="#FEFFDD"
+			      style="stroke:#181818;stroke-width:0.5;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing"
+			      textLength="85.96" x="813.5" y="63.1045">Uhr-Mechanik
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="186.4053"
+			      x="813.5" y="79.4561">Die Run-Zeit l&#228;uft ausschlie&#223;lich
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="218.9497"
+			      x="813.5" y="95.8076">in StateAthOnARun. Enter/Exit setzen
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="231.9116"
+			      x="813.5" y="112.1592">Timestamp-Paare in Level.TimeStamps;
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="223.9707"
+			      x="813.5" y="128.5107">GetPlayDuration() summiert die Paare.
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="197.2471"
+			      x="813.5" y="144.8623">Ziel-/Pausenbildschirm z&#228;hlt nicht.
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="GMN5" data-source-line="145" id="ent0006">
+			<path
+				d="M981.5,1268.1094 L981.5,1343.5156 A0,0 0 0 0 981.5,1343.5156 L1206.2852,1343.5156 A0,0 0 0 0 1206.2852,1343.5156 L1206.2852,1309.6094 L1241.43,1305.6094 L1206.2852,1301.6094 L1206.2852,1278.1094 L1196.2852,1268.1094 L981.5,1268.1094 A0,0 0 0 0 981.5,1268.1094"
+				fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/>
+			<path d="M1196.2852,1268.1094 L1196.2852,1278.1094 L1206.2852,1278.1094 L1196.2852,1268.1094" fill="#FEFFDD"
+			      style="stroke:#181818;stroke-width:0.5;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="187.8716"
+			      x="987.5" y="1286.6045">ConsecutiveDuplicateCount wird
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing"
+			      textLength="109.0845" x="987.5" y="1302.9561">nie zur&#252;ckgesetzt
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="75.8608"
+			      x="1100.1963" y="1302.9561">&#8212; der Z&#228;hler
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="203.7852"
+			      x="987.5" y="1319.3076">ist kumulativ &#252;ber den ganzen Run,
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="112.563"
+			      x="987.5" y="1335.6592">nicht "consecutive".
+			</text>
+		</g>
+		<g class="entity" data-qualified-name="GMN8" data-source-line="152" id="ent0009">
+			<path
+				d="M745.5,1268.1094 L745.5,1301.6094 L710.82,1305.6094 L745.5,1309.6094 L745.5,1343.5156 A0,0 0 0 0 745.5,1343.5156 L946.4053,1343.5156 A0,0 0 0 0 946.4053,1343.5156 L946.4053,1278.1094 L936.4053,1268.1094 L745.5,1268.1094 A0,0 0 0 0 745.5,1268.1094"
+				fill="#FEFFDD" style="stroke:#181818;stroke-width:0.5;"/>
+			<path d="M936.4053,1268.1094 L936.4053,1278.1094 L946.4053,1278.1094 L936.4053,1268.1094" fill="#FEFFDD"
+			      style="stroke:#181818;stroke-width:0.5;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="139.4326"
+			      x="751.5" y="1286.6045">Ersetzt wird die UID von
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="179.9053"
+			      x="751.5" y="1302.9561">Ctx.CurrentLevel &#8212; das ist das
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacing"
+			      textLength="59.2427" x="751.5" y="1319.3076">vorherige
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="90.3335"
+			      x="814.3545" y="1319.3076">Level, nicht das
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="161.8843"
+			      x="751.5" y="1335.6592">gerade als broken erkannte.
+			</text>
+		</g><!--link *start* to Starting-->
+		<g class="link" data-entity-1="ent0002" data-entity-2="ent0002" data-link-type="dependency"
+		   data-source-line="12" id="lnk3">
+			<path d="M1249,524.3294 C1249,545.6194 1249,594.1394 1249,643.4294" fill="none" id="*start*-to-Starting"
+			      style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818" points="1249,649.4294,1253,640.4294,1249,644.4294,1245,640.4294,1249,649.4294"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="130.7681"
+			      x="1250" y="600.1045">StateMasterOn.Enter()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="41.5327"
+			      x="1294.6177" y="616.4561">-&gt; Init()
+			</text>
+		</g><!--link Starting to Loading-->
+		<g class="link" data-entity-1="ent0002" data-entity-2="ent0003" data-link-type="dependency"
+		   data-source-line="95" id="lnk4">
+			<path
+				d="M1133.2,838.9294 C1126.42,848.2994 1120.53,858.2094 1116,868.6094 C1107.31,888.5294 1107.2341,907.0782 1110.1941,926.4582"
+				fill="none" id="Starting-to-Loading" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="1111.1,932.3894,1113.6953,922.8886,1110.3451,927.4467,1105.787,924.0965,1111.1,932.3894"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="88.1436"
+			      x="1117" y="891.1045">Execute() fertig
+			</text>
+		</g><!--link Starting to Loading-->
+		<g class="link" data-entity-1="ent0002" data-entity-2="ent0003" data-link-type="dependency"
+		   data-source-line="96" id="lnk5">
+			<path
+				d="M1237.41,838.9594 C1231.62,861.1694 1222.96,883.8294 1210,902.6094 C1202.14,913.9994 1196.3064,920.3546 1185.0764,928.7946"
+				fill="none" id="Starting-to-Loading-1" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="1180.28,932.3994,1189.8778,930.1898,1184.277,929.3954,1185.0714,923.7946,1180.28,932.3994"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
+			      x="1227" y="891.1045">OnRoundEnded()
+			</text>
+		</g><!--link Loading to Processing-->
+		<g class="link" data-entity-1="ent0003" data-entity-2="ent0004" data-link-type="dependency"
+		   data-source-line="99" id="lnk6">
+			<path d="M1059.95,1000.7594 C1011.03,1028.2194 947.1018,1064.1119 898.2118,1091.5619" fill="none"
+			      id="Loading-to-Processing" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="892.98,1094.4994,902.786,1093.581,897.3398,1092.0515,898.8693,1086.6054,892.98,1094.4994"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
+			      x="1076.2393" y="1045.1045">OnLevelLoaded()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="246.9365"
+			      x="1003" y="1061.4561">[!IsTimeOver &amp;&amp; (RTM || Levels &lt; Playlist)]
+			</text>
+		</g><!--link Loading to Stopping-->
+		<g class="link" data-entity-1="ent0003" data-entity-2="ent0013" data-link-type="dependency"
+		   data-source-line="100" id="lnk7">
+			<path
+				d="M1204.66,1000.6494 C1222.93,1009.2594 1241.64,1019.3394 1258,1030.6094 C1403,1130.5094 1590.35,1212.7794 1486,1354.6094 C1427.23,1434.4894 1153.6921,1467.276 987.0321,1480.186"
+				fill="none" id="Loading-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="981.05,1480.6494,990.332,1483.9423,986.0351,1480.2632,989.7142,1475.9662,981.05,1480.6494"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
+			      x="1547.0879" y="1207.1045">OnLevelLoaded()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="186.6338"
+			      x="1504" y="1223.4561">[IsTimeOver || Playlist ersch&#246;pft]
+			</text>
+		</g><!--link Processing to Processing-->
+		<g class="link" data-entity-1="ent0004" data-entity-2="ent0004" data-link-type="dependency"
+		   data-source-line="103" id="lnk8">
+			<path
+				d="M925.54,1114.0094 C945.77,1115.3894 960.5,1120.2494 960.5,1128.6094 C960.5,1136.9694 951.7561,1141.421 931.5261,1142.801"
+				fill="none" id="Processing-to-Processing" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="925.54,1143.2094,934.7914,1146.5876,930.5284,1142.8691,934.2469,1138.6061,925.54,1143.2094"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="170.5488"
+			      x="966.5" y="1126.1045">LevelApi.CurrentLevel == null
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="164.7217"
+			      x="969.4136" y="1142.4561">(delay 100 ms, Selbst-Retry)
+			</text>
+		</g><!--link Processing to Broken-->
+		<g class="link" data-entity-1="ent0004" data-entity-2="ent0005" data-link-type="dependency"
+		   data-source-line="104" id="lnk9">
+			<path
+				d="M742.33,1142.7894 C684.91,1153.1394 618.58,1169.6494 601,1192.6094 C587.34,1210.4494 585.7068,1229.0593 589.0268,1250.6193"
+				fill="none" id="Processing-to-Broken" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="589.94,1256.5494,592.5236,1247.0454,589.179,1251.6076,584.6168,1248.263,589.94,1256.5494"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="188.9443"
+			      x="602" y="1215.1045">Playlist[idx].UID != geladene UID
+			</text>
+		</g><!--link Broken to Processing-->
+		<g class="link" data-entity-1="ent0005" data-entity-2="ent0004" data-link-type="dependency"
+		   data-source-line="109" id="lnk13">
+			<path
+				d="M710.69,1263.0094 C752.46,1246.3694 791.37,1230.2594 795,1226.6094 C812.15,1209.3694 820.4779,1189.3952 826.0079,1168.7452"
+				fill="none" id="Broken-to-Processing" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="827.56,1162.9494,821.368,1170.6083,826.2666,1167.7792,829.0957,1172.6778,827.56,1162.9494"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
+			      x="817" y="1215.1045">OnLevelLoaded()
+			</text>
+		</g><!--link Processing to Duplicate-->
+		<g class="link" data-entity-1="ent0004" data-entity-2="ent0006" data-link-type="dependency"
+		   data-source-line="105" id="lnk10">
+			<path
+				d="M925.63,1142.7094 C985.44,1152.7794 1064.63,1169.0094 1132,1192.6094 C1180.04,1209.4394 1225.6773,1231.5646 1266.7173,1253.6646"
+				fill="none" id="Processing-to-Duplicate" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="1272,1256.5094,1265.9724,1248.7204,1267.5977,1254.1387,1262.1794,1255.7641,1272,1256.5094"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="180.6162"
+			      x="1208" y="1215.1045">RTM &amp;&amp; Levels.Contains(level)
+			</text>
+		</g><!--link Duplicate to Processing-->
+		<g class="link" data-entity-1="ent0006" data-entity-2="ent0004" data-link-type="dependency"
+		   data-source-line="110" id="lnk14">
+			<path
+				d="M1241.48,1261.4394 C1235.6,1259.6994 1229.75,1258.0694 1224,1256.6094 C1136.04,1234.2094 1108.38,1254.4594 1022,1226.6094 C973.94,1211.1094 928.4425,1187.3199 891.8325,1165.7999"
+				fill="none" id="Duplicate-to-Processing" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="886.66,1162.7594,892.3918,1170.7685,890.9705,1165.2931,896.4458,1163.8718,886.66,1162.7594"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100.458"
+			      x="1023" y="1215.1045">OnLevelLoaded()
+			</text>
+		</g><!--link Processing to FirstTime-->
+		<g class="link" data-entity-1="ent0004" data-entity-2="ent0007" data-link-type="dependency"
+		   data-source-line="106" id="lnk11">
+			<path
+				d="M742.39,1134.6694 C617.04,1142.6594 399.38,1160.6794 327,1192.6094 C290.18,1208.8494 260.0771,1234.6519 235.8171,1259.5519"
+				fill="none" id="Processing-to-FirstTime" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="231.63,1263.8494,240.7756,1260.1945,235.1192,1260.2681,235.0456,1254.6117,231.63,1263.8494"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="48.4199"
+			      x="328" y="1215.1045">Level ok
+			</text>
+		</g><!--link Processing to Stopping-->
+		<g class="link" data-entity-1="ent0004" data-entity-2="ent0013" data-link-type="dependency"
+		   data-source-line="107" id="lnk12">
+			<path
+				d="M742.41,1144.2194 C632.14,1163.9694 457.21,1202.9894 421,1256.6094 C396.62,1292.6994 395.12,1319.5794 421,1354.6094 C457.97,1404.6594 608.5138,1442.5864 723.0038,1465.2064"
+				fill="none" id="Processing-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="728.89,1466.3694,720.836,1460.7008,723.9848,1465.4002,719.2854,1468.5491,728.89,1466.3694"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="57.0908"
+			      x="422" y="1311.1045">Exception
+			</text>
+		</g><!--link Duplicate to Stopping-->
+		<g class="link" data-entity-1="ent0006" data-entity-2="ent0013" data-link-type="dependency"
+		   data-source-line="111" id="lnk15">
+			<path
+				d="M1241.4,1348.2694 C1235.52,1350.4094 1229.69,1352.5394 1224,1354.6094 C1143.18,1384.0394 1057.9733,1414.8714 986.6433,1440.6314"
+				fill="none" id="Duplicate-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="981,1442.6694,990.8236,1443.3746,985.7027,1440.971,988.1062,1435.8502,981,1442.6694"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="190.0615"
+			      x="1133" y="1399.1045">ConsecutiveDuplicateCount &gt;= 3
+			</text>
+		</g><!--link FirstTime to OnARun-->
+		<g class="link" data-entity-1="ent0007" data-entity-2="ent0008" data-link-type="dependency"
+		   data-source-line="114" id="lnk16">
+			<path
+				d="M184.63,1263.9494 C175.79,1228.7094 165,1176.1994 165,1129.6094 C165,287.1094 165,287.1094 165,287.1094 C165,238.1294 164.68,216.5494 200,182.6094 C236.04,147.9694 279.8668,129.1151 327.6368,117.2551"
+				fill="none" id="FirstTime-to-OnARun" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="333.46,115.8094,323.7613,114.0959,328.6073,117.0142,325.689,121.8601,333.46,115.8094"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.2217"
+			      x="199.4172" y="741.6045">OnRoundStarted()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="173.0562"
+			      x="166" y="757.9561">(+ fire&amp;forget AddLevelAsync)
+			</text>
+		</g><!--link OnARun to OnARun-->
+		<g class="link" data-entity-1="ent0008" data-entity-2="ent0008" data-link-type="dependency"
+		   data-source-line="116" id="lnk17">
+			<path
+				d="M636.84,81.9294 C657.63,84.6994 671.5,90.2594 671.5,98.6094 C671.5,106.9594 663.5774,111.727 642.7874,114.497"
+				fill="none" id="OnARun-to-OnARun" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="636.84,115.2894,646.2894,118.0657,641.7962,114.629,645.2329,110.1358,636.84,115.2894"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.2217"
+			      x="677.5" y="96.1045">OnRoundStarted()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.209"
+			      x="677.5063" y="112.4561">Attempt++ (Reset)
+			</text>
+		</g><!--link OnARun to Pausing-->
+		<g class="link" data-entity-1="ent0008" data-entity-2="ent0009" data-link-type="dependency"
+		   data-source-line="117" id="lnk18">
+			<path
+				d="M333.15,118.3994 C252.16,134.7794 177.19,164.3994 220,216.6094 C251.26,254.7294 372.0529,272.1152 464.7629,280.2452"
+				fill="none" id="OnARun-to-Pausing" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="470.74,280.7694,462.1238,275.9984,465.7591,280.3326,461.425,283.9679,470.74,280.7694"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.6626"
+			      x="221" y="197.1045">OnCrossedFinishLine()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="51.2954"
+			      x="262.1836" y="213.4561">[kein AT]
+			</text>
+		</g><!--link OnARun to Pausing-->
+		<g class="link" data-entity-1="ent0008" data-entity-2="ent0009" data-link-type="dependency"
+		   data-source-line="119" id="lnk20">
+			<path
+				d="M415.11,147.6194 C393.55,168.4094 379.16,193.2894 395,216.6094 C412.65,242.5894 435.8709,257.0059 465.2809,267.3659"
+				fill="none" id="OnARun-to-Pausing-1" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="470.94,269.3594,463.7803,262.5964,466.224,267.6981,461.1223,270.1419,470.94,269.3594"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.6626"
+			      x="396" y="197.1045">OnCrossedFinishLine()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="130.0635"
+			      x="397.7996" y="213.4561">[CurrentResult == null]
+			</text>
+		</g><!--link Pausing to OnARun-->
+		<g class="link" data-entity-1="ent0009" data-entity-2="ent0008" data-link-type="dependency"
+		   data-source-line="123" id="lnk23">
+			<path
+				d="M559.71,246.4794 C552.82,226.8394 543.8,203.1494 534,182.6094 C528.52,171.1294 524.9977,164.3352 518.4977,153.1652"
+				fill="none" id="Pausing-to-OnARun" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="515.48,147.9794,516.5494,157.77,517.9948,152.3009,523.4639,153.7464,515.48,147.9794"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="106.2217"
+			      x="550" y="205.1045">OnRoundStarted()
+			</text>
+		</g><!--link Pausing to OnARun-->
+		<g class="link" data-entity-1="ent0009" data-entity-2="ent0008" data-link-type="dependency"
+		   data-source-line="124" id="lnk24">
+			<path
+				d="M641.73,246.5094 C663.95,228.0594 679.53,205.3094 665,182.6094 C656.19,168.8394 649.3073,160.8517 636.0273,151.2217"
+				fill="none" id="Pausing-to-OnARun-1" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="631.17,147.6994,636.1078,156.221,635.2178,150.6346,640.8042,149.7446,631.17,147.6994"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="138.0234"
+			      x="671" y="205.1045">OnPhotoModeEntered()
+			</text>
+		</g><!--link OnARun to WaitRespawn-->
+		<g class="link" data-entity-1="ent0008" data-entity-2="ent0010" data-link-type="dependency"
+		   data-source-line="118" id="lnk19">
+			<path
+				d="M636.52,125.7694 C748.14,145.6194 884.74,171.3594 910,182.6094 C953.2,201.8494 968.09,207.7194 995,246.6094 C1018.47,280.5194 1028.873,320.8195 1034.293,353.6595"
+				fill="none" id="OnARun-to-WaitRespawn" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="1035.27,359.5794,1037.7511,350.0481,1034.4558,354.6461,1029.8578,351.3509,1035.27,359.5794"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="133.6626"
+			      x="970" y="197.1045">OnCrossedFinishLine()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="121.3735"
+			      x="976.1445" y="213.4561">[Status == AUTHOR]
+			</text>
+		</g><!--link OnARun to Evaluate-->
+		<g class="link" data-entity-1="ent0008" data-entity-2="ent0011" data-link-type="dependency"
+		   data-source-line="120" id="lnk21">
+			<path
+				d="M636.67,121.8794 C711.67,135.8594 791.68,156.2694 818,182.6094 C894.86,259.5194 878.2099,396.4889 863.4299,466.4689"
+				fill="none" id="OnARun-to-Evaluate" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="862.19,472.3394,867.9635,464.3602,863.2232,467.4473,860.1361,462.7071,862.19,472.3394"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
+			      x="875" y="293.6045">OnRoundEnded()
+			</text>
+		</g><!--link OnARun to Stopping-->
+		<g class="link" data-entity-1="ent0008" data-entity-2="ent0013" data-link-type="dependency"
+		   data-source-line="121" id="lnk22">
+			<path
+				d="M333.44,128.7994 C193.11,160.2894 6,215.6694 6,287.1094 C6,287.1094 6,287.1094 6,1306.6094 C6,1452.6294 486.3116,1481.4514 722.8116,1486.8914"
+				fill="none" id="OnARun-to-Stopping" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="728.81,1487.0294,719.9044,1482.8235,723.8113,1486.9144,719.7204,1490.8214,728.81,1487.0294"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="102.5591"
+			      x="7" y="883.1045">OnAthTimerTick()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="74.3945"
+			      x="21.0823" y="899.4561">[IsTimeOver]
+			</text>
+		</g><!--link Pausing to Evaluate-->
+		<g class="link" data-entity-1="ent0009" data-entity-2="ent0011" data-link-type="dependency"
+		   data-source-line="125" id="lnk25">
+			<path
+				d="M619.37,329.8094 C655.7,361.3094 707.82,405.6494 755,442.6094 C767.7,452.5594 776.7533,459.4125 789.9633,469.0525"
+				fill="none" id="Pausing-to-Evaluate" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="794.81,472.5894,789.8979,464.0529,790.7711,469.642,785.182,470.5152,794.81,472.5894"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
+			      x="756" y="406.6045">OnRoundEnded()
+			</text>
+		</g><!--link WaitRespawn to WaitRespawn-->
+		<g class="link" data-entity-1="ent0010" data-entity-2="ent0010" data-link-type="dependency"
+		   data-source-line="127" id="lnk26">
+			<path
+				d="M1150.71,381.2294 C1171.14,383.7094 1185.5,390.3394 1185.5,401.1094 C1185.5,411.8794 1177.0963,417.7863 1156.6663,420.2663"
+				fill="none" id="WaitRespawn-to-WaitRespawn" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="1150.71,420.9894,1160.1264,423.8757,1155.6736,420.3868,1159.1624,415.934,1150.71,420.9894"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="117.0571"
+			      x="1191.5" y="398.6045">OnPlayerSpawned()
+			</text>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="29.2563"
+			      x="1235.4004" y="414.9561">-&gt; /fs
+			</text>
+		</g><!--link WaitRespawn to Summary-->
+		<g class="link" data-entity-1="ent0010" data-entity-2="ent0012" data-link-type="dependency"
+		   data-source-line="128" id="lnk27">
+			<path d="M1032.82,442.8994 C1020.32,513.9694 995.9298,652.6002 985.5798,711.4202" fill="none"
+			      id="WaitRespawn-to-Summary" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="984.54,717.3294,990.0392,709.1587,985.4065,712.405,982.1602,707.7724,984.54,717.3294"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="101.8989"
+			      x="1028" y="519.6045">OnRoundEnded()
+			</text>
+		</g><!--link Evaluate to Summary-->
+		<g class="link" data-entity-1="ent0011" data-entity-2="ent0012" data-link-type="dependency"
+		   data-source-line="130" id="lnk28">
+			<path d="M874.88,555.8694 C901.2,602.7494 940.6729,673.0574 962.7129,712.3174" fill="none"
+			      id="Evaluate-to-Summary" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="965.65,717.5494,964.7323,707.7434,963.2024,713.1894,957.7563,711.6596,965.65,717.5494"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36.1055"
+			      x="909" y="608.1045">immer
+			</text>
+		</g><!--link Summary to Loading-->
+		<g class="link" data-entity-1="ent0012" data-entity-2="ent0003" data-link-type="dependency"
+		   data-source-line="131" id="lnk29">
+			<path
+				d="M991.17,770.7394 C1005.67,802.8294 1032.73,858.9094 1063,902.6094 C1070.08,912.8394 1074.6556,918.7333 1082.9156,928.0333"
+				fill="none" id="Summary-to-Loading" style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818"
+			         points="1086.9,932.5194,1083.9141,923.134,1083.5797,928.781,1077.9327,928.4466,1086.9,932.5194"
+			         style="stroke:#181818;stroke-width:1;"/>
+			<text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="36.1055"
+			      x="1064" y="891.1045">immer
+			</text>
+		</g><!--link Stopping to *end*-->
+		<g class="link" data-entity-1="ent0013" data-entity-2="ent0030" data-link-type="dependency"
+		   data-source-line="133" id="lnk31">
+			<path d="M855,1545.9594 C855,1568.9994 855,1587.3594 855,1600.5994" fill="none" id="Stopping-to-*end*"
+			      style="stroke:#181818;stroke-width:1;"/>
+			<polygon fill="#181818" points="855,1606.5994,859,1597.5994,855,1601.5994,851,1597.5994,855,1606.5994"
+			         style="stroke:#181818;stroke-width:1;"/>
+		</g>
+		<?plantuml-src bLZDRXit4BxhAIOka4gsLr6IfWrSsuLYMuq1EpPaEG6I-43jKbf2A-w2vCe_JO4-HE-zv1bwoirlqYVf3Bd_MZUDVV0k-Srm_ZZphOqm4OUX2IyCC_oK-Q6G7FxvuqyOfz8RJYEMpg1xV37PXgVFm89qhzFH2o4JfjWITCY2-5h8ESnOf7brXy3mMmVW5VCNSnMdCZY8erZjxeQnsTy7-_FTQ3GQ73nhGodknokkRX6AgAF1qQ0DPRXQ2iaYGXszfDysb8Zp0n7rVFHiTDZvlHEAW0DV9kOM0gvz9H8ZOjdfVDYy0i_R9tUL8TTs80kFnjFEPFz8ujzkxwD4qB4KfaiXiUvkMA2BfvNT0APBHPaX59IAyeEGcHquvLgpES_NKMSDv7bUVM5pSpmvXJqNzytDXifKAIxDIJoTtlR758Y9M794l_pnXy6WZWrun6xXsOl10D2VooH03owumj2VuqOajA5rXthH53v0tGOhGC8BJR0dC_q_xJOgHREXEnKQdiDRhdJgXxpXzQ5YrsCcWtXvmbSy6kfRwNTxa2Vd3R_ERMp6gyKm663IcuawYLc04bQzJLQsKCrLlhG3DfHd69e9lp7en73osdlDMS0LR474pHqM1bXT7XsGwfhqDLh73T2T6ZCVruQ9w5iqONZGOjwvYdqiZ9g5vPgrhlAw0oiMYK1mPPmLT41U2_JUXCiqYdwXy4nLlE3IFWPf4WaVZ_-bnPunrt6qGk5NLg0qohr3xThQo-_M6rLUaRQ9Ar3j2QyYnZo9cC_jzh7CdAjLGG6bd2kkgIZ-ovN3tE7Ics9ftQ5oYufCQkwdHgnuiMmBRskhWNpGhofe60HsTnAtkLL5acSIIx35BNi7h9gHKDhGlRSk5M_MY_8DlJ0tVMfZ0cld3kE1jyfbfhM4UWrfe9gH_1goR6wx1zr7RugtlhMgsvIzuCPrcgmikWbBDG-oxj1hyUvC3d4oMOVS8-JZXBpAbgZ9P3qQEump0AsXGr7FCi4E0hlJ_G-NeOBe_dCwCrUxJwRx3GKtrDXH_YiAj8cJP5r1hTpTgdM_04o4lsY9W6tdFUmc9_6rHmTwxvYIgPotDGUCLZvZicVN4R9dEZzWaOTNVextG7ksQtMva4jCzRnNWr8Lu9NWPioD4bntwzlVdgftJ50l7iKArIRiscMDLhDtQslrVQSebZYnnzStp-CaJM1Zc9emLc2eXFo8uP_WqSOQk1P_9sA3SU0akcqM7s7tJ6dwBKHYZSqNhAN5omvCiQc8vT808Rt9RG9TBNZ8uL2mEPAV9Gn-wjL5CiyGdnHHQqKutri65MrVfCibKxUELRXdnoQovuRVLPbMfNHQKj8Kzm8rLkN8IhQ3-YFEN2IfcBAfM-nkRXxB5NRVaP12X-xwO7jmp0cq7x8edu1dirb3SwN9b2LG1LHTEv91Sp-s_8r5M2avSS7BP6Vq-FADr-_tGITS8CjGacBnFP6JxCTHXoHacbTMEmMX83vO3lAZ6-hw7Dl034Ujc3-4EvEMCA2jjkBg9vxWo5yxC9SbFRL9VIOhH86uvuT7nvhw0x4HUFmOkaIhFdtAkY_i5a7eNTMq5W5hLLhHYRgAE28xyyFxlnFib0qltcQ48xNg2pygjg-vqZfMO6_Fif6FikkevbFaeqkzZOqdcchZKLUwxJNrPgEUVigiVn31pLN_ylWG7kt179K573zgyBqfNKvKuXKOFWnZDhnmiXicfEv6RkOr9CiXbli3yQ89AYDjIyRdsVT5QVJNijmfBVn6QEti1saAxE_1yqP2Hop4f5HpMJfBcei1bXMtBNrNFTqjc0d57yzYDSTRdjCPItQm-ZF9Yf8iSUkQXiRGXzdM5fOrpQHULJWVIhdmWOerZYBNSqxm0zPMyWB77DxzgwfaVKGy9EcOEnNay7Bo-cnyzUs7PvMDPwMHoKkxfgTe_DK8v8sYWgiaqkAmQLCg5D67net5gvbRLulnUe0VnfqZcOfFuu1R_hI6hOohPc-hnhOjrdGxkRgWTvVZx6knAPUFijR0T0e3gj0Tm67CLQSGhNTXjzaf8acx-8tVwSWO5Ian3mt4iomE7SliaDXvfnp7bHIBZDaT2cx_AVAU2vEnHfnZ6ljY9FZzNtYhGaHXpTMfQXzi99yGdGIiv3jEHr3AD359xvmnnKdCpRs2OkgV4VOhjvy0XwbYr3fmtcXqqNxUOSy5Azj7t7k17vnFA55SJaKKe552BU7k_dE8vIVHDDFlS1a0UPpv7V6PTRle2AZduKPnBLJWGYFnuBjKtN_n5tEwcdU60cJ_PqIVmU_fJ0mtXWBdnY9TfX7QleBxBrFSnKuCSoOn21JBRKHPus33Bq_UM3ErI97hd4IRb3tPccL3GTr-5TCMyTZQOB6M8RqXU_2lys8LAwG1OiwjyHQudTdYC7EkiB5Q0k6-ZN46BfZ4N5RC-nS0?>
+	</g>
 </svg>

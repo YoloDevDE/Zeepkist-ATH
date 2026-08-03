@@ -81,7 +81,9 @@ public class LocalLevelCacheService
 				}
 
 				foreach (OnlineZeeplevel level in playlist.levels)
+				{
 					AddLevel(seenUids, level.UID, level.WorkshopID, level.Name, level.Author);
+				}
 			}
 
 			Logger.LogInfo(
@@ -119,11 +121,15 @@ public class LocalLevelCacheService
 			HashSet<string> seenUids = new(StringComparer.OrdinalIgnoreCase);
 
 			// Collect already cached UIDs to avoid duplicates with Api results
-			foreach (LevelItem existing in CachedLevelItems) seenUids.Add(existing.FileUid);
+			foreach (LevelItem existing in CachedLevelItems)
+			{
+				seenUids.Add(existing.FileUid);
+			}
 
 			int fileCount = 0;
 
 			foreach (string file in files)
+			{
 				try
 				{
 					string json = File.ReadAllText(file);
@@ -147,6 +153,7 @@ public class LocalLevelCacheService
 					Logger.LogWarning(
 						$"LocalLevelCacheService: Failed to parse {Path.GetFileName(file)}: {ex.Message}");
 				}
+			}
 
 			Logger.LogInfo(
 				$"LocalLevelCacheService: File system scan complete, parsed {fileCount}/{files.Length} files, {CachedLevelItems.Count} total levels.");
@@ -169,10 +176,7 @@ public class LocalLevelCacheService
 			return;
 		}
 
-		CachedLevelItems.Add(new LevelItem
-		{
-			FileUid = uid, WorkshopId = workshopId, Name = name, FileAuthor = author
-		});
+		CachedLevelItems.Add(new LevelItem { FileUid = uid, WorkshopId = workshopId, Name = name, FileAuthor = author });
 	}
 
 	/// <summary>
@@ -188,9 +192,9 @@ public class LocalLevelCacheService
 			return new List<LevelItem>();
 		}
 
-		HashSet<string> excluded = excludedUids != null
-			? new HashSet<string>(excludedUids, StringComparer.OrdinalIgnoreCase)
-			: new HashSet<string>();
+		HashSet<string> excluded = excludedUids != null ?
+			new HashSet<string>(excludedUids, StringComparer.OrdinalIgnoreCase) :
+			new HashSet<string>();
 
 		List<LevelItem> available = CachedLevelItems.Where(l => !excluded.Contains(l.FileUid)).ToList();
 
@@ -207,7 +211,7 @@ public class LocalLevelCacheService
 	{
 		try
 		{
-			Messenger.Notify().LogSuccess(message);
+			ToastNotification.Success(message);
 		}
 		catch (Exception ex)
 		{
@@ -219,7 +223,7 @@ public class LocalLevelCacheService
 	{
 		try
 		{
-			Messenger.Notify().LogWarning(message);
+			ToastNotification.Warn(message);
 		}
 		catch (Exception ex)
 		{

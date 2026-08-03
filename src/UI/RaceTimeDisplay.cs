@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using TMPro;
 using UnityEngine;
@@ -9,16 +11,16 @@ using Object = UnityEngine.Object;
 namespace AuthorTimeHunting.UI;
 
 /// <summary>
-///     Rewrites the game's own running-time display into three aligned lines: the time itself,
-///     how much room is left to the gold time, and how much to the author time.
+///     Rewrites the game's own running-time display into two aligned lines: the time itself,
+///     and under it the best medal still within reach with the time it needs.
 ///     <code>
-///     00:12.480
-///       +02.130
-///       -00.940
+///        00:43.123          00:45.444        00:49.000
+///     AT 00:45.423     GOLD 00:48.345        missed
 ///     </code>
-///     A plus means headroom - that much of the target is still unspent. It flips to a minus
-///     the moment the target goes past, which is the reading a hunter actually wants: not "how
-///     far off am I" but "do I still have it".
+///     The target line is static - it names a medal and its time, and only changes when a
+///     medal drops out of reach. That is the whole reading: the number above is chasing the
+///     number below, and how far apart they are is visible without doing the subtraction.
+///     Deltas came before this and were too much to take in mid-run.
 ///     No Harmony patch. The game writes this label from ReadyToReset.Update, and Unity runs
 ///     every LateUpdate after every Update, so writing from a LateUpdate of our own wins the
 ///     frame deterministically. It also means there is nothing to undo: stop writing and the
@@ -32,11 +34,18 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private const string MonoSpace = "0.62em";
 
+	// Words rather than the game's medal sprites: a TMP sprite tag only resolves against a
+	// sprite asset assigned to the label, and the running-time label has none. Assigning one
+	// means borrowing another mod's asset bundle, which ATH does not depend on.
+	private const string AuthorLabel = "AT";
+	private const string GoldLabel = "GOLD";
+	private const string MissedLabel = "missed";
+
 	/// <summary>
-	///     Indent on the delta lines, in monospaced characters. Two, so a delta sits under the
-	///     seconds of the time above it rather than under its minutes.
+	///     Share of a target time at which it counts as "closing in". Everything before this is
+	///     the same colour, because a warning that is on from the start line is not a warning.
 	/// </summary>
-	private const string DeltaIndent = "  ";
+	private const double CloseFraction = 0.85;
 
 	private readonly RaceTimeBehaviour _behaviour;
 
@@ -45,10 +54,7 @@ public class RaceTimeDisplay : IDisposable
 
 	public RaceTimeDisplay()
 	{
-		GameObject host = new(nameof(RaceTimeDisplay))
-		{
-			hideFlags = HideFlags.HideAndDontSave
-		};
+		GameObject host = new(nameof(RaceTimeDisplay)) { hideFlags = HideFlags.HideAndDontSave };
 
 		Object.DontDestroyOnLoad(host);
 		_behaviour = host.AddComponent<RaceTimeBehaviour>();
@@ -56,27 +62,30 @@ public class RaceTimeDisplay : IDisposable
 	}
 
 	/// <summary>
-	///     Set while a hunt is on. Outside one the game keeps its own single-line display -
-	///     the extra lines are about beating a medal, which is what a hunt is.
+	///     The run currently in progress, or null when ATH is idle. Set by StateMasterOn.
 	/// </summary>
-	public bool Enabled
+	public AthStateMachine ActiveRun
 	{
 		get;
 		set
 		{
-			if (field == value)
-			{
-				return;
-			}
-
 			field = value;
 
-			if (!value)
+			if (value == null)
 			{
 				Restore();
 			}
 		}
 	}
+
+	/// <summary>
+	///     Whether the medal lines are ours to write. A run exists from /ath start onwards, but
+	///     for the first few seconds of it there is no level yet - only the countdown and the
+	///     playlist being rewritten. Writing a medal target over that meant the game's timer
+	///     showed an author time belonging to whatever map the lobby happened to be sitting on.
+	///     A level in the context is exactly the moment the first run begins.
+	/// </summary>
+	private bool IsActive => ActiveRun?.Ctx.CurrentLevel != null;
 
 	public void Dispose()
 	{
@@ -90,8 +99,10 @@ public class RaceTimeDisplay : IDisposable
 
 	private void LateUpdate()
 	{
-		if (!Enabled)
+		if (!IsActive)
 		{
+			// No-op once the labels have been handed back, so this costs nothing per frame.
+			Restore();
 			return;
 		}
 
@@ -103,7 +114,7 @@ public class RaceTimeDisplay : IDisposable
 		{
 			// Every frame, so it must not be allowed to spam. One failure disables it.
 			Logger.LogError($"RaceTimeDisplay: Failed, switching it off: {e.Message}\n{e.StackTrace}");
-			Enabled = false;
+			ActiveRun = null;
 		}
 	}
 
@@ -147,10 +158,29 @@ public class RaceTimeDisplay : IDisposable
 			return;
 		}
 
-		float elapsed = player.ticker.GetTicker();
-
 		Borrow(label);
-		label.text = Compose(elapsed, level.TimeGold, level.TimeAuthor);
+		label.text = Compose(Elapsed(player), level.TimeGold, level.TimeAuthor);
+	}
+
+	/// <summary>
+	///     The time to show: the live ticker while the player is driving, and the time they
+	///     finished with once they are not.
+	///     The game's ticker keeps counting past the finish line - it is reset by the next
+	///     spawn, not by crossing - so the number carried on climbing while the player sat on
+	///     the round-over screen, and the run they had just done was gone before they could
+	///     read it. The run's own clock is the honest signal for "still driving", because it is
+	///     the same one the time budget is spent from.
+	/// </summary>
+	private double Elapsed(ReadyToReset player)
+	{
+		AthCtx ctx = ActiveRun?.Ctx;
+
+		if (ctx?.CurrentLevel != null && !ctx.CurrentLevel.IsTiming && ctx.LastRunTime >= 0)
+		{
+			return ctx.LastRunTime;
+		}
+
+		return player.ticker.GetTicker();
 	}
 
 	/// <summary>
@@ -161,39 +191,31 @@ public class RaceTimeDisplay : IDisposable
 	{
 		PluginConfig config = Plugin.Instance.MyConfig;
 
-		string colour = config.RaceTimeColorChange.Value
-			? Hex(TimeColour(elapsed, goldTime, authorTime))
-			: Hex(HudPalette.White);
+		string colour = config.RaceTimeColorChange.Value ? Hex(TimeColour(elapsed, goldTime, authorTime)) : Hex(HudPalette.White);
 
-		string block = Line(TimeFormatter.FormatTime(elapsed), colour);
+		string time = TimeFormatter.FormatTime(elapsed);
 
-		if (config.RaceTimeShowGold.Value)
+		if (!config.RaceTimeShowTarget.Value)
 		{
-			block += "\n" + Delta(goldTime - elapsed, HudPalette.Gold);
+			return Line(time, colour);
 		}
 
-		if (config.RaceTimeShowAuthor.Value)
+		if (elapsed >= goldTime)
 		{
-			block += "\n" + Delta(authorTime - elapsed, HudPalette.Author);
+			// Nothing left to chase. No indent either - there is no label to clear.
+			return Line(time, colour) + "\n" + Line(MissedLabel, Hex(HudPalette.Danger));
 		}
 
-		return block;
-	}
+		bool author = elapsed < authorTime;
+		string label = author ? AuthorLabel : GoldLabel;
+		Color32 medal = author ? HudPalette.Author : HudPalette.Gold;
+		string target = TimeFormatter.FormatTime(author ? authorTime : goldTime);
 
-	/// <summary>
-	///     Headroom, not lateness: positive while the target is still ahead, negative once it
-	///     has gone by. The sign is always written, so the column never shifts.
-	/// </summary>
-	private static string Delta(double headroom, Color32 colour)
-	{
-		string sign = headroom >= 0 ? "+" : "-";
-		TimeSpan span = TimeSpan.FromSeconds(Math.Abs(headroom));
+		// The running time is pushed right by the label plus its separating space, so the two
+		// times sit in the same column. Monospacing is what makes counting characters legal.
+		string indent = new(' ', label.Length + 1);
 
-		// Seconds, not minutes: a delta of over a minute is not a delta any more, and the
-		// two-character indent is what puts these under the seconds of the line above.
-		string magnitude = $"{(int)span.TotalSeconds:D2}.{span.Milliseconds:D3}";
-
-		return Line($"{DeltaIndent}{sign}{magnitude}", Hex(colour));
+		return Line(indent + time, colour) + "\n" + Line($"{label} {target}", Hex(medal));
 	}
 
 	private static string Line(string text, string colour)
@@ -202,17 +224,32 @@ public class RaceTimeDisplay : IDisposable
 	}
 
 	/// <summary>
-	///     Author while the author time is still ahead, gold while only the gold time is, red
-	///     once both are gone.
+	///     How close the attempt is to losing the medal it is currently chasing, as five steps
+	///     from white to red.
+	///     It used to be the medal's own colour - magenta while the author time was ahead, gold
+	///     after - which said which medal was in play and nothing about how it was going. Magenta
+	///     at a tenth of a second before the author time looked exactly like magenta at the start
+	///     line. The ladder answers the question actually being asked mid-run: is this attempt
+	///     still worth finishing.
 	/// </summary>
 	private static Color32 TimeColour(double elapsed, double goldTime, double authorTime)
 	{
-		if (elapsed < authorTime)
+		if (elapsed >= goldTime)
 		{
-			return HudPalette.Author;
+			return HudPalette.PaceGone;
 		}
 
-		return elapsed < goldTime ? HudPalette.Gold : HudPalette.Danger;
+		if (elapsed >= goldTime * CloseFraction)
+		{
+			return HudPalette.PaceCritical;
+		}
+
+		if (elapsed >= authorTime)
+		{
+			return HudPalette.PaceLost;
+		}
+
+		return elapsed >= authorTime * CloseFraction ? HudPalette.PaceClose : HudPalette.PaceSafe;
 	}
 
 	private static string Hex(Color32 colour)
@@ -236,9 +273,16 @@ public class RaceTimeDisplay : IDisposable
 			return;
 		}
 
-		_borrowed[label] = new LabelState(label.overflowMode, label.enableAutoSizing, label.fontSize);
+		_borrowed[label] = new LabelState(label.overflowMode, label.enableAutoSizing, label.fontSize,
+			label.enableWordWrapping);
 
 		label.overflowMode = TextOverflowModes.Overflow;
+
+		// The label is a box built for one short line. With wrapping on, "AT 00:51.685" does not
+		// fit and TMP breaks it after the label - which is what put the medal and its time on
+		// separate lines and threw the whole block off centre. Off, the line stays a line and
+		// spills sideways, which is what the overflow change above is already for.
+		label.enableWordWrapping = false;
 
 		// Switching auto-sizing off freezes fontSize at whatever is on screen right now, and
 		// right now is still the game's own single line at its normal size - Borrow runs
@@ -261,6 +305,7 @@ public class RaceTimeDisplay : IDisposable
 			entry.Key.overflowMode = entry.Value.Overflow;
 			entry.Key.enableAutoSizing = entry.Value.AutoSizing;
 			entry.Key.fontSize = entry.Value.FontSize;
+			entry.Key.enableWordWrapping = entry.Value.WordWrapping;
 		}
 
 		_borrowed.Clear();
@@ -269,16 +314,18 @@ public class RaceTimeDisplay : IDisposable
 	/// <summary>What a label looked like before ATH took it over.</summary>
 	private readonly struct LabelState
 	{
-		public LabelState(TextOverflowModes overflow, bool autoSizing, float fontSize)
+		public LabelState(TextOverflowModes overflow, bool autoSizing, float fontSize, bool wordWrapping)
 		{
 			Overflow = overflow;
 			AutoSizing = autoSizing;
 			FontSize = fontSize;
+			WordWrapping = wordWrapping;
 		}
 
 		public TextOverflowModes Overflow { get; }
 		public bool AutoSizing { get; }
 		public float FontSize { get; }
+		public bool WordWrapping { get; }
 	}
 
 	/// <summary>

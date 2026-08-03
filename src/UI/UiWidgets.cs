@@ -1,6 +1,7 @@
 using System;
 using Imui.Controls;
 using Imui.Core;
+using Imui.Style;
 using UnityEngine;
 
 namespace AuthorTimeHunting.UI;
@@ -86,6 +87,80 @@ internal static class UiWidgets
 	public static bool Button(ImGui gui, ImRect rect, string label)
 	{
 		return gui.Button(label.AsSpan(), rect);
+	}
+
+	/// <summary>
+	///     A button in its own colour with its symbol beside the label.
+	///     The symbol is drawn after the button rather than baked into its text: Imui centres a
+	///     button's label and has no notion of an icon slot, so the only way to get both is to
+	///     let it draw the button and then paint the shape into the gutter on the left. The
+	///     colour goes through the theme for the same reason - a button paints its own
+	///     background, so a rect drawn underneath would simply be covered.
+	/// </summary>
+	public static bool IconButton(ImGui gui, ImRect rect, UiIcon icon, string label, Color32 accent)
+	{
+		return IconButton(gui, rect, icon, label, accent, true);
+	}
+
+	/// <summary>
+	///     The same button, with an off switch. When <paramref name="enabled" /> is false it is
+	///     not drawn as a button at all: Imui has no disabled state, and a control that still
+	///     registers, still highlights on hover and then does nothing reads as broken rather than
+	///     as unavailable. Nothing is registered, so nothing can be clicked, and the flat muted
+	///     slab it leaves behind holds the layout so the strip does not reshuffle itself every
+	///     time the lobby changes state.
+	/// </summary>
+	public static bool IconButton(ImGui gui, ImRect rect, UiIcon icon, string label, Color32 accent, bool enabled)
+	{
+		if (!enabled)
+		{
+			DrawDisabled(gui, rect, icon, label);
+			return false;
+		}
+
+		ImStyleButton previous = gui.Style.Button;
+
+		gui.Style.Button.Normal.BackColor = accent;
+		gui.Style.Button.Hovered.BackColor = Lighten(accent, 1.35f);
+		gui.Style.Button.Pressed.BackColor = Lighten(accent, 0.75f);
+		gui.Style.Button.Normal.FrontColor = HudPalette.White;
+		gui.Style.Button.Hovered.FrontColor = HudPalette.White;
+		gui.Style.Button.Pressed.FrontColor = HudPalette.White;
+
+		bool pressed;
+
+		try
+		{
+			pressed = gui.Button(label.AsSpan(), rect);
+		}
+		finally
+		{
+			gui.Style.Button = previous;
+		}
+
+		float inset = rect.H * 0.25f;
+		UiIcons.Draw(gui, new ImRect(rect.X + inset, rect.Y + inset, rect.H - inset * 2f, rect.H - inset * 2f), icon,
+			HudPalette.White);
+
+		return pressed;
+	}
+
+	private static void DrawDisabled(ImGui gui, ImRect rect, UiIcon icon, string label)
+	{
+		float inset = rect.H * 0.25f;
+
+		gui.Canvas.Rect(rect, HudPalette.Track, rect.H * 0.2f);
+		UiIcons.Draw(gui, new ImRect(rect.X + inset, rect.Y + inset, rect.H - inset * 2f, rect.H - inset * 2f), icon,
+			HudPalette.Muted);
+		UiText.Centre(gui, label, HudPalette.Muted, rect, gui.Style.Layout.TextSize);
+	}
+
+	private static Color32 Lighten(Color32 colour, float factor)
+	{
+		return new Color32((byte)Mathf.Clamp(colour.r * factor, 0f, 255f),
+			(byte)Mathf.Clamp(colour.g * factor, 0f, 255f),
+			(byte)Mathf.Clamp(colour.b * factor, 0f, 255f),
+			colour.a);
 	}
 
 	/// <summary>Centres a square inside a rect, so a non-square sprite is never stretched.</summary>

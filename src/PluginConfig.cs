@@ -29,11 +29,15 @@ public class PluginConfig
 		RaceTimeColorChange = config.Bind("Race Timer", "Colour the Run Time", true,
 			"Tints the running time by the medal it is currently on: author, gold, or neither.");
 
-		RaceTimeShowGold = config.Bind("Race Timer", "Show Gold Delta", true,
-			"Adds a line under the running time showing how far ahead of or behind the gold time you are.");
+		// Off by default since the medals moved into the leaderboard. Both at once put the
+		// author and gold times on screen three times over - board, timer, level panel.
+		RaceTimeShowTarget = config.Bind("Race Timer", "Show Next Medal", false,
+			"Adds a line under the running time naming the best medal still within reach and the time it needs. "
+			+ "Redundant while the leaderboard carries the medals.");
 
-		RaceTimeShowAuthor = config.Bind("Race Timer", "Show Author Delta", true,
-			"Adds a line under the running time showing how far ahead of or behind the author time you are.");
+		LeaderboardMedals = config.Bind("Race Timer", "Medals in the Leaderboard", true,
+			"Adds the author and gold times to the small in-race leaderboard as if they were two more players, "
+			+ "with the gap to your own time instead of theirs.");
 
 		GraphQlUrl = config.Bind("Backend", "GraphQL URL", "https://graphql.zeepki.st/",
 			"GraphQL endpoint used for level queries.");
@@ -84,11 +88,11 @@ public class PluginConfig
 	/// <summary>Tint the running time by the medal it currently sits on.</summary>
 	public ConfigEntry<bool> RaceTimeColorChange { get; }
 
-	/// <summary>Show the delta to the gold time under the running time.</summary>
-	public ConfigEntry<bool> RaceTimeShowGold { get; }
+	/// <summary>Show the medal still in reach, and its time, under the running time.</summary>
+	public ConfigEntry<bool> RaceTimeShowTarget { get; }
 
-	/// <summary>Show the delta to the author time under the running time.</summary>
-	public ConfigEntry<bool> RaceTimeShowAuthor { get; }
+	/// <summary>Sort the author and gold times into the small in-race leaderboard.</summary>
+	public ConfigEntry<bool> LeaderboardMedals { get; }
 
 	#endregion
 }

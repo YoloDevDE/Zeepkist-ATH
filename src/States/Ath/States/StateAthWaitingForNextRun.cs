@@ -7,7 +7,7 @@ using ZeepkistNetworking;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	private bool _hasShownMedal;
 	// Constructor
@@ -19,16 +19,13 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 	public override void Enter()
 	{
 		_hasShownMedal = false;
-	}
 
-	public override void Execute()
-	{
 		if (!_hasShownMedal)
 		{
 			PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer?.CurrentResult;
-			double lastRunTime = AthStateMachine.Ctx.LastRunTime > 0
-				? AthStateMachine.Ctx.LastRunTime
-				: currentResult?.Time ?? -1;
+			double lastRunTime = AthStateMachine.Ctx.LastRunTime > 0 ?
+				AthStateMachine.Ctx.LastRunTime :
+				currentResult?.Time ?? -1;
 			bool hasMedalToShow =
 				AthStateMachine.Ctx.LastRunMedalStatus is Level.LevelStatus.AUTHOR or Level.LevelStatus.GOLD;
 
@@ -44,11 +41,11 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 
 	public override void OnRoundEnded()
 	{
-		StateMachine.TransitionTo(new StateAthEvaluateSkip(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthSkippingLevel(AthStateMachine));
 	}
 
 	// Private Methods
-	public override void OnAthTimerTick()
+	public override void Update()
 	{
 		AthStateMachine.SetServerMessage(true);
 		// ZeepkistNetwork.PlayerList
@@ -58,7 +55,7 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 
 	public override void OnRoundStarted()
 	{
-		StateMachine.TransitionTo(new StateAthOnARun(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthWaitingForFinish(AthStateMachine));
 	}
 
 	/// <summary>
@@ -72,7 +69,7 @@ public class StateAthPausing(AthStateMachine stateMachine) : AthState(stateMachi
 	{
 		if (!GameStateObserver.IsRacing)
 		{
-			Logger.LogInfo("StateAthPausing: Photo mode entered outside a running race, keeping the clock paused.");
+			Logger.LogInfo("StateAthWaitingForNextRun: Photo mode entered outside a running race, keeping the clock paused.");
 			return;
 		}
 

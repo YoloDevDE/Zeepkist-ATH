@@ -119,11 +119,9 @@ public class Level
 	} = -1f;
 
 	public TimeSpan TimeWasted =>
-		LevelBroken
-			? TimeSpan.Zero
-			: AuthorTimeAcquired
-				? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime)
-				: GetPlayDuration();
+		LevelBroken ? TimeSpan.Zero
+		: AuthorTimeAcquired ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime)
+		: GetPlayDuration();
 
 	public string StatusString
 	{

@@ -6,20 +6,20 @@ using ZeepkistNetworking;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	public override void Enter()
 	{
+		// The player is driving, so the between-levels card has said what it had to say.
+		AthStateMachine.Services.LevelSummary.Hide();
+
 		// A run resumed while the player paused ATH must not restart the clock.
 		if (!AthStateMachine.Ctx.IsPaused)
 		{
 			AthStateMachine.Ctx.CurrentLevel.ResumeTiming();
 		}
-	}
 
-	public override void Execute()
-	{
-		OnAthTimerTick();
+		Update();
 	}
 
 	public override void Exit()
@@ -29,7 +29,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 	public override void OnRoundEnded()
 	{
-		StateMachine.TransitionTo(new StateAthEvaluateSkip(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthSkippingLevel(AthStateMachine));
 	}
 
 	public override void OnCrossedFinishLine(float time)
@@ -40,7 +40,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (currentResult == null)
 		{
-			StateMachine.TransitionTo(new StateAthPausing(AthStateMachine));
+			StateMachine.TransitionTo(new StateAthWaitingForNextRun(AthStateMachine));
 			return;
 		}
 
@@ -63,19 +63,19 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (runMedalStatus == Level.LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
 		{
-			Messenger.Notify().Log("Gold medal claimed!<br>You can now skip without penalty");
+			ToastNotification.Gold("Gold medal claimed!<br>You can now skip without penalty");
 		}
 
-		StateMachine.TransitionTo(new StateAthPausing(AthStateMachine));
+		StateMachine.TransitionTo(new StateAthWaitingForNextRun(AthStateMachine));
 	}
 
 	public override void OnRoundStarted()
 	{
 		AthStateMachine.Ctx.CurrentLevel.Attempt++;
-		Execute();
+		Update();
 	}
 
-	public override void OnAthTimerTick()
+	public override void Update()
 	{
 		if (AthStateMachine.Ctx.IsTimeOver())
 		{
@@ -87,7 +87,7 @@ public class StateAthOnARun(AthStateMachine stateMachine) : AthState(stateMachin
 
 		if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
 		{
-			Messenger.Notify().Log("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
+			ToastNotification.Info("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
 		}
 	}
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath;
 using AuthorTimeHunting.Util;
@@ -19,7 +20,21 @@ public class RunReportView
 	{
 	}
 
+	/// <summary>The small line above everything, saying what this screen is.</summary>
+	public string Kicker { get; private set; }
+
 	public string Headline { get; private set; }
+
+	/// <summary>
+	///     The line above the headline. A run report is the one screen in the mod that is read
+	///     when nothing else is happening, and it used to open on a bare number - so it now says
+	///     whose hour that was. The name comes off the lobby rather than a config field: it is
+	///     the name the run was actually driven under.
+	/// </summary>
+	public string PlayerName { get; private set; }
+
+	/// <summary>Every run ever finished on this machine, newest first. The one just played is at the top.</summary>
+	public IReadOnlyList<HistoryRow> History { get; private set; }
 
 	public int AuthorMedals { get; private set; }
 	public int GoldMedals { get; private set; }
@@ -36,6 +51,16 @@ public class RunReportView
 
 	public static RunReportView From(AthCtx ctx)
 	{
+		return From(ctx, null, null);
+	}
+
+	/// <summary>
+	///     The full report: the run, who drove it, and what came before it.
+	///     <paramref name="history" /> is expected to already contain this run as its first
+	///     entry - the report does not record anything itself, it only shows what was recorded.
+	/// </summary>
+	public static RunReportView From(AthCtx ctx, string playerName, IReadOnlyList<RunRecord> history)
+	{
 		if (ctx == null)
 		{
 			return null;
@@ -46,7 +71,10 @@ public class RunReportView
 
 		return new RunReportView
 		{
+			Kicker = "RUN OVER",
 			Headline = Headlines(ctx),
+			PlayerName = Name(playerName),
+			History = BuildHistory(history),
 			AuthorMedals = ctx.AuthorMedals,
 			GoldMedals = ctx.GoldMedals,
 			Penalties = ctx.Penalties,
@@ -66,6 +94,46 @@ public class RunReportView
 		};
 	}
 
+	/// <summary>
+	///     The same screen with nothing but the history in it, for looking runs up between runs.
+	///     The other tabs are empty rather than hidden: a report with a missing tab looks like a
+	///     report that failed to build.
+	/// </summary>
+	public static RunReportView HistoryOnly(string playerName, IReadOnlyList<RunRecord> history)
+	{
+		IReadOnlyList<RunRecord> records = history ?? [];
+
+		return new RunReportView
+		{
+			Kicker = "MATCH HISTORY",
+			Headline = records.Count == 0 ? "No runs recorded yet" :
+				records.Count == 1 ? "1 run on record" : $"{records.Count} runs on record",
+			PlayerName = Name(playerName),
+			History = BuildHistory(records),
+
+			// Everything ever earned rather than the last run's - under a headline that counts
+			// runs, a medal row that counted only the newest one would read as the total.
+			AuthorMedals = records.Sum(record => record.AuthorMedals),
+			GoldMedals = records.Sum(record => record.GoldMedals),
+			Penalties = records.Sum(record => record.Penalties),
+			Summary = [],
+			Records = [],
+			Levels = []
+		};
+	}
+
+	/// <summary>
+	///     The name the run was driven under, verbatim, or a stand-in when the lobby has already
+	///     been left - stopping a run and leaving the server in the same breath is ordinary.
+	///     Nothing is put in front of it: the name is whatever the player called themselves, and
+	///     a greeting bolted on turns their name into the punchline of a sentence they did not
+	///     write.
+	/// </summary>
+	private static string Name(string playerName)
+	{
+		return string.IsNullOrWhiteSpace(playerName) ? "Unknown driver" : playerName;
+	}
+
 	private static string Headlines(AthCtx ctx)
 	{
 		if (ctx.AuthorMedals == 0)
@@ -74,6 +142,37 @@ public class RunReportView
 		}
 
 		return ctx.AuthorMedals == 1 ? "1 author time" : $"{ctx.AuthorMedals} author times";
+	}
+
+	/// <summary>
+	///     The history, formatted. The newest run is marked rather than sorted differently: it
+	///     is the one just played, and finding it in a list of forty identical-looking lines is
+	///     the whole reason anyone opens this tab straight after a run.
+	/// </summary>
+	private static HistoryRow[] BuildHistory(IReadOnlyList<RunRecord> history)
+	{
+		if (history == null || history.Count == 0)
+		{
+			return [];
+		}
+
+		HistoryRow[] rows = new HistoryRow[history.Count];
+
+		for (int i = 0; i < history.Count; i++)
+		{
+			RunRecord record = history[i];
+
+			rows[i] = new HistoryRow(record.EndedAt.ToString("yyyy-MM-dd HH:mm"),
+				string.IsNullOrWhiteSpace(record.Gamemode) ? "-" : record.Gamemode,
+				record.AuthorMedals,
+				record.GoldMedals,
+				record.Penalties,
+				record.LevelsPlayed.ToString(),
+				TimeSpan.FromMilliseconds(record.DrivenMs).ToFormattedString(),
+				i == 0);
+		}
+
+		return rows;
 	}
 
 	private static ReportRow[] BuildRecords(RunStatistics stats)
@@ -110,7 +209,11 @@ public class RunReportView
 		return rows.ToArray();
 	}
 
-	private static LevelRow[] BuildLevels(IReadOnlyList<Level> levels)
+	/// <summary>
+	///     The level list, formatted. Public because the between-levels summary shows the same
+	///     list in miniature, and two builders would be two lists that slowly stopped matching.
+	/// </summary>
+	public static LevelRow[] BuildLevels(IReadOnlyList<Level> levels)
 	{
 		LevelRow[] rows = new LevelRow[levels.Count];
 
@@ -162,6 +265,34 @@ public class RunReportView
 		public Color32 ValueColour { get; }
 	}
 
+	/// <summary>One past run. Medal counts stay numbers so the tab can draw them as medals.</summary>
+	public readonly struct HistoryRow
+	{
+		public HistoryRow(string when, string gamemode, int authorMedals, int goldMedals, int penalties, string levels,
+			string driven, bool isCurrent)
+		{
+			When = when;
+			Gamemode = gamemode;
+			AuthorMedals = authorMedals;
+			GoldMedals = goldMedals;
+			Penalties = penalties;
+			Levels = levels;
+			Driven = driven;
+			IsCurrent = isCurrent;
+		}
+
+		public string When { get; }
+		public string Gamemode { get; }
+		public int AuthorMedals { get; }
+		public int GoldMedals { get; }
+		public int Penalties { get; }
+		public string Levels { get; }
+		public string Driven { get; }
+
+		/// <summary>True for the run that was just played.</summary>
+		public bool IsCurrent { get; }
+	}
+
 	/// <summary>One line of the level list.</summary>
 	public readonly struct LevelRow
 	{
@@ -175,6 +306,15 @@ public class RunReportView
 			StatusColour = statusColour;
 			Attempts = attempts;
 			Duration = duration;
+		}
+
+		/// <summary>
+		///     The same row under a different number. For a list that shows only the tail of a
+		///     run and still has to say which levels these actually were.
+		/// </summary>
+		public LevelRow Renumbered(int index)
+		{
+			return new LevelRow(index, Name, Author, Status, StatusColour, Attempts, Duration);
 		}
 
 		public int Index { get; }

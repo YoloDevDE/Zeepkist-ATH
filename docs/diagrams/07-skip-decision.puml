@@ -1,5 +1,5 @@
 @startuml 07-skip-decision
-title Aktivität — Skip-Klassifikation in StateAthEvaluateSkip (IST)
+title Aktivität — Skip-Klassifikation in StateAthSkippingLevel (IST)
 
 skinparam shadowing false
 
@@ -23,7 +23,7 @@ else (nein)
       Kein Penalty.
       AUTHOR erreicht diesen Zweig
       nur über OnRoundEnded aus
-      StateAthPausing.
+      StateAthWaitingForNextRun.
     end note
   else (nein)
     if (AvaiableFreeSkips > 0?) then (ja)
