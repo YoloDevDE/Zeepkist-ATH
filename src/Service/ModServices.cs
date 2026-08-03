@@ -92,8 +92,8 @@ public class ModServices
 	public RaceTimeDisplay RaceTime { get; } = new();
 
 	/// <summary>
-	///     Sorts the author and gold times into the game's own small leaderboard. Not a drawer
-	///     either, and for the same reason as <see cref="RaceTime" />.
+	///     The board with the author and gold times standing in it. Its own window rather than a
+	///     rewrite of the game's own rows, so it can be moved and later put over them.
 	/// </summary>
 	public LeaderboardOverlay Leaderboard { get; } = new();
 
@@ -102,6 +102,19 @@ public class ModServices
 	///     reports on is torn down the moment it stops.
 	/// </summary>
 	public ResultsScreen Results { get; } = new();
+
+	/// <summary>
+	///     The screen that explains the mod, up on startup unless it has been switched off.
+	///     Session-scoped like every other window, and deliberately not tied to a run: it is read
+	///     before the first one and reopened between them.
+	/// </summary>
+	public WelcomeWindow Welcome { get; } = new();
+
+	/// <summary>
+	///     Where the windows are and what can be typed. The reference half of the welcome screen,
+	///     split off because it is the half that gets reopened.
+	/// </summary>
+	public HelpWindow Help { get; } = new();
 
 	/// <summary>
 	///     Every run that ever finished, kept on disk. Session-scoped so the file is read once
@@ -131,6 +144,18 @@ public class ModServices
 		Control.Toggle();
 		LevelStats.Visible = Control.Visible && LevelStats.ActiveRun != null;
 		RunOverlay.Visible = Control.Visible && RunOverlay.ActiveRun != null;
+
+		// Opening the mod is the moment the welcome screen is for, and it is the only moment:
+		// nobody types /ath to be told the rules of a run they are already in, so a hunt in
+		// progress keeps it away. It goes down again with everything else.
+		if (Control.Visible)
+		{
+			Welcome.Visible = Plugin.Instance.MyConfig.ShowWelcome.Value && Control.ActiveRun == null;
+		}
+		else
+		{
+			Welcome.Visible = false;
+		}
 	}
 
 	/// <summary>

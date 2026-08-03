@@ -31,6 +31,23 @@ internal static class UiText
 		Draw(gui, text, colour, rect, size, 1f);
 	}
 
+	/// <summary>
+	///     A block of prose that wraps and takes as many layout rows as it needs.
+	///     The only text in the mod that is read rather than glanced at, so it is the only text
+	///     that wraps: everything else lives in a fixed row and is cut with an ellipsis. Sized by
+	///     the layout rather than by a caller-supplied rect, because how tall a paragraph comes
+	///     out depends on the window width, and nobody can be asked to know that in advance.
+	/// </summary>
+	public static void Paragraph(ImGui gui, string text, Color32 colour)
+	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return;
+		}
+
+		gui.Text(text.AsSpan(), colour, true, ImTextOverflow.Overflow);
+	}
+
 	public static void Draw(ImGui gui, string text, Color32 colour, ImRect rect, float size, float alignX)
 	{
 		if (string.IsNullOrEmpty(text))

@@ -4,179 +4,155 @@ using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
-using TMPro;
+using Imui.Controls;
+using Imui.Core;
 using UnityEngine;
 using ZeepkistClient;
+using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
-using Object = UnityEngine.Object;
 
 namespace AuthorTimeHunting.UI;
 
 /// <summary>
-///     Puts the author and gold times into the small in-race leaderboard as if they were two
+///     ATH's own leaderboard, with the author and gold times standing in it as if they were two
 ///     more players in the lobby.
 ///     <code>
-///     1  AT      +00:03.231
-///     2  Yolo     00:56.345
-///     3  GOLD    -00:00.344
+///     1  AT         +00:03.231
+///     2  Hi Im Yolo  00:56.345
+///     3  GOLD       -00:00.344
 ///     </code>
-///     A hunt is a race against two times, and the game already has a widget for "who is ahead
-///     of whom" - it simply does not know that the medals are competitors. Sorting them in
-///     turns the question into the one the leaderboard was built to answer, and the medal rows
-///     carry the gap rather than the time, because the gap is what is actually being read.
-///     Written from a LateUpdate rather than a Harmony patch, for the same reason as
-///     <see cref="RaceTimeDisplay" />: Unity runs every LateUpdate after every Update, so this
-///     wins the frame against the game's own redraw without patching it, and stopping is enough
-///     to hand the leaderboard back.
+///     A hunt is a race against two times, and a leaderboard is the widget for "who is ahead of
+///     whom" - it simply does not know that the medals are competitors. Sorting them in turns
+///     the question into the one the board was built to answer, and the medal rows carry the gap
+///     rather than the time, because the gap is what is actually being read.
+///     Its own window rather than a rewrite of the game's own rows. The first version took over
+///     the small leaderboard's labels in a LateUpdate, which meant living inside somebody else's
+///     layout and handing every row back on the way out. Drawn here, it can be moved, and it can
+///     later be put exactly over the game's board instead of inside it.
 /// </summary>
-public class LeaderboardOverlay : IDisposable
+public class LeaderboardOverlay : IZeepGUIDrawer
 {
+	private const string WindowTitle = "Leaderboard";
+
 	private const string AuthorLabel = "AT";
 	private const string GoldLabel = "GOLD";
 
-	/// <summary>Shown in the time column for an entry that has no time yet.</summary>
-	private const string NoTime = "--:--.---";
+	private const float WidthFraction = 0.17f;
+	private const float MinWidth = 220f;
+	private const float MaxWidth = 320f;
 
-	private readonly LeaderboardBehaviour _behaviour;
+	/// <summary>
+	///     Most rows the board will draw. A lobby can hold a lot of people and this is a HUD
+	///     element, not the tab screen - what matters is the medals and whoever is next to you.
+	/// </summary>
+	private const int MaxRows = 8;
 
-	/// <summary>Rows we have written into, and what they said before we did.</summary>
-	private readonly Dictionary<GUI_OnlineLeaderboardPosition, RowState> _borrowed = new();
+	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
 	private readonly List<Entry> _entries = [];
 
-	private OnlineGameplayUI _ui;
-
-	public LeaderboardOverlay()
-	{
-		GameObject host = new(nameof(LeaderboardOverlay)) { hideFlags = HideFlags.HideAndDontSave };
-
-		Object.DontDestroyOnLoad(host);
-		_behaviour = host.AddComponent<LeaderboardBehaviour>();
-		_behaviour.Bind(this);
-	}
+	private float _contentHeight;
+	private bool _mouseOverWindow;
 
 	/// <summary>The run currently in progress, or null when ATH is idle. Set by StateMasterOn.</summary>
-	public AthStateMachine ActiveRun
+	public AthStateMachine ActiveRun { get; set; }
+
+	/// <summary>Toggled from the toolbar. Off with the config switch as well.</summary>
+	public bool Visible { get; set; } = true;
+
+	public void OnZeepGUI(ImGui gui)
 	{
-		get;
-		set
+		AthStateMachine run = ActiveRun;
+
+		// A level in the context is the moment the first run begins - before that there is
+		// nothing to compare against and the lobby is still sitting on somebody else's map.
+		if (!Visible || run?.Ctx.CurrentLevel == null || !Plugin.Instance.MyConfig.LeaderboardMedals.Value)
 		{
-			field = value;
-
-			if (value == null)
-			{
-				Restore();
-			}
-		}
-	}
-
-	/// <summary>
-	///     A level in the context is the moment the first run begins - before that there is
-	///     nothing to compare against and the lobby is still sitting on somebody else's map.
-	/// </summary>
-	private bool IsActive =>
-		ActiveRun?.Ctx.CurrentLevel != null && Plugin.Instance.MyConfig.LeaderboardMedals.Value;
-
-	public void Dispose()
-	{
-		Restore();
-
-		if (_behaviour != null)
-		{
-			Object.Destroy(_behaviour.gameObject);
-		}
-	}
-
-	private void LateUpdate()
-	{
-		if (!IsActive)
-		{
-			// No-op once the rows have been handed back, so this costs nothing per frame.
-			Restore();
 			return;
 		}
 
 		try
 		{
-			Draw();
+			using (UiScale.Push(gui))
+			{
+				Draw(gui, run.Ctx);
+			}
 		}
 		catch (Exception e)
 		{
-			// Every frame, so it must not be allowed to spam. One failure disables it.
-			Logger.LogError($"LeaderboardOverlay: Failed, switching it off: {e.Message}\n{e.StackTrace}");
-			ActiveRun = null;
+			// Inside the game's shared GUI pass - a throwing drawer would throw every frame.
+			Logger.LogError($"LeaderboardOverlay: Draw failed, hiding it: {e.Message}\n{e.StackTrace}");
+			Visible = false;
 		}
 	}
 
-	private void Draw()
+	private void Draw(ImGui gui, AthCtx ctx)
 	{
-		List<GUI_OnlineLeaderboardPosition> rows = Rows();
-
-		if (rows == null || rows.Count == 0)
-		{
-			return;
-		}
-
-		AthCtx ctx = ActiveRun.Ctx;
 		float yourTime = YourTime(ctx);
 
 		Build(ctx, yourTime);
 
-		if (_entries.Count == 0)
+		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
+			ImWindowAnchor.MiddleRight);
+
+		bool open = true;
+
+		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
 		{
 			return;
 		}
 
-		int first = FirstVisible(rows.Count);
-
-		for (int i = 0; i < rows.Count; i++)
+		try
 		{
-			GUI_OnlineLeaderboardPosition row = rows[i];
+			int first = FirstVisible();
+			int last = Mathf.Min(first + MaxRows, _entries.Count);
 
-			if (row == null)
+			for (int i = first; i < last; i++)
 			{
-				continue;
+				DrawRow(gui, _entries[i], i + 1, yourTime);
 			}
 
-			int index = first + i;
-
-			if (index >= _entries.Count)
-			{
-				// Past the end of our list. Blanked rather than left alone, because what is
-				// left there is the game's own line for a player we have pushed off the board.
-				Write(row, false, string.Empty, string.Empty, string.Empty);
-				continue;
-			}
-
-			Entry entry = _entries[index];
-
-			// A leading space in the time column: the name column runs right up against it, and
-			// a name that ends in a digit and a time that starts with one read as one number.
-			Write(row, true, (index + 1).ToString(), Tint(entry.Name, entry.Colour),
-				Tint(" " + TimeText(entry, yourTime), entry.Colour));
+			// While the window's layout frame is still open, so it can report what it holds.
+			_contentHeight = UiMetrics.ContentHeight(gui);
+		}
+		finally
+		{
+			gui.EndWindow();
 		}
 	}
 
-	/// <summary>
-	///     The game's row objects, found once and rechecked whenever the scene has taken them
-	///     away. FindObjectOfType is not something to do every frame, and the online gameplay UI
-	///     is destroyed and rebuilt on every level load.
-	/// </summary>
-	private List<GUI_OnlineLeaderboardPosition> Rows()
+	private static void DrawRow(ImGui gui, Entry entry, int rank, float yourTime)
 	{
-		if (_ui == null)
+		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight());
+		float size = gui.Style.Layout.TextSize;
+
+		// The player's own line is the one being looked for, so it is the one that is not grey.
+		Color32 rankColour = entry.IsLocal ? HudPalette.White : HudPalette.Muted;
+
+		UiText.Draw(gui, rank.ToString(), rankColour, Cell(row, 0), size * 0.9f, 0f);
+		UiText.Draw(gui, entry.Name, entry.Colour, Cell(row, 1), size, 0f);
+		UiText.Draw(gui, TimeText(entry, yourTime), entry.Colour, Cell(row, 2), size, 1f);
+	}
+
+	private static ImRect Cell(ImRect row, int column)
+	{
+		float[] weights = [0.1f, 0.45f, 0.45f];
+		float offset = 0f;
+
+		for (int i = 0; i < column; i++)
 		{
-			_ui = Object.FindObjectOfType<OnlineGameplayUI>();
-			_borrowed.Clear();
+			offset += weights[i];
 		}
 
-		return _ui == null ? null : _ui.leaderboard_ingame_positions;
+		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
 	}
 
 	/// <summary>
 	///     What the local player has on this level right now: this round's result if they have
 	///     finished, otherwise their best from an earlier attempt, otherwise nothing. The round
-	///     result wins because the leaderboard is about the round, and a personal best from three
+	///     result wins because the board is about the round, and a personal best from three
 	///     attempts ago sitting above the author time would be a lie about what just happened.
 	/// </summary>
 	private static float YourTime(AthCtx ctx)
@@ -193,7 +169,7 @@ public class LeaderboardOverlay : IDisposable
 
 	/// <summary>
 	///     Everyone with a time, the two medals among them, fastest first. Rebuilt into the same
-	///     list every frame rather than allocated fresh - this runs in LateUpdate.
+	///     list every frame rather than allocated fresh - this runs in a GUI pass.
 	/// </summary>
 	private void Build(AthCtx ctx, float yourTime)
 	{
@@ -222,8 +198,8 @@ public class LeaderboardOverlay : IDisposable
 					continue;
 				}
 
-				_entries.Add(new Entry(player.GetTaggedUsername(), time, local ? HudPalette.White : HudPalette.Default,
-					false, local));
+				_entries.Add(new Entry(player.Username, time, local ? HudPalette.White : HudPalette.Default, false,
+					local));
 			}
 		}
 
@@ -232,12 +208,12 @@ public class LeaderboardOverlay : IDisposable
 
 	/// <summary>
 	///     Which entry the visible window starts at. Scrolled so the local player stays on the
-	///     board: on a full lobby the two medals push two people off the bottom, and the person
+	///     board: in a full lobby the two medals push two people off the bottom, and the person
 	///     they must never push off is the one reading it.
 	/// </summary>
-	private int FirstVisible(int rowCount)
+	private int FirstVisible()
 	{
-		if (_entries.Count <= rowCount)
+		if (_entries.Count <= MaxRows)
 		{
 			return 0;
 		}
@@ -249,10 +225,7 @@ public class LeaderboardOverlay : IDisposable
 			return 0;
 		}
 
-		// Centred on the local player, then pulled back inside both ends of the list.
-		int first = local - rowCount / 2;
-
-		return Mathf.Clamp(first, 0, _entries.Count - rowCount);
+		return Mathf.Clamp(local - MaxRows / 2, 0, _entries.Count - MaxRows);
 	}
 
 	/// <summary>
@@ -271,68 +244,11 @@ public class LeaderboardOverlay : IDisposable
 		return yourTime > 0f ? TimeFormatter.FormatDelta(yourTime - entry.Time) : TimeFormatter.FormatTime(entry.Time);
 	}
 
-	private void Write(GUI_OnlineLeaderboardPosition row, bool active, string position, string name, string time)
+	private float Height(ImGui gui)
 	{
-		Borrow(row);
+		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 4f;
 
-		// The game only activates as many rows as it has players for, which on a solo hunt is
-		// one. The medals need theirs turned on, and turned back off when we let go.
-		if (row.gameObject.activeSelf != active)
-		{
-			row.gameObject.SetActive(active);
-		}
-
-		Set(row.position, position);
-		Set(row.player_name, name);
-		Set(row.time, time);
-	}
-
-	private static void Set(TMP_Text label, string text)
-	{
-		if (label != null && label.text != text)
-		{
-			label.text = text;
-		}
-	}
-
-	private static string Tint(string text, Color32 colour)
-	{
-		return string.IsNullOrEmpty(text) ?
-			text :
-			$"<color=#{colour.r:X2}{colour.g:X2}{colour.b:X2}>{text}</color>";
-	}
-
-	/// <summary>Takes a row over, once, and keeps what it looked like first.</summary>
-	private void Borrow(GUI_OnlineLeaderboardPosition row)
-	{
-		if (_borrowed.ContainsKey(row))
-		{
-			return;
-		}
-
-		_borrowed[row] = new RowState(row.gameObject.activeSelf, row.position?.text, row.player_name?.text,
-			row.time?.text);
-	}
-
-	/// <summary>Hands every row back exactly as it was found.</summary>
-	private void Restore()
-	{
-		foreach (KeyValuePair<GUI_OnlineLeaderboardPosition, RowState> entry in _borrowed)
-		{
-			GUI_OnlineLeaderboardPosition row = entry.Key;
-
-			if (row == null)
-			{
-				continue;
-			}
-
-			row.gameObject.SetActive(entry.Value.Active);
-			Set(row.position, entry.Value.Position);
-			Set(row.player_name, entry.Value.Name);
-			Set(row.time, entry.Value.Time);
-		}
-
-		_borrowed.Clear();
+		return content + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
 	}
 
 	/// <summary>One line of the merged board. A medal is an entry like any other - that is the point.</summary>
@@ -352,41 +268,5 @@ public class LeaderboardOverlay : IDisposable
 		public Color32 Colour { get; }
 		public bool IsMedal { get; }
 		public bool IsLocal { get; }
-	}
-
-	/// <summary>What a row looked like before ATH took it over.</summary>
-	private readonly struct RowState
-	{
-		public RowState(bool active, string position, string name, string time)
-		{
-			Active = active;
-			Position = position;
-			Name = name;
-			Time = time;
-		}
-
-		public bool Active { get; }
-		public string Position { get; }
-		public string Name { get; }
-		public string Time { get; }
-	}
-
-	/// <summary>
-	///     The frame hook. Separate because LeaderboardOverlay is a plain service and only a
-	///     MonoBehaviour gets a LateUpdate - the same split RaceTimeDisplay uses.
-	/// </summary>
-	private sealed class LeaderboardBehaviour : MonoBehaviour
-	{
-		private LeaderboardOverlay _owner;
-
-		private void LateUpdate()
-		{
-			_owner?.LateUpdate();
-		}
-
-		public void Bind(LeaderboardOverlay owner)
-		{
-			_owner = owner;
-		}
 	}
 }

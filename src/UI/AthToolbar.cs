@@ -35,7 +35,12 @@ public class AthToolbar : IZeepToolbarDrawer
 			Toggle(gui, "Current Level", () => _services.LevelStats.Visible,
 				value => _services.LevelStats.Visible = value);
 			Toggle(gui, "Controls", () => _services.Control.Visible, value => _services.Control.Visible = value);
+			Toggle(gui, "Leaderboard", () => _services.Leaderboard.Visible,
+				value => _services.Leaderboard.Visible = value);
 			Toggle(gui, "Debug Panel", () => _services.Debug.Visible, value => _services.Debug.Visible = value);
+			Toggle(gui, "Welcome Screen", () => _services.Welcome.Visible,
+				value => _services.Welcome.Visible = value);
+			Toggle(gui, "Help", () => _services.Help.Visible, value => _services.Help.Visible = value);
 
 			if (gui.Menu("Match History".AsSpan()))
 			{

@@ -214,7 +214,19 @@ public class ControlPanel : IZeepGUIDrawer
 
 	private static void DrawControls(ImGui gui, AthStateMachine run, RunHudView view)
 	{
-		UiWidgets.Heading(gui, Row(gui, 0.85f), "CONTROLS");
+		DrawSkipSection(gui, view);
+		DrawRunSection(gui, run, view);
+	}
+
+	/// <summary>
+	///     Leaving the level, in its two forms. Kept apart from the run controls below because
+	///     they answer different questions - this one is about the level in front of you, those
+	///     are about the hour you are in - and because a Stop Hunt next to a Skip is a mistake
+	///     waiting for a bad landing.
+	/// </summary>
+	private static void DrawSkipSection(ImGui gui, RunHudView view)
+	{
+		UiWidgets.Heading(gui, Row(gui, 0.85f), "SKIP");
 
 		// Both of these skip the level out from under the lobby. Off the track - on the podium,
 		// between levels, in a lobby that is not racing - the game has no level to skip and the
@@ -222,24 +234,33 @@ public class ControlPanel : IZeepGUIDrawer
 		// nothing at all. Not a warning afterwards: the button simply is not there to press.
 		bool racing = GameStateObserver.IsRacing;
 
-		ImRect first = ButtonRow(gui);
-
-		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, first, 0, 2), UiIcon.Skip, "Skip", HudPalette.ActionSkip,
-			    racing))
+		// The button says what the skip would actually cost, in the colour of that cost: an
+		// author skip is free and magenta, a penalty skip is five minutes and red, and the fatal
+		// one that ends the run is near-black. A plain "Skip" made the cheapest and the most
+		// expensive move in the mod look like the same button, which is exactly what it is not.
+		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Skip, view.SkipType, view.SkipColour, racing))
 		{
 			// The game's own skip, the same thing typing /fs does.
 			ChatApi.SendMessage("/fs");
 		}
 
-		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, first, 1, 2), UiIcon.Warning, "Broken",
-			    HudPalette.ActionBroken, racing))
+		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Warning, "Level is Broken", HudPalette.ActionBroken,
+			    racing))
 		{
 			CommandSkipBroken.Raise();
 		}
 
-		ImRect second = ButtonRow(gui);
+		gui.AddSpacing();
+	}
 
-		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, second, 0, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
+	/// <summary>The hour itself: hold it, start it over, end it.</summary>
+	private static void DrawRunSection(ImGui gui, AthStateMachine run, RunHudView view)
+	{
+		UiWidgets.Heading(gui, Row(gui, 0.85f), "RUN");
+
+		ImRect row = ButtonRow(gui);
+
+		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 0, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
 			    view.Paused ? "Resume" : "Pause", view.Paused ? HudPalette.ActionResume : HudPalette.ActionPause))
 		{
 			if (view.Paused)
@@ -252,7 +273,7 @@ public class ControlPanel : IZeepGUIDrawer
 			}
 		}
 
-		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, second, 1, 2), UiIcon.Restart, "Restart",
+		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 1, 2), UiIcon.Restart, "Restart",
 			    HudPalette.ActionRestart))
 		{
 			CommandRestart.Raise();

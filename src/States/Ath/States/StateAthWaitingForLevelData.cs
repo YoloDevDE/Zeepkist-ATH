@@ -21,6 +21,11 @@ public class StateAthWaitingForLevelData(AthStateMachine stateMachine) : AthStat
 
 	public override async void Enter()
 	{
+		// The next level has finished loading, so the card about the last one is in the way of
+		// the one being looked at. It used to hang on until the player was driving again, which
+		// meant it sat over the start of the level it was no longer about.
+		AthStateMachine.Services.LevelSummary.Hide();
+
 		try
 		{
 			if (IsNull(LevelApi.CurrentLevel))

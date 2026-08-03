@@ -57,8 +57,14 @@ public class Plugin : BaseUnityPlugin
 		// than last frame's - otherwise it lags a frame behind every height change.
 		UIApi.AddZeepGUIDrawer(Services.LevelStats);
 		UIApi.AddZeepGUIDrawer(Services.Control);
+		UIApi.AddZeepGUIDrawer(Services.Leaderboard);
 		UIApi.AddZeepGUIDrawer(Services.LevelSummary);
 		UIApi.AddZeepGUIDrawer(Services.Results);
+		UIApi.AddZeepGUIDrawer(Services.Help);
+
+		// Last of the windows, so it draws over anything that happens to be up behind it. It is
+		// the first thing a player sees and nothing should be in front of it.
+		UIApi.AddZeepGUIDrawer(Services.Welcome);
 		UIApi.AddZeepGUIDrawer(Services.Debug);
 		UIApi.AddToolbarDrawer(Services.Toolbar);
 		CommandAth.CommandTrigger += Services.ToggleUi;
@@ -80,14 +86,16 @@ public class Plugin : BaseUnityPlugin
 			UIApi.RemoveZeepGUIDrawer(Services.RunOverlay);
 			UIApi.RemoveZeepGUIDrawer(Services.Control);
 			UIApi.RemoveZeepGUIDrawer(Services.LevelStats);
+			UIApi.RemoveZeepGUIDrawer(Services.Leaderboard);
 			UIApi.RemoveZeepGUIDrawer(Services.LevelSummary);
 			UIApi.RemoveZeepGUIDrawer(Services.Results);
+			UIApi.RemoveZeepGUIDrawer(Services.Help);
+			UIApi.RemoveZeepGUIDrawer(Services.Welcome);
 			UIApi.RemoveZeepGUIDrawer(Services.Debug);
 			UIApi.RemoveToolbarDrawer(Services.Toolbar);
 		}
 
 		Services?.RaceTime.Dispose();
-		Services?.Leaderboard.Dispose();
 		Services?.GameState.Dispose();
 		Services?.WorkshopDownloads.Dispose();
 		_harmony?.UnpatchSelf();

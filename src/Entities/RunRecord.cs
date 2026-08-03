@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace AuthorTimeHunting.Entities;
 
@@ -33,4 +34,37 @@ public class RunRecord
 
 	/// <summary>True when the clock ran out rather than the player stopping early.</summary>
 	public bool RanOutOfTime { get; set; }
+
+	/// <summary>
+	///     Every level the run touched, in the order they were played. Null on records written
+	///     before runs kept their levels - the history opens those as a summary and says so
+	///     rather than pretending the run played nothing.
+	/// </summary>
+	public List<RunLevelRecord> Levels { get; set; }
+}
+
+/// <summary>
+///     One level inside a stored run. Flat and primitive for the same reason as
+///     <see cref="RunRecord" />: it has to stay readable long after the code that wrote it.
+/// </summary>
+public class RunLevelRecord
+{
+	public string Uid { get; set; }
+	public string Name { get; set; }
+	public string Author { get; set; }
+
+	/// <summary>What the level ended as, in the words the report uses.</summary>
+	public string Status { get; set; }
+
+	public int Attempts { get; set; }
+	public int Crashes { get; set; }
+	public int WheelsLost { get; set; }
+
+	public double DurationMs { get; set; }
+
+	public double AuthorTime { get; set; }
+	public double GoldTime { get; set; }
+
+	/// <summary>The best time driven here, or negative when the level was never finished.</summary>
+	public double PersonalBest { get; set; }
 }

@@ -13,7 +13,8 @@ internal enum UiIcon
 	Stop,
 	Skip,
 	Restart,
-	Warning
+	Warning,
+	Info
 }
 
 /// <summary>
@@ -52,6 +53,9 @@ internal static class UiIcons
 				break;
 			case UiIcon.Warning:
 				Warning(gui, box, colour);
+				break;
+			case UiIcon.Info:
+				Info(gui, box, colour);
 				break;
 		}
 	}
@@ -113,6 +117,23 @@ internal static class UiIcons
 		];
 
 		gui.Canvas.ConvexFill(points, colour);
+	}
+
+	/// <summary>
+	///     A lower-case i: the dot and the stem, nothing around them. Drawn rather than ringed
+	///     because the ring would have to be knocked out of the middle to leave the stem visible,
+	///     and the canvas can fill shapes but not subtract them - a solid disc with a stem the
+	///     same colour is just a disc.
+	/// </summary>
+	private static void Info(ImGui gui, ImRect box, Color32 colour)
+	{
+		float stem = box.W * 0.24f;
+		float dot = box.H * 0.2f;
+		float gap = box.H * 0.12f;
+		float x = box.X + (box.W - stem) * 0.5f;
+
+		gui.Canvas.Rect(new ImRect(x, box.Top - dot, stem, dot), colour);
+		gui.Canvas.Rect(new ImRect(x, box.Y, stem, box.H - dot - gap), colour);
 	}
 
 	/// <summary>The largest square that fits, centred, so nothing is ever stretched.</summary>

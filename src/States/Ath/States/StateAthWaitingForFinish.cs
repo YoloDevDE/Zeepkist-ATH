@@ -10,9 +10,6 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 {
 	public override void Enter()
 	{
-		// The player is driving, so the between-levels card has said what it had to say.
-		AthStateMachine.Services.LevelSummary.Hide();
-
 		// A run resumed while the player paused ATH must not restart the clock.
 		if (!AthStateMachine.Ctx.IsPaused)
 		{

@@ -30,17 +30,25 @@ public class ResultsScreen : IZeepGUIDrawer
 	private const float MedalRowSize = 2.2f;
 
 	/// <summary>
-	///     Rows of the level list per page. The list is paged rather than scrolled: a run can
-	///     touch forty levels, and this screen is a fixed size on purpose.
+	///     How wide a level thumbnail is allowed to get. It is a 16:9 picture on a screen that
+	///     is mostly a list, and letting it fill the width makes the numbers under it a footnote.
 	/// </summary>
-	private const int LevelsPerPage = 12;
+	private const float ThumbnailMaxWidth = 360f;
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
 
-	private int _historyPage;
+	/// <summary>The level whose detail view is open, or null while the list is showing.</summary>
+	private RunReportView.LevelRow _level;
+
 	private bool _mouseOverWindow;
-	private int _page;
 	private RunReportView _report;
+
+	/// <summary>
+	///     A past run opened out of the history, as its own report, or null while the history
+	///     list is showing. Held as a built view rather than as the record, so it is converted
+	///     once on the click rather than on every frame of the frame it is open.
+	/// </summary>
+	private RunReportView _run;
 
 	public bool Visible => _report != null;
 
@@ -68,8 +76,8 @@ public class ResultsScreen : IZeepGUIDrawer
 	public void Show(RunReportView report)
 	{
 		_report = report;
-		_page = 0;
-		_historyPage = 0;
+		_level = null;
+		_run = null;
 	}
 
 	public void Close()
@@ -186,8 +194,19 @@ public class ResultsScreen : IZeepGUIDrawer
 		}
 	}
 
+	/// <summary>
+	///     The level list, or the one level that was clicked. Scrolled rather than paged: the
+	///     list was already inside a scrollable window, so the pager was a second way of moving
+	///     through the same list that only worked twelve rows at a time.
+	/// </summary>
 	private void DrawLevels(ImGui gui, RunReportView report)
 	{
+		if (_level != null)
+		{
+			DrawLevelDetail(gui, _level);
+			return;
+		}
+
 		IReadOnlyList<RunReportView.LevelRow> levels = report.Levels;
 
 		if (levels.Count == 0)
@@ -196,32 +215,131 @@ public class ResultsScreen : IZeepGUIDrawer
 			return;
 		}
 
-		int pages = Mathf.CeilToInt(levels.Count / (float)LevelsPerPage);
-		_page = Mathf.Clamp(_page, 0, pages - 1);
-
 		DrawLevelHeader(gui);
 
-		int first = _page * LevelsPerPage;
-		int last = Mathf.Min(first + LevelsPerPage, levels.Count);
+		gui.BeginScrollable();
 
-		for (int i = first; i < last; i++)
+		try
 		{
-			DrawLevelRow(gui, levels[i]);
+			foreach (RunReportView.LevelRow level in levels)
+			{
+				if (DrawLevelRow(gui, level))
+				{
+					_level = level;
+				}
+			}
 		}
-
-		if (pages > 1)
+		finally
 		{
-			DrawPager(gui, pages, ref _page);
+			gui.EndScrollable();
 		}
 	}
 
 	/// <summary>
+	///     One level, in full: what it looked like, what it wanted, and what it cost. The report
+	///     lists forty of these as one line each, which answers how the run went and nothing
+	///     about how any single level went.
+	/// </summary>
+	private void DrawLevelDetail(ImGui gui, RunReportView.LevelRow level)
+	{
+		float text = gui.Style.Layout.TextSize;
+
+		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Restart, "Back to the list", HudPalette.ActionRestart))
+		{
+			_level = null;
+		}
+
+		gui.BeginScrollable();
+
+		try
+		{
+			DrawThumbnail(gui, level);
+
+			UiText.Centre(gui, level.Name, HudPalette.LevelName, Row(gui, 1.6f), text * 1.4f);
+			UiText.Centre(gui, $"by {level.Author}", HudPalette.AuthorName, Row(gui, 1f), text * 0.9f);
+			UiText.Centre(gui, level.Status.ToUpperInvariant(), level.StatusColour, Row(gui, 1.8f), text * 1.5f);
+			gui.AddSpacing();
+
+			DrawMedalTime(gui, GameSprites.AuthorMedal, "Author Time", level.AuthorTime, HudPalette.Author);
+			DrawMedalTime(gui, GameSprites.GoldMedal, "Gold Time", level.GoldTime, HudPalette.Gold);
+
+			if (level.PersonalBest == null)
+			{
+				UiWidgets.Row(gui, Row(gui, 1f), "Your Best", "never finished", HudPalette.Muted);
+			}
+			else
+			{
+				UiWidgets.Row(gui, Row(gui, 1f), "Your Best", $"{level.PersonalBest}   ({level.AuthorDelta})",
+					level.StatusColour);
+			}
+
+			gui.AddSpacing();
+			UiWidgets.Heading(gui, Row(gui, 0.85f), "EFFORT");
+			UiWidgets.Row(gui, Row(gui, 1f), "Attempts", level.Attempts, HudPalette.Default);
+			UiWidgets.Row(gui, Row(gui, 1f), "Crashes", level.Crashes, HudPalette.Default);
+			UiWidgets.Row(gui, Row(gui, 1f), "Wheels Lost", level.WheelsLost, HudPalette.Default);
+			UiWidgets.Row(gui, Row(gui, 1f), "Time Spent", level.Duration, HudPalette.Default);
+		}
+		finally
+		{
+			gui.EndScrollable();
+		}
+	}
+
+	/// <summary>
+	///     The level's own picture, at the game's 16:9, or a box saying there is none. Loaded
+	///     asynchronously, so the first frame or two draw the placeholder - see
+	///     <see cref="LevelThumbnails" />.
+	/// </summary>
+	private static void DrawThumbnail(ImGui gui, RunReportView.LevelRow level)
+	{
+		float width = Mathf.Min(gui.GetLayoutWidth(), ThumbnailMaxWidth);
+		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), width * 9f / 16f);
+		ImRect box = new(row.X + (row.W - width) * 0.5f, row.Y, width, row.H);
+
+		Texture2D thumbnail = LevelThumbnails.Get(level.Uid);
+
+		if (thumbnail == null)
+		{
+			gui.Canvas.Rect(box, HudPalette.Track, box.H * 0.05f);
+			UiText.Centre(gui, "no thumbnail", HudPalette.Muted, box, gui.Style.Layout.TextSize);
+			return;
+		}
+
+		gui.Image(thumbnail, box);
+	}
+
+	private static void DrawMedalTime(ImGui gui, Sprite sprite, string label, string time, Color32 colour)
+	{
+		ImRect row = Row(gui, 1.4f);
+		float iconSize = row.H;
+
+		ImRect icon = row.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect rest);
+
+		if (sprite != null)
+		{
+			gui.Image(sprite, icon, true);
+		}
+		else
+		{
+			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, colour);
+		}
+
+		UiWidgets.Row(gui, rest, label, time, colour);
+	}
+
+	/// <summary>
 	///     Every run this machine has ever finished, newest first, with the one just played
-	///     marked. Paged like the level list and for the same reason: the window is a fixed size
-	///     and a history is only ever going to get longer.
+	///     marked - or the one that was clicked, opened as the report it was when it ended.
 	/// </summary>
 	private void DrawHistory(ImGui gui, RunReportView report)
 	{
+		if (_run != null)
+		{
+			DrawRunDetail(gui, _run);
+			return;
+		}
+
 		IReadOnlyList<RunReportView.HistoryRow> history = report.History;
 
 		if (history.Count == 0)
@@ -230,22 +348,74 @@ public class ResultsScreen : IZeepGUIDrawer
 			return;
 		}
 
-		int pages = Mathf.CeilToInt(history.Count / (float)LevelsPerPage);
-		_historyPage = Mathf.Clamp(_historyPage, 0, pages - 1);
-
 		DrawHistoryHeader(gui);
 
-		int first = _historyPage * LevelsPerPage;
-		int last = Mathf.Min(first + LevelsPerPage, history.Count);
+		gui.BeginScrollable();
 
-		for (int i = first; i < last; i++)
+		try
 		{
-			DrawHistoryRow(gui, history[i]);
+			foreach (RunReportView.HistoryRow record in history)
+			{
+				if (DrawHistoryRow(gui, record))
+				{
+					_run = RunReportView.FromRecord(record.Record);
+					_level = null;
+				}
+			}
+		}
+		finally
+		{
+			gui.EndScrollable();
+		}
+	}
+
+	/// <summary>
+	///     A past run, opened as the report it was: the headline, the medals, the numbers, and
+	///     its own level list - which clicks through into the same level detail as this run's.
+	/// </summary>
+	private void DrawRunDetail(ImGui gui, RunReportView run)
+	{
+		if (_level != null)
+		{
+			DrawLevelDetail(gui, _level);
+			return;
 		}
 
-		if (pages > 1)
+		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Restart, "Back to the history", HudPalette.ActionRestart))
 		{
-			DrawPager(gui, pages, ref _historyPage);
+			_run = null;
+			return;
+		}
+
+		gui.BeginScrollable();
+
+		try
+		{
+			DrawHeadline(gui, run);
+			DrawRows(gui, run.Summary);
+
+			gui.AddSpacing();
+			UiWidgets.Heading(gui, Row(gui, 0.85f), "LEVELS");
+
+			if (run.Levels.Count == 0)
+			{
+				UiText.Left(gui, "This run was recorded before levels were kept.", HudPalette.Muted, Row(gui, 1f));
+				return;
+			}
+
+			DrawLevelHeader(gui);
+
+			foreach (RunReportView.LevelRow level in run.Levels)
+			{
+				if (DrawLevelRow(gui, level))
+				{
+					_level = level;
+				}
+			}
+		}
+		finally
+		{
+			gui.EndScrollable();
 		}
 	}
 
@@ -261,9 +431,11 @@ public class ResultsScreen : IZeepGUIDrawer
 		UiText.Draw(gui, "DRIVEN", HudPalette.Muted, HistoryCell(row, 4), size, 1f);
 	}
 
-	private static void DrawHistoryRow(ImGui gui, RunReportView.HistoryRow record)
+	/// <summary>True on the frame the row was clicked.</summary>
+	private static bool DrawHistoryRow(ImGui gui, RunReportView.HistoryRow record)
 	{
 		ImRect row = Row(gui, 1f);
+		bool clicked = Clickable(gui, row);
 
 		// The run just played, picked out so it can be compared against the rest at a glance.
 		Color32 when = record.IsCurrent ? HudPalette.Positive : HudPalette.Muted;
@@ -274,6 +446,30 @@ public class ResultsScreen : IZeepGUIDrawer
 			HistoryCell(row, 2));
 		UiText.Right(gui, record.Levels, HudPalette.Default, HistoryCell(row, 3), gui.Style.Layout.TextSize);
 		UiText.Right(gui, record.Driven, HudPalette.Default, HistoryCell(row, 4), gui.Style.Layout.TextSize);
+
+		return clicked;
+	}
+
+	/// <summary>
+	///     Makes a row of plain text behave like a button without looking like one. The hover
+	///     tint is drawn under the text rather than the row being a real button, because a
+	///     button centres its own label and this row has five columns that have to line up with
+	///     the header above them.
+	/// </summary>
+	private static bool Clickable(ImGui gui, ImRect row)
+	{
+		// The id is taken first so the hover can be asked about by name. Drawing the tint before
+		// the text also matters: the canvas paints in call order, and a highlight painted after
+		// its row would cover the row it is highlighting.
+		uint id = gui.GetNextControlId();
+		bool clicked = gui.InvisibleButton(id, row);
+
+		if (gui.IsControlHovered(id))
+		{
+			gui.Canvas.Rect(row, HudPalette.Track, row.H * 0.2f);
+		}
+
+		return clicked;
 	}
 
 	private static ImRect HistoryCell(ImRect row, int column)
@@ -301,15 +497,19 @@ public class ResultsScreen : IZeepGUIDrawer
 		UiText.Draw(gui, "TIME", HudPalette.Muted, Cell(row, 4), size, 1f);
 	}
 
-	private static void DrawLevelRow(ImGui gui, RunReportView.LevelRow level)
+	/// <summary>True on the frame the row was clicked.</summary>
+	private static bool DrawLevelRow(ImGui gui, RunReportView.LevelRow level)
 	{
 		ImRect row = Row(gui, 1f);
+		bool clicked = Clickable(gui, row);
 
 		UiText.Left(gui, level.Index.ToString(), HudPalette.Muted, Cell(row, 0));
 		UiText.Left(gui, $"{level.Name}  ({level.Author})", HudPalette.LevelName, Cell(row, 1));
 		UiText.Left(gui, level.Status, level.StatusColour, Cell(row, 2));
 		UiText.Right(gui, level.Attempts, HudPalette.Default, Cell(row, 3), gui.Style.Layout.TextSize);
 		UiText.Right(gui, level.Duration, HudPalette.Default, Cell(row, 4), gui.Style.Layout.TextSize);
+
+		return clicked;
 	}
 
 	/// <summary>
@@ -329,31 +529,14 @@ public class ResultsScreen : IZeepGUIDrawer
 		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
 	}
 
-	private static void DrawPager(ImGui gui, int pages, ref int page)
-	{
-		gui.AddSpacing();
-
-		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
-		ImRect previous = UiWidgets.Column(gui, row, 0, 3);
-		ImRect label = UiWidgets.Column(gui, row, 1, 3);
-		ImRect next = UiWidgets.Column(gui, row, 2, 3);
-
-		if (page > 0 && UiWidgets.Button(gui, previous, "< Previous"))
-		{
-			page--;
-		}
-
-		UiText.Centre(gui, $"Page {page + 1} / {pages}", HudPalette.Muted, label, gui.Style.Layout.TextSize);
-
-		if (page < pages - 1 && UiWidgets.Button(gui, next, "Next >"))
-		{
-			page++;
-		}
-	}
-
 	/// <summary>A layout row <paramref name="scale" /> times the theme's text size tall.</summary>
 	private static ImRect Row(ImGui gui, float scale)
 	{
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * scale);
+	}
+
+	private static ImRect ButtonRow(ImGui gui)
+	{
+		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
 	}
 }

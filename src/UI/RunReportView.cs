@@ -123,6 +123,77 @@ public class RunReportView
 	}
 
 	/// <summary>
+	///     A run out of the history, opened as the report it was when it ended.
+	///     Built from what was written to disk rather than from a live AthCtx, so the superlatives
+	///     that need the levels themselves are not all here - the ones that are, are the ones the
+	///     record kept. A run stored before runs kept their levels opens with an empty list and
+	///     says so rather than claiming it played none.
+	/// </summary>
+	public static RunReportView FromRecord(RunRecord record)
+	{
+		if (record == null)
+		{
+			return null;
+		}
+
+		IReadOnlyList<RunLevelRecord> levels = record.Levels ?? [];
+
+		return new RunReportView
+		{
+			Kicker = record.EndedAt.ToString("yyyy-MM-dd HH:mm"),
+			Headline = record.AuthorMedals == 1 ? "1 author time" : $"{record.AuthorMedals} author times",
+			PlayerName = Name(record.PlayerName),
+			History = [],
+			AuthorMedals = record.AuthorMedals,
+			GoldMedals = record.GoldMedals,
+			Penalties = record.Penalties,
+			Summary =
+			[
+				new ReportRow("Levels Played", record.LevelsPlayed.ToString()),
+				new ReportRow("Author Times", record.AuthorMedals.ToString(), HudPalette.Author),
+				new ReportRow("Gold Skips", record.GoldMedals.ToString(), HudPalette.Gold),
+				new ReportRow("Penalty Skips", record.Penalties.ToString(), HudPalette.Penalty),
+				new ReportRow("Time Budget", TimeSpan.FromMilliseconds(record.DurationMs).ToFormattedString()),
+				new ReportRow("Time Driven", TimeSpan.FromMilliseconds(record.DrivenMs).ToFormattedString()),
+				new ReportRow("Total Attempts", record.TotalAttempts.ToString()),
+				new ReportRow("Ended", record.RanOutOfTime ? "clock ran out" : "stopped early",
+					record.RanOutOfTime ? HudPalette.Penalty : HudPalette.Muted),
+				new ReportRow("Gamemode", string.IsNullOrWhiteSpace(record.Gamemode) ? "-" : record.Gamemode)
+			],
+			Records = [],
+			Levels = BuildLevels(levels)
+		};
+	}
+
+	private static LevelRow[] BuildLevels(IReadOnlyList<RunLevelRecord> levels)
+	{
+		LevelRow[] rows = new LevelRow[levels.Count];
+
+		for (int i = 0; i < levels.Count; i++)
+		{
+			RunLevelRecord level = levels[i];
+			bool finished = level.PersonalBest >= 0;
+
+			rows[i] = new LevelRow(i + 1,
+				level.Uid,
+				level.Name,
+				level.Author,
+				level.Status,
+				StatusColour(level.Status),
+				level.Attempts.ToString(),
+				TimeSpan.FromMilliseconds(level.DurationMs).ToFormattedString(),
+				TimeFormatter.FormatTime(level.AuthorTime),
+				TimeFormatter.FormatTime(level.GoldTime),
+				finished ? TimeFormatter.FormatTime(level.PersonalBest) : null,
+				finished ? TimeFormatter.FormatDelta(level.PersonalBest - level.AuthorTime) : null,
+				level.Crashes.ToString(),
+				level.WheelsLost.ToString());
+		}
+
+		return rows;
+	}
+
+	/// <summary>
 	///     The name the run was driven under, verbatim, or a stand-in when the lobby has already
 	///     been left - stopping a run and leaving the server in the same breath is ordinary.
 	///     Nothing is put in front of it: the name is whatever the player called themselves, and
@@ -162,7 +233,8 @@ public class RunReportView
 		{
 			RunRecord record = history[i];
 
-			rows[i] = new HistoryRow(record.EndedAt.ToString("yyyy-MM-dd HH:mm"),
+			rows[i] = new HistoryRow(record,
+				record.EndedAt.ToString("yyyy-MM-dd HH:mm"),
 				string.IsNullOrWhiteSpace(record.Gamemode) ? "-" : record.Gamemode,
 				record.AuthorMedals,
 				record.GoldMedals,
@@ -219,18 +291,32 @@ public class RunReportView
 
 		for (int i = 0; i < levels.Count; i++)
 		{
-			Level level = levels[i];
-
-			rows[i] = new LevelRow(i + 1,
-				level.Name,
-				level.Author,
-				level.StatusString,
-				StatusColour(level),
-				level.Attempt.ToString(),
-				level.GetPlayDuration().ToFormattedString());
+			rows[i] = ToRow(levels[i], i + 1);
 		}
 
 		return rows;
+	}
+
+	/// <summary>One level, with everything the detail view asks for behind the five columns.</summary>
+	private static LevelRow ToRow(Level level, int index)
+	{
+		bool finished = level.PersonalBestTime >= 0;
+		double delta = level.PersonalBestTime - level.AuthorTime;
+
+		return new LevelRow(index,
+			level.LevelUid,
+			level.Name,
+			level.Author,
+			level.StatusString,
+			StatusColour(level),
+			level.Attempt.ToString(),
+			level.GetPlayDuration().ToFormattedString(),
+			TimeFormatter.FormatTime(level.AuthorTime),
+			TimeFormatter.FormatTime(level.GoldTime),
+			finished ? TimeFormatter.FormatTime(level.PersonalBestTime) : null,
+			finished ? TimeFormatter.FormatDelta(delta) : null,
+			level.Crashes.ToString(),
+			level.WheelsLost.ToString());
 	}
 
 	private static Color32 StatusColour(Level level)
@@ -242,6 +328,24 @@ public class RunReportView
 			Level.LevelStatus.FREE => HudPalette.FreeSkip,
 			Level.LevelStatus.BROKEN => HudPalette.Warning,
 			Level.LevelStatus.FAILED => HudPalette.Penalty,
+			_ => HudPalette.Muted
+		};
+	}
+
+	/// <summary>
+	///     The same colours, off the stored word rather than the enum. A record keeps what the
+	///     status was called, not which enum member it was - that is what makes it survive the
+	///     enum changing.
+	/// </summary>
+	private static Color32 StatusColour(string status)
+	{
+		return status switch
+		{
+			"Completed" => HudPalette.Author,
+			"Gold-Skipped" => HudPalette.Gold,
+			"Free-Skipped" => HudPalette.FreeSkip,
+			"Broken" => HudPalette.Warning,
+			"Failed" => HudPalette.Penalty,
 			_ => HudPalette.Muted
 		};
 	}
@@ -268,9 +372,10 @@ public class RunReportView
 	/// <summary>One past run. Medal counts stay numbers so the tab can draw them as medals.</summary>
 	public readonly struct HistoryRow
 	{
-		public HistoryRow(string when, string gamemode, int authorMedals, int goldMedals, int penalties, string levels,
-			string driven, bool isCurrent)
+		public HistoryRow(RunRecord record, string when, string gamemode, int authorMedals, int goldMedals,
+			int penalties, string levels, string driven, bool isCurrent)
 		{
+			Record = record;
 			When = when;
 			Gamemode = gamemode;
 			AuthorMedals = authorMedals;
@@ -280,6 +385,12 @@ public class RunReportView
 			Driven = driven;
 			IsCurrent = isCurrent;
 		}
+
+		/// <summary>
+		///     What was stored, kept alongside the formatted columns so clicking the row can open
+		///     the whole run rather than the five things this line happens to show.
+		/// </summary>
+		public RunRecord Record { get; }
 
 		public string When { get; }
 		public string Gamemode { get; }
@@ -293,20 +404,58 @@ public class RunReportView
 		public bool IsCurrent { get; }
 	}
 
-	/// <summary>One line of the level list.</summary>
-	public readonly struct LevelRow
+	/// <summary>
+	///     One level of a run: the five columns the list shows, and everything behind them that
+	///     the detail view opens up.
+	///     A class rather than a struct because it doubles as "which level is selected", and a
+	///     null reference is a cleaner way to say "none" than an index that has to be kept in
+	///     step with a list that is rebuilt every frame.
+	/// </summary>
+	public class LevelRow
 	{
-		public LevelRow(int index, string name, string author, string status, Color32 statusColour, string attempts,
-			string duration)
+		public LevelRow(int index, string uid, string name, string author, string status, Color32 statusColour,
+			string attempts, string duration, string authorTime, string goldTime, string personalBest,
+			string authorDelta, string crashes, string wheelsLost)
 		{
 			Index = index;
+			Uid = uid;
 			Name = name;
 			Author = author;
 			Status = status;
 			StatusColour = statusColour;
 			Attempts = attempts;
 			Duration = duration;
+			AuthorTime = authorTime;
+			GoldTime = goldTime;
+			PersonalBest = personalBest;
+			AuthorDelta = authorDelta;
+			Crashes = crashes;
+			WheelsLost = wheelsLost;
 		}
+
+		public int Index { get; private set; }
+
+		/// <summary>The level's own id, which is what a thumbnail is looked up by.</summary>
+		public string Uid { get; }
+
+		public string Name { get; }
+		public string Author { get; }
+		public string Status { get; }
+		public Color32 StatusColour { get; }
+		public string Attempts { get; }
+		public string Duration { get; }
+
+		public string AuthorTime { get; }
+		public string GoldTime { get; }
+
+		/// <summary>The best time driven here, or null when the level was never finished.</summary>
+		public string PersonalBest { get; }
+
+		/// <summary>How far that best was off the author time, signed. Null without a time.</summary>
+		public string AuthorDelta { get; }
+
+		public string Crashes { get; }
+		public string WheelsLost { get; }
 
 		/// <summary>
 		///     The same row under a different number. For a list that shows only the tail of a
@@ -314,15 +463,9 @@ public class RunReportView
 		/// </summary>
 		public LevelRow Renumbered(int index)
 		{
-			return new LevelRow(index, Name, Author, Status, StatusColour, Attempts, Duration);
-		}
+			Index = index;
 
-		public int Index { get; }
-		public string Name { get; }
-		public string Author { get; }
-		public string Status { get; }
-		public Color32 StatusColour { get; }
-		public string Attempts { get; }
-		public string Duration { get; }
+			return this;
+		}
 	}
 }

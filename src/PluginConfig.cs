@@ -20,6 +20,10 @@ public class PluginConfig
 
 		Minimalist = config.Bind("Misc", "Minimalist", false, "Makes it a bit less text");
 
+		ShowWelcome = config.Bind("Misc", "Show the Welcome Screen", true,
+			"Puts the welcome screen up whenever /ath opens the mod. It explains the gamemode and can always "
+			+ "be reopened from the ATH menu in the top bar.");
+
 		InGameHud = config.Bind("Misc", "In-Game HUD", true,
 			"Draws the run HUD as a movable in-game window instead of the server message block.");
 
@@ -52,6 +56,12 @@ public class PluginConfig
 	///     When enabled, shows less text in the UI
 	/// </summary>
 	public ConfigEntry<bool> Minimalist { get; }
+
+	/// <summary>
+	///     Whether the welcome screen comes up on its own when /ath opens the mod. Written by the
+	///     checkbox on that screen, which is the only place a player will look for the switch.
+	/// </summary>
+	public ConfigEntry<bool> ShowWelcome { get; }
 
 	/// <summary>
 	///     When enabled, the run HUD is drawn as an in-game window instead of being written

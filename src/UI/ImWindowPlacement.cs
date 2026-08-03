@@ -10,6 +10,7 @@ public enum ImWindowAnchor
 	TopCenter,
 	TopRight,
 	MiddleLeft,
+	MiddleRight,
 	BottomRight
 }
 
@@ -84,6 +85,8 @@ public static class ImWindowPlacement
 				height),
 			ImWindowAnchor.MiddleLeft => new ImRect(screen.Left + margin, screen.Bottom + (screen.H - height) * 0.5f,
 				width, height),
+			ImWindowAnchor.MiddleRight => new ImRect(screen.Right - width - margin,
+				screen.Bottom + (screen.H - height) * 0.5f, width, height),
 			_ => new ImRect(screen.Left + margin, screen.Bottom + margin, width, height)
 		};
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI;
@@ -74,7 +75,26 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 			TotalAttempts = new RunStatistics(ctx.Levels).TotalAttempts,
 			DurationMs = ctx.Duration,
 			DrivenMs = ctx.GetTotalLevelPlayDuration().TotalMilliseconds,
-			RanOutOfTime = ctx.IsTimeOver()
+			RanOutOfTime = ctx.IsTimeOver(),
+			Levels = ctx.Levels.Select(ToRecord).ToList()
+		};
+	}
+
+	private static RunLevelRecord ToRecord(Level level)
+	{
+		return new RunLevelRecord
+		{
+			Uid = level.LevelUid,
+			Name = level.Name,
+			Author = level.Author,
+			Status = level.StatusString,
+			Attempts = level.Attempt,
+			Crashes = level.Crashes,
+			WheelsLost = level.WheelsLost,
+			DurationMs = level.GetPlayDuration().TotalMilliseconds,
+			AuthorTime = level.AuthorTime,
+			GoldTime = level.GoldTime,
+			PersonalBest = level.PersonalBestTime
 		};
 	}
 
