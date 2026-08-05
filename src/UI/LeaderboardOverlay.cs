@@ -49,10 +49,31 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
-	private readonly List<Entry> _entries = [];
+	/// <summary>
+	///     How often the board is rebuilt, in seconds. Lap times land at human speed, so a tenth
+	///     of a second is already faster than anything on here can change.
+	/// </summary>
+	private const float RefreshInterval = 0.1f;
+
+	/// <summary>Rank, name, time - as shares of the row.</summary>
+	private static readonly float[] Weights = [0.1f, 0.45f, 0.45f];
+
+	/// <summary>Fastest first. A field rather than a lambda at the call site, so it is made once.</summary>
+	private static readonly Comparison<LeaderboardEntry> ByTime = (left, right) => left.Time.CompareTo(right.Time);
+
+	private readonly List<LeaderboardEntry> _entries = [];
+
+	/// <summary>The level the board was last built for, to notice one being swapped underneath it.</summary>
+	private Level _builtLevel;
+
+	/// <summary>The local player's time the board was last built with. See <see cref="Refresh" />.</summary>
+	private float _builtYourTime;
 
 	private float _contentHeight;
 	private bool _mouseOverWindow;
+
+	/// <summary>Unscaled time at which the board may be rebuilt again.</summary>
+	private float _nextRefresh;
 
 	/// <summary>The run currently in progress, or null when ATH is idle. Set by StateMasterOn.</summary>
 	public AthStateMachine ActiveRun { get; set; }
@@ -88,9 +109,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 	private void Draw(ImGui gui, AthCtx ctx)
 	{
-		float yourTime = YourTime(ctx);
-
-		Build(ctx, yourTime);
+		Refresh(ctx);
 
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 
@@ -111,7 +130,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 			for (int i = first; i < last; i++)
 			{
-				DrawRow(gui, _entries[i], i + 1, yourTime);
+				DrawRow(gui, _entries[i], i + 1);
 			}
 
 			// While the window's layout frame is still open, so it can report what it holds.
@@ -123,7 +142,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawRow(ImGui gui, Entry entry, int rank, float yourTime)
+	private static void DrawRow(ImGui gui, LeaderboardEntry entry, int rank)
 	{
 		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight());
 		float size = gui.Style.Layout.TextSize;
@@ -131,22 +150,14 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 		// The player's own line is the one being looked for, so it is the one that is not grey.
 		Color32 rankColour = entry.IsLocal ? HudPalette.White : HudPalette.Muted;
 
-		UiText.Draw(gui, rank.ToString(), rankColour, Cell(row, 0), size * 0.9f, 0f);
+		UiText.Draw(gui, UiNumbers.Text(rank), rankColour, Cell(row, 0), size * 0.9f, 0f);
 		UiText.Draw(gui, entry.Name, entry.Colour, Cell(row, 1), size, 0f);
-		UiText.Draw(gui, TimeText(entry, yourTime), entry.Colour, Cell(row, 2), size, 1f);
+		UiText.Draw(gui, entry.Text, entry.Colour, Cell(row, 2), size, 1f);
 	}
 
 	private static ImRect Cell(ImRect row, int column)
 	{
-		float[] weights = [0.1f, 0.45f, 0.45f];
-		float offset = 0f;
-
-		for (int i = 0; i < column; i++)
-		{
-			offset += weights[i];
-		}
-
-		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
+		return UiWidgets.Cell(row, Weights, column);
 	}
 
 	/// <summary>
@@ -168,16 +179,45 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 	}
 
 	/// <summary>
+	///     Rebuilds the board, but not on every frame.
+	///     Nothing on it moves at frame rate: a lap time appears when somebody crosses the line
+	///     and then stands still. Rebuilding regardless meant formatting a fresh string for every
+	///     row of a full lobby, a hundred and forty times a second, for the length of a hunt -
+	///     garbage the collector then had to walk, in the middle of a race.
+	///     The two things that do want to be immediate are handled as they happen: your own time
+	///     landing, and the level changing under the board.
+	/// </summary>
+	private void Refresh(AthCtx ctx)
+	{
+		float yourTime = YourTime(ctx);
+		Level level = ctx.CurrentLevel;
+
+		// _builtLevel is null until the first build, so the first frame always falls through.
+		if (ReferenceEquals(level, _builtLevel)
+		    && Mathf.Approximately(yourTime, _builtYourTime)
+		    && Time.unscaledTime < _nextRefresh)
+		{
+			return;
+		}
+
+		_builtLevel = level;
+		_builtYourTime = yourTime;
+		_nextRefresh = Time.unscaledTime + RefreshInterval;
+
+		Build(ctx, yourTime);
+	}
+
+	/// <summary>
 	///     Everyone with a time, the two medals among them, fastest first. Rebuilt into the same
-	///     list every frame rather than allocated fresh - this runs in a GUI pass.
+	///     list rather than allocated fresh - this runs in a GUI pass.
 	/// </summary>
 	private void Build(AthCtx ctx, float yourTime)
 	{
 		Level level = ctx.CurrentLevel;
 
 		_entries.Clear();
-		_entries.Add(new Entry(AuthorLabel, (float)level.AuthorTime, HudPalette.Author, true, false));
-		_entries.Add(new Entry(GoldLabel, (float)level.GoldTime, HudPalette.Gold, true, false));
+		_entries.Add(Medal(AuthorLabel, (float)level.AuthorTime, HudPalette.Author, yourTime));
+		_entries.Add(Medal(GoldLabel, (float)level.GoldTime, HudPalette.Gold, yourTime));
 
 		List<ZeepkistNetworkPlayer> players = ZeepkistNetwork.PlayerList;
 
@@ -198,12 +238,26 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 					continue;
 				}
 
-				_entries.Add(new Entry(player.Username, time, local ? HudPalette.White : HudPalette.Default, false,
-					local));
+				_entries.Add(new LeaderboardEntry(player.Username, time, local ? HudPalette.White : HudPalette.Default, local,
+					TimeFormatter.FormatTime(time)));
 			}
 		}
 
-		_entries.Sort((left, right) => left.Time.CompareTo(right.Time));
+		_entries.Sort(ByTime);
+	}
+
+	/// <summary>
+	///     A medal standing in the board. It carries the gap to the local player rather than its
+	///     own time: the absolute time is already on the level panel and does not change, and the
+	///     gap is signed the way a split is - ahead is negative, so a leading minus means the
+	///     medal is still in hand. Without a time of your own there is no gap, so it shows the
+	///     time it wants instead.
+	/// </summary>
+	private static LeaderboardEntry Medal(string name, float time, Color32 colour, float yourTime)
+	{
+		string text = yourTime > 0f ? TimeFormatter.FormatDelta(yourTime - time) : TimeFormatter.FormatTime(time);
+
+		return new LeaderboardEntry(name, time, colour, false, text);
 	}
 
 	/// <summary>
@@ -228,45 +282,10 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 		return Mathf.Clamp(local - MaxRows / 2, 0, _entries.Count - MaxRows);
 	}
 
-	/// <summary>
-	///     The medals carry their gap to the local player, everyone else carries their time. A
-	///     gap is the only reading that matters on a medal - its absolute time is already on the
-	///     level panel and does not change - and it is signed the way a split is: ahead is
-	///     negative, so a leading minus means the medal is still in hand.
-	/// </summary>
-	private static string TimeText(Entry entry, float yourTime)
-	{
-		if (!entry.IsMedal)
-		{
-			return TimeFormatter.FormatTime(entry.Time);
-		}
-
-		return yourTime > 0f ? TimeFormatter.FormatDelta(yourTime - entry.Time) : TimeFormatter.FormatTime(entry.Time);
-	}
-
 	private float Height(ImGui gui)
 	{
 		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 4f;
 
 		return content + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
-	}
-
-	/// <summary>One line of the merged board. A medal is an entry like any other - that is the point.</summary>
-	private readonly struct Entry
-	{
-		public Entry(string name, float time, Color32 colour, bool isMedal, bool isLocal)
-		{
-			Name = name;
-			Time = time;
-			Colour = colour;
-			IsMedal = isMedal;
-			IsLocal = isLocal;
-		}
-
-		public string Name { get; }
-		public float Time { get; }
-		public Color32 Colour { get; }
-		public bool IsMedal { get; }
-		public bool IsLocal { get; }
 	}
 }

@@ -128,6 +128,11 @@ public class ModServices
 	/// </summary>
 	public void PublishRun(AthStateMachine run)
 	{
+		// The frame cache is static and would otherwise keep the run that just ended reachable
+		// for the rest of the session. This is the moment the run changed, so this is where it
+		// is let go of.
+		RunHudView.Clear();
+
 		Control.ActiveRun = run;
 		LevelStats.ActiveRun = run;
 		LevelStats.Visible = run != null;
@@ -148,14 +153,7 @@ public class ModServices
 		// Opening the mod is the moment the welcome screen is for, and it is the only moment:
 		// nobody types /ath to be told the rules of a run they are already in, so a hunt in
 		// progress keeps it away. It goes down again with everything else.
-		if (Control.Visible)
-		{
-			Welcome.Visible = Plugin.Instance.MyConfig.ShowWelcome.Value && Control.ActiveRun == null;
-		}
-		else
-		{
-			Welcome.Visible = false;
-		}
+		Welcome.Visible = Control.Visible && Plugin.Instance.MyConfig.ShowWelcome.Value && Control.ActiveRun == null;
 	}
 
 	/// <summary>

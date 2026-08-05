@@ -309,25 +309,30 @@ public class RunReportView
 			level.Author,
 			level.StatusString,
 			StatusColour(level),
-			level.Attempt.ToString(),
+			UiNumbers.Text(level.Attempt),
 			level.GetPlayDuration().ToFormattedString(),
 			TimeFormatter.FormatTime(level.AuthorTime),
 			TimeFormatter.FormatTime(level.GoldTime),
 			finished ? TimeFormatter.FormatTime(level.PersonalBestTime) : null,
 			finished ? TimeFormatter.FormatDelta(delta) : null,
-			level.Crashes.ToString(),
-			level.WheelsLost.ToString());
+			UiNumbers.Text(level.Crashes),
+			UiNumbers.Text(level.WheelsLost));
 	}
 
-	private static Color32 StatusColour(Level level)
+	/// <summary>
+	///     What a level's outcome is painted in. Public because the summary card asks the same
+	///     question about the same enum - one table, so a new status cannot end up grey in one
+	///     place and coloured in the other.
+	/// </summary>
+	public static Color32 StatusColour(Level level)
 	{
 		return level.Status switch
 		{
-			Level.LevelStatus.AUTHOR => HudPalette.Author,
-			Level.LevelStatus.GOLD => HudPalette.Gold,
-			Level.LevelStatus.FREE => HudPalette.FreeSkip,
-			Level.LevelStatus.BROKEN => HudPalette.Warning,
-			Level.LevelStatus.FAILED => HudPalette.Penalty,
+			LevelStatus.AUTHOR => HudPalette.Author,
+			LevelStatus.GOLD => HudPalette.Gold,
+			LevelStatus.FREE => HudPalette.FreeSkip,
+			LevelStatus.BROKEN => HudPalette.Warning,
+			LevelStatus.FAILED => HudPalette.Penalty,
 			_ => HudPalette.Muted
 		};
 	}
@@ -348,124 +353,5 @@ public class RunReportView
 			"Failed" => HudPalette.Penalty,
 			_ => HudPalette.Muted
 		};
-	}
-
-	/// <summary>One label/value pair. The colour applies to the value, not the label.</summary>
-	public readonly struct ReportRow
-	{
-		public ReportRow(string label, string value) : this(label, value, HudPalette.Default)
-		{
-		}
-
-		public ReportRow(string label, string value, Color32 valueColour)
-		{
-			Label = label;
-			Value = value;
-			ValueColour = valueColour;
-		}
-
-		public string Label { get; }
-		public string Value { get; }
-		public Color32 ValueColour { get; }
-	}
-
-	/// <summary>One past run. Medal counts stay numbers so the tab can draw them as medals.</summary>
-	public readonly struct HistoryRow
-	{
-		public HistoryRow(RunRecord record, string when, string gamemode, int authorMedals, int goldMedals,
-			int penalties, string levels, string driven, bool isCurrent)
-		{
-			Record = record;
-			When = when;
-			Gamemode = gamemode;
-			AuthorMedals = authorMedals;
-			GoldMedals = goldMedals;
-			Penalties = penalties;
-			Levels = levels;
-			Driven = driven;
-			IsCurrent = isCurrent;
-		}
-
-		/// <summary>
-		///     What was stored, kept alongside the formatted columns so clicking the row can open
-		///     the whole run rather than the five things this line happens to show.
-		/// </summary>
-		public RunRecord Record { get; }
-
-		public string When { get; }
-		public string Gamemode { get; }
-		public int AuthorMedals { get; }
-		public int GoldMedals { get; }
-		public int Penalties { get; }
-		public string Levels { get; }
-		public string Driven { get; }
-
-		/// <summary>True for the run that was just played.</summary>
-		public bool IsCurrent { get; }
-	}
-
-	/// <summary>
-	///     One level of a run: the five columns the list shows, and everything behind them that
-	///     the detail view opens up.
-	///     A class rather than a struct because it doubles as "which level is selected", and a
-	///     null reference is a cleaner way to say "none" than an index that has to be kept in
-	///     step with a list that is rebuilt every frame.
-	/// </summary>
-	public class LevelRow
-	{
-		public LevelRow(int index, string uid, string name, string author, string status, Color32 statusColour,
-			string attempts, string duration, string authorTime, string goldTime, string personalBest,
-			string authorDelta, string crashes, string wheelsLost)
-		{
-			Index = index;
-			Uid = uid;
-			Name = name;
-			Author = author;
-			Status = status;
-			StatusColour = statusColour;
-			Attempts = attempts;
-			Duration = duration;
-			AuthorTime = authorTime;
-			GoldTime = goldTime;
-			PersonalBest = personalBest;
-			AuthorDelta = authorDelta;
-			Crashes = crashes;
-			WheelsLost = wheelsLost;
-		}
-
-		public int Index { get; private set; }
-
-		/// <summary>The level's own id, which is what a thumbnail is looked up by.</summary>
-		public string Uid { get; }
-
-		public string Name { get; }
-		public string Author { get; }
-		public string Status { get; }
-		public Color32 StatusColour { get; }
-		public string Attempts { get; }
-		public string Duration { get; }
-
-		public string AuthorTime { get; }
-		public string GoldTime { get; }
-
-		/// <summary>The best time driven here, or null when the level was never finished.</summary>
-		public string PersonalBest { get; }
-
-		/// <summary>How far that best was off the author time, signed. Null without a time.</summary>
-		public string AuthorDelta { get; }
-
-		public string Crashes { get; }
-		public string WheelsLost { get; }
-
-		/// <summary>
-		///     The same row under a different number. For a list that shows only the tail of a
-		///     run and still has to say which levels these actually were.
-		/// </summary>
-		public LevelRow Renumbered(int index)
-		{
-			Index = index;
-
-			return this;
-		}
 	}
 }

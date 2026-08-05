@@ -15,13 +15,13 @@ namespace AuthorTimeHunting.States.Ath.StateMachine;
 /// <summary>
 ///     The run's state machine. A plain class, not a MonoBehaviour: it needs a Unity update
 ///     loop, but it also needs to inherit <see cref="StateMachineBase" />, and C# has no
-///     multiple inheritance. So the frame loop lives in a small nested MonoBehaviour that
-///     does nothing but call back in - see AthStateMachine.AthLoopBehaviour.cs.
+///     multiple inheritance. So the frame loop lives in a small MonoBehaviour that does
+///     nothing but call back in - see <see cref="AthLoopBehaviour" />.
 ///     It subscribes to the game's events exactly once and forwards them to whichever state
 ///     is current. States never subscribe to anything themselves, so they cannot leak a
 ///     handler no matter how a run ends.
 /// </summary>
-public partial class AthStateMachine : StateMachineBase
+public class AthStateMachine : StateMachineBase
 {
 	/// <summary>
 	///     How many frames in a row the tick may throw before the run is given up on.
@@ -35,7 +35,6 @@ public partial class AthStateMachine : StateMachineBase
 	private bool _eventsSubscribed;
 	private string _lastServerMessage;
 	private DateTime _lastServerMessageTime = DateTime.MinValue;
-	private bool _timerStarted;
 
 	public AthStateMachine(ModServices services, IGamemode gamemode)
 	{
@@ -56,6 +55,9 @@ public partial class AthStateMachine : StateMachineBase
 	}
 
 	public AthCtx Ctx { get; }
+
+	/// <summary>True between <see cref="StartTimer" /> and <see cref="StopTimer" />.</summary>
+	public bool IsTimerRunning { get; private set; }
 
 	/// <summary>
 	///     The mode this run is being played in. Held rather than looked up, so a mode change
@@ -342,24 +344,24 @@ public partial class AthStateMachine : StateMachineBase
 
 	public void StartTimer()
 	{
-		if (_timerStarted)
+		if (IsTimerRunning)
 		{
 			return;
 		}
 
 		SubscribeEvents();
-		_timerStarted = true;
+		IsTimerRunning = true;
 	}
 
 	public void StopTimer()
 	{
-		if (!_timerStarted)
+		if (!IsTimerRunning)
 		{
 			return;
 		}
 
 		UnsubscribeEvents();
-		_timerStarted = false;
+		IsTimerRunning = false;
 	}
 
 	public void Dispose()

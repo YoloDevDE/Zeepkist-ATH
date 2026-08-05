@@ -12,7 +12,7 @@ namespace AuthorTimeHunting.UI;
 ///     the first ask starts the load and returns nothing, and the picture appears a frame or
 ///     two later - which for a screen the player is reading is soon enough.
 /// </summary>
-internal static class LevelThumbnails
+public static class LevelThumbnails
 {
 	/// <summary>Thumbnails already loaded. Null means "asked for and there is none".</summary>
 	private static readonly Dictionary<string, Texture2D> Loaded = new();

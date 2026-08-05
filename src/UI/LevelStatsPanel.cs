@@ -134,7 +134,7 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		float text = gui.Style.Layout.TextSize;
 
 		UiText.Draw(gui, view.Name, HudPalette.LevelName, Row(gui, TitleSize * 1.2f), text * TitleSize, 0f);
-		UiText.Draw(gui, $"by {view.Author}", HudPalette.AuthorName, Row(gui, 0.9f), text * 0.85f, 0f);
+		UiText.Draw(gui, view.ByAuthor, HudPalette.AuthorName, Row(gui, 0.9f), text * 0.85f, 0f);
 		gui.AddSpacing();
 	}
 
@@ -147,15 +147,14 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		DrawMedalTime(gui, GameSprites.AuthorMedal, "Author", view.AuthorTime, HudPalette.Author);
 		DrawMedalTime(gui, GameSprites.GoldMedal, "Gold", view.GoldTime, HudPalette.Gold);
 
-		if (view.PersonalBest == null)
+		if (view.BestWithDelta == null)
 		{
 			UiWidgets.Row(gui, Row(gui, 1f), "Your Best", "not finished yet", HudPalette.Muted);
 			gui.AddSpacing();
 			return;
 		}
 
-		UiWidgets.Row(gui, Row(gui, 1f), "Your Best", $"{view.PersonalBest}   ({view.AuthorDelta})",
-			view.PersonalBestColour);
+		UiWidgets.Row(gui, Row(gui, 1f), "Your Best", view.BestWithDelta, view.PersonalBestColour);
 		gui.AddSpacing();
 	}
 
@@ -166,16 +165,20 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 		ImRect icon = row.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect rest);
 
-		if (sprite != null)
-		{
-			gui.Image(sprite, icon, true);
-		}
-		else
+		DrawMedalIcon(gui, icon, sprite, iconSize, colour);
+		UiWidgets.Row(gui, rest, label, time, colour);
+	}
+
+	private static void DrawMedalIcon(ImGui gui, ImRect icon, Sprite sprite, float iconSize, Color32 colour)
+	{
+		if (sprite == null)
 		{
 			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, colour);
+
+			return;
 		}
 
-		UiWidgets.Row(gui, rest, label, time, colour);
+		gui.Image(sprite, icon, true);
 	}
 
 	/// <summary>What the level has cost so far. The numbers that feed the traffic light.</summary>

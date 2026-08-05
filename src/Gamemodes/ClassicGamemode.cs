@@ -22,6 +22,8 @@ public class ClassicGamemode : IGamemode
 	///     Read off the player's own config rather than hard-coded, because this is the one mode
 	///     whose numbers they can change - a welcome screen promising sixty minutes to somebody
 	///     who set it to twenty would be the mod lying about itself on the first screen.
+	///     Read once when the welcome screen opens, which is the only place that asks - so this
+	///     builds fresh every time and the screen keeps what it got.
 	/// </summary>
 	public IReadOnlyList<string> Rules
 	{

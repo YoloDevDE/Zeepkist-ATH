@@ -12,7 +12,7 @@ namespace AuthorTimeHunting.UI;
 ///     So sizes that should track the screen are a fraction of it with a clamp, and sizes that
 ///     should track the font (buttons, chrome) are derived from the row height instead.
 /// </summary>
-internal static class UiMetrics
+public static class UiMetrics
 {
 	/// <summary>Gap between a window and the screen edge.</summary>
 	public static float Margin(ImGui gui)

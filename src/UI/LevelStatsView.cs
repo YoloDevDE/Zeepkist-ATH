@@ -1,4 +1,3 @@
-using System;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath;
 using AuthorTimeHunting.Util;
@@ -17,16 +16,20 @@ public class LevelStatsView
 	}
 
 	public string Name { get; private set; }
-	public string Author { get; private set; }
+
+	/// <summary>The author, already written the way the panel says it.</summary>
+	public string ByAuthor { get; private set; }
 
 	public string AuthorTime { get; private set; }
 	public string GoldTime { get; private set; }
 
-	/// <summary>Best time on this level so far, or null when it has never been finished.</summary>
-	public string PersonalBest { get; private set; }
-
-	/// <summary>How far the personal best is off the author time, signed. Null without a best.</summary>
-	public string AuthorDelta { get; private set; }
+	/// <summary>
+	///     Best time on this level so far and how far off the author time it is, or null when the
+	///     level has never been finished. Composed here rather than at the draw, like the two
+	///     sibling view models: the panel is redrawn every frame, the sentence is not new every
+	///     frame.
+	/// </summary>
+	public string BestWithDelta { get; private set; }
 
 	public Color32 PersonalBestColour { get; private set; }
 
@@ -59,12 +62,12 @@ public class LevelStatsView
 		{
 			AttemptPending = attemptPending,
 			Name = level.Name,
-			Author = level.Author,
+			ByAuthor = $"by {level.Author}",
 			AuthorTime = TimeFormatter.FormatTime(level.AuthorTime),
 			GoldTime = TimeFormatter.FormatTime(level.GoldTime),
-			Attempts = attemptPending ? $"{level.Attempt} (+1)" : level.Attempt.ToString(),
-			Crashes = level.Crashes.ToString(),
-			WheelsLost = level.WheelsLost.ToString(),
+			Attempts = attemptPending ? $"{level.Attempt} (+1)" : UiNumbers.Text(level.Attempt),
+			Crashes = UiNumbers.Text(level.Crashes),
+			WheelsLost = UiNumbers.Text(level.WheelsLost),
 			TimeOnLevel = TimeFormatter.FormatDuration((int)level.GetPlayDuration().TotalMilliseconds),
 			Pace = LevelRating.Rate(level, ctx.Levels)
 		};
@@ -76,8 +79,8 @@ public class LevelStatsView
 
 		double delta = level.PersonalBestTime - level.AuthorTime;
 
-		view.PersonalBest = TimeFormatter.FormatTime(level.PersonalBestTime);
-		view.AuthorDelta = $"{(delta <= 0 ? "-" : "+")}{TimeFormatter.FormatTime(Math.Abs(delta))}";
+		view.BestWithDelta =
+			$"{TimeFormatter.FormatTime(level.PersonalBestTime)}   ({TimeFormatter.FormatDelta(delta)})";
 		view.PersonalBestColour = level.AuthorTimeAcquired ? HudPalette.Author
 			: level.GoldMedalAcquired ? HudPalette.Gold
 			: HudPalette.Default;

@@ -18,7 +18,7 @@ namespace AuthorTimeHunting.Service;
 ///     flag on GameMaster that nothing announces. Polling two booleans per frame is cheap;
 ///     the observer only raises events on an actual edge.
 /// </summary>
-public partial class GameStateObserver
+public class GameStateObserver
 {
 	private ObserverBehaviour _behaviour;
 	private bool _lastIsRacing;
@@ -95,7 +95,7 @@ public partial class GameStateObserver
 	/// <summary>Raised on the frame a running race stops being runnable.</summary>
 	public event Action StoppedRacing;
 
-	private void Tick()
+	public void Tick()
 	{
 		ZeepkistLobbyState? state = LobbyState;
 

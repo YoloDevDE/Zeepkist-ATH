@@ -9,7 +9,7 @@ namespace AuthorTimeHunting.UI;
 ///     PlayerManager at all. Callers are expected to handle that and fall back to text; the
 ///     alternative would be shipping copies of Zeepkist's art in the plugin.
 /// </summary>
-internal static class GameSprites
+public static class GameSprites
 {
 	public static Sprite AuthorMedal => PlayerManager.Instance == null ? null : PlayerManager.Instance.authorMedal;
 

@@ -13,7 +13,7 @@ namespace AuthorTimeHunting.UI;
 ///     ended up looking cramped rather than smaller. The theme is a plain set of fields, so the
 ///     honest move is to turn them down, draw, and put them back before anyone else draws.
 /// </summary>
-internal readonly struct UiScale : IDisposable
+public readonly struct UiScale : IDisposable
 {
 	/// <summary>What the game's theme is multiplied by. 0.67 is the requested third off.</summary>
 	public const float Factor = 0.67f;

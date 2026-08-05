@@ -27,7 +27,7 @@ public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(
 				AthStateMachine.Ctx.LastRunTime :
 				currentResult?.Time ?? -1;
 			bool hasMedalToShow =
-				AthStateMachine.Ctx.LastRunMedalStatus is Level.LevelStatus.AUTHOR or Level.LevelStatus.GOLD;
+				AthStateMachine.Ctx.LastRunMedalStatus is LevelStatus.AUTHOR or LevelStatus.GOLD;
 
 			if (currentResult != null && hasMedalToShow && lastRunTime >= 0)
 			{

@@ -39,6 +39,9 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	// variant is what left the top overlay without a single character on screen.
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
+	/// <summary>Index, name, result, attempts, time - as shares of the row.</summary>
+	private static readonly float[] Weights = [0.07f, 0.42f, 0.24f, 0.09f, 0.18f];
+
 	private float _contentHeight;
 
 	private bool _mouseOverWindow;
@@ -123,18 +126,11 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 		float text = gui.Style.Layout.TextSize;
 
 		UiText.Centre(gui, view.Name, HudPalette.LevelName, Row(gui, TitleSize * 1.2f), text * TitleSize);
-		UiText.Centre(gui, $"by {view.Author}", HudPalette.AuthorName, Row(gui, 0.9f), text * 0.85f);
-		UiText.Centre(gui, view.Status.ToUpperInvariant(), view.StatusColour, Row(gui, StatusSize * 1.2f),
-			text * StatusSize);
+		UiText.Centre(gui, view.ByAuthor, HudPalette.AuthorName, Row(gui, 0.9f), text * 0.85f);
+		UiText.Centre(gui, view.StatusUpper, view.StatusColour, Row(gui, StatusSize * 1.2f), text * StatusSize);
 
-		if (view.YourBest == null)
-		{
-			UiWidgets.Row(gui, Row(gui, 1f), "Your Time", "never finished", HudPalette.Muted);
-		}
-		else
-		{
-			UiWidgets.Row(gui, Row(gui, 1f), "Your Time", $"{view.YourBest}   ({view.AuthorDelta})", view.StatusColour);
-		}
+		UiWidgets.Row(gui, Row(gui, 1f), "Your Time", view.BestWithDelta ?? "never finished",
+			view.BestWithDelta == null ? HudPalette.Muted : view.StatusColour);
 
 		UiWidgets.Row(gui, Row(gui, 1f), "Author Time", view.AuthorTime, HudPalette.Author);
 		UiWidgets.Row(gui, Row(gui, 1f), "Attempts", view.Attempts, HudPalette.Default);
@@ -153,18 +149,18 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 		UiWidgets.Heading(gui, Row(gui, 0.85f), "RUN SO FAR");
 		UiWidgets.Row(gui, Row(gui, 1f), view.Score, view.TimeLeft, HudPalette.Good);
 
-		foreach (RunReportView.LevelRow level in view.Recent)
+		foreach (LevelRow level in view.Recent)
 		{
 			DrawRecentRow(gui, level);
 		}
 	}
 
-	private static void DrawRecentRow(ImGui gui, RunReportView.LevelRow level)
+	private static void DrawRecentRow(ImGui gui, LevelRow level)
 	{
 		ImRect row = Row(gui, 1f);
 		float size = gui.Style.Layout.TextSize * 0.9f;
 
-		UiText.Draw(gui, level.Index.ToString(), HudPalette.Muted, Cell(row, 0), size, 0f);
+		UiText.Draw(gui, UiNumbers.Text(level.Index), HudPalette.Muted, Cell(row, 0), size, 0f);
 		UiText.Draw(gui, level.Name, HudPalette.LevelName, Cell(row, 1), size, 0f);
 		UiText.Draw(gui, level.Status, level.StatusColour, Cell(row, 2), size, 0f);
 		UiText.Draw(gui, level.Attempts, HudPalette.Muted, Cell(row, 3), size, 1f);
@@ -173,15 +169,7 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 
 	private static ImRect Cell(ImRect row, int column)
 	{
-		float[] weights = [0.07f, 0.42f, 0.24f, 0.09f, 0.18f];
-		float offset = 0f;
-
-		for (int i = 0; i < column; i++)
-		{
-			offset += weights[i];
-		}
-
-		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
+		return UiWidgets.Cell(row, Weights, column);
 	}
 
 	/// <summary>A layout row <paramref name="scale" /> times the theme's row height tall.</summary>

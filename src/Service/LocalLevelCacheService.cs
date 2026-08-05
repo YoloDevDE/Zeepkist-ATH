@@ -51,12 +51,12 @@ public class LocalLevelCacheService
 		{
 			Logger.LogWarning("LocalLevelCacheService: No levels found in any local playlist.");
 			TryNotifyWarning("ATH: No levels found in local playlists. Add playlists to use ATH.");
+
+			return;
 		}
-		else
-		{
-			Logger.LogInfo($"LocalLevelCacheService: Cached {CachedLevelItems.Count} unique levels.");
-			TryNotifySuccess($"ATH: Loaded {CachedLevelItems.Count} levels from local playlists.");
-		}
+
+		Logger.LogInfo($"LocalLevelCacheService: Cached {CachedLevelItems.Count} unique levels.");
+		TryNotifySuccess($"ATH: Loaded {CachedLevelItems.Count} levels from local playlists.");
 	}
 
 	private bool TryScanViaApi()
@@ -229,19 +229,5 @@ public class LocalLevelCacheService
 		{
 			Logger.LogWarning($"LocalLevelCacheService: Could not send warning notification: {ex.Message}");
 		}
-	}
-
-	// JSON model for manual .zeeplist file parsing
-	private class ZeeplistFile
-	{
-		public List<ZeeplistLevel> Levels { get; set; }
-	}
-
-	private class ZeeplistLevel
-	{
-		public string UID { get; set; }
-		public string WorkshopID { get; set; }
-		public string Name { get; set; }
-		public string Author { get; set; }
 	}
 }

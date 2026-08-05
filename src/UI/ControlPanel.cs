@@ -114,7 +114,7 @@ public class ControlPanel : IZeepGUIDrawer
 	private void DrawScaled(ImGui gui)
 	{
 		AthStateMachine run = ActiveRun;
-		RunHudView view = run == null ? null : RunHudView.From(run.Ctx, run.Ctx.IsPaused);
+		RunHudView view = run == null ? null : RunHudView.ForFrame(run.Ctx);
 
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 
@@ -137,14 +137,7 @@ public class ControlPanel : IZeepGUIDrawer
 
 		try
 		{
-			if (view == null)
-			{
-				DrawIdle(gui, run != null);
-			}
-			else
-			{
-				DrawControls(gui, run, view);
-			}
+			DrawBody(gui, run, view);
 
 			// While the window's layout frame is still open, so it can report what it holds.
 			_contentHeight = UiMetrics.ContentHeight(gui);
@@ -159,6 +152,30 @@ public class ControlPanel : IZeepGUIDrawer
 	///     Shown when no run is in progress. <paramref name="starting" /> covers the gap
 	///     between /ath start and the first level, where a run exists but has no level yet.
 	/// </summary>
+	private static void DrawBody(ImGui gui, AthStateMachine run, RunHudView view)
+	{
+		if (view == null)
+		{
+			DrawIdle(gui, run != null);
+
+			return;
+		}
+
+		DrawControls(gui, run, view);
+	}
+
+	private static void TogglePause(AthStateMachine run, RunHudView view)
+	{
+		if (view.Paused)
+		{
+			run.ResumeRun();
+
+			return;
+		}
+
+		run.PauseRun();
+	}
+
 	private static void DrawIdle(ImGui gui, bool starting)
 	{
 		UiText.Left(gui, starting ? "Waiting for the level to load..." : "No hunt running.", HudPalette.Muted,
@@ -263,14 +280,7 @@ public class ControlPanel : IZeepGUIDrawer
 		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 0, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
 			    view.Paused ? "Resume" : "Pause", view.Paused ? HudPalette.ActionResume : HudPalette.ActionPause))
 		{
-			if (view.Paused)
-			{
-				run.ResumeRun();
-			}
-			else
-			{
-				run.PauseRun();
-			}
+			TogglePause(run, view);
 		}
 
 		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 1, 2), UiIcon.Restart, "Restart",

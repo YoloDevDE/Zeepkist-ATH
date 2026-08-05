@@ -37,10 +37,10 @@ public static class Logger
 		if (string.IsNullOrEmpty(context))
 		{
 			_logSource?.LogError($"Exception: {ex.Message}\n{ex.StackTrace}");
+
+			return;
 		}
-		else
-		{
-			_logSource?.LogError($"Exception in {context}: {ex.Message}\n{ex.StackTrace}");
-		}
+
+		_logSource?.LogError($"Exception in {context}: {ex.Message}\n{ex.StackTrace}");
 	}
 }

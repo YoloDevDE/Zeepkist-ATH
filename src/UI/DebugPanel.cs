@@ -154,11 +154,11 @@ public class DebugPanel : IZeepGUIDrawer
 		Line(gui, "Paused", ctx.IsPaused.ToString());
 		Line(gui, "Clock", ctx.CurrentLevel is { IsTiming: true } ? "running" : "stopped");
 		Line(gui, "Remaining", TimeFormatter.FormatDuration((int)ctx.GetRemainingTime().TotalMilliseconds));
-		Line(gui, "Levels", ctx.Levels.Count.ToString());
+		Line(gui, "Levels", UiNumbers.Text(ctx.Levels.Count));
 		Line(gui, "AT/Gold/Pen", $"{ctx.AuthorMedals} / {ctx.GoldMedals} / {ctx.Penalties}");
-		Line(gui, "Free skips", ctx.AvaiableFreeSkips.ToString());
-		Line(gui, "Duplicates", ctx.ConsecutiveDuplicateCount.ToString());
-		Line(gui, "Broken in a row", ctx.ConsecutiveBrokenCount.ToString());
+		Line(gui, "Free skips", UiNumbers.Text(ctx.AvaiableFreeSkips));
+		Line(gui, "Duplicates", UiNumbers.Text(ctx.ConsecutiveDuplicateCount));
+		Line(gui, "Broken in a row", UiNumbers.Text(ctx.ConsecutiveBrokenCount));
 		gui.AddSpacing();
 	}
 
@@ -180,9 +180,9 @@ public class DebugPanel : IZeepGUIDrawer
 		RandomLevelService pool = run.RandomLevels;
 
 		Line(gui, "Source", pool.LastSource ?? "not fetched yet");
-		Line(gui, "Cached", pool.CachedCount.ToString());
-		Line(gui, "Drawn", pool.PlayedCount.ToString());
-		Line(gui, "Seen", pool.FetchedCount.ToString());
+		Line(gui, "Cached", UiNumbers.Text(pool.CachedCount));
+		Line(gui, "Drawn", UiNumbers.Text(pool.PlayedCount));
+		Line(gui, "Seen", UiNumbers.Text(pool.FetchedCount));
 		Line(gui, "Last", pool.LastDrawn ?? "none");
 
 		if (UiWidgets.Button(gui, ButtonRow(gui), "Fetch a level"))
@@ -264,8 +264,8 @@ public class DebugPanel : IZeepGUIDrawer
 
 		level.PersonalBestTime = clamped;
 		run.Ctx.LastRunTime = clamped;
-		run.Ctx.LastRunMedalStatus = clamped <= level.AuthorTime ? Level.LevelStatus.AUTHOR :
-			clamped <= level.GoldTime ? Level.LevelStatus.GOLD : Level.LevelStatus.UNKNOWN;
+		run.Ctx.LastRunMedalStatus = clamped <= level.AuthorTime ? LevelStatus.AUTHOR :
+			clamped <= level.GoldTime ? LevelStatus.GOLD : LevelStatus.UNKNOWN;
 
 		ToastNotification.Info($"Granted {TimeFormatter.FormatTime(clamped)} -> {level.StatusString}");
 	}

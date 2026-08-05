@@ -9,33 +9,49 @@ public class StateAthSkippingLevel(AthStateMachine stateMachine) : AthState(stat
 	{
 		AthCtx athCtx = AthStateMachine.Ctx;
 
-		if (athCtx.CurrentLevel.LevelBroken)
-		{
-			HandleBrokenSkip(athCtx);
-		}
-		else
-		{
-			if (athCtx.CurrentLevel.GoldMedalAcquired)
-			{
-				HandleGoldSkip();
-			}
-			else if (athCtx.AvaiableFreeSkips > 0)
-			{
-				HandleFreeSkip(athCtx);
-			}
-			else if (athCtx.IsTimeRunningLow)
-			{
-				HandleTimeExpiredSkip();
-			}
-			else
-			{
-				HandlePenaltySkip();
-			}
-		}
+		Announce(athCtx);
 
 		athCtx.CurrentLevel.Skipped = true;
 		athCtx.CurrentLevel.Stop();
 		StateMachine.TransitionTo(new StateAthLevelSummary(AthStateMachine));
+	}
+
+	/// <summary>
+	///     Which kind of skip this was, in the order the run values them: a broken level costs
+	///     nothing, a medal already earned costs nothing, a free skip costs one of a fixed
+	///     supply, and everything after that costs time.
+	/// </summary>
+	private void Announce(AthCtx ctx)
+	{
+		if (ctx.CurrentLevel.LevelBroken)
+		{
+			HandleBrokenSkip(ctx);
+
+			return;
+		}
+
+		if (ctx.CurrentLevel.GoldMedalAcquired)
+		{
+			HandleGoldSkip();
+
+			return;
+		}
+
+		if (ctx.AvaiableFreeSkips > 0)
+		{
+			HandleFreeSkip(ctx);
+
+			return;
+		}
+
+		if (ctx.IsTimeRunningLow)
+		{
+			HandleTimeExpiredSkip();
+
+			return;
+		}
+
+		HandlePenaltySkip();
 	}
 
 	private void HandleBrokenSkip(AthCtx ctx)

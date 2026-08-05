@@ -80,7 +80,7 @@ public class AthCtx
 
 	// Reset per level in InitializingNewLevel - the medal overlay reads these while the
 	// player is on the round-over screen, before the next level is loaded.
-	public Level.LevelStatus LastRunMedalStatus { get; set; } = Level.LevelStatus.UNKNOWN;
+	public LevelStatus LastRunMedalStatus { get; set; } = LevelStatus.UNKNOWN;
 	public bool LastRunMedalWasNew { get; set; }
 	public double LastRunTime { get; set; } = -1;
 
@@ -88,11 +88,11 @@ public class AthCtx
 
 	#region Live Counters
 
-	public int AuthorMedals => Levels.Count(level => level.Status == Level.LevelStatus.AUTHOR);
+	public int AuthorMedals => Levels.Count(level => level.Status == LevelStatus.AUTHOR);
 
-	public int GoldMedals => Levels.Count(level => level.Status == Level.LevelStatus.GOLD);
+	public int GoldMedals => Levels.Count(level => level.Status == LevelStatus.GOLD);
 
-	public int Penalties => Levels.Count(level => level.Status == Level.LevelStatus.FAILED);
+	public int Penalties => Levels.Count(level => level.Status == LevelStatus.FAILED);
 
 	#endregion
 
@@ -165,7 +165,7 @@ public class AthCtx
 		// Per-level scratch state. Without the reset the medal overlay keeps showing
 		// the previous level's run until the player crosses a finish line here.
 		LastRunTime = -1;
-		LastRunMedalStatus = Level.LevelStatus.UNKNOWN;
+		LastRunMedalStatus = LevelStatus.UNKNOWN;
 		LastRunMedalWasNew = false;
 
 		CurrentLevel.Start();

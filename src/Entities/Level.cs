@@ -5,16 +5,6 @@ namespace AuthorTimeHunting.Entities;
 
 public class Level
 {
-	public enum LevelStatus
-	{
-		AUTHOR = 0,
-		GOLD = 1,
-		FREE = 2,
-		FAILED = 3,
-		BROKEN = 4,
-		UNKNOWN = 5
-	}
-
 	public Level(LevelScriptableObject level)
 		: this(level.UID, level.Name, level.Author, level.TimeAuthor, level.TimeGold)
 	{

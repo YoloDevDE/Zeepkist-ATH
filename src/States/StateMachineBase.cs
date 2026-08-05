@@ -103,15 +103,7 @@ public abstract class StateMachineBase
 			Logger.LogDebug(
 				$"StateMachine: Checking if current state ({currentStateName}) matches final state ({finalStateName})");
 
-			if (currentStateName != finalStateName)
-			{
-				Logger.LogInfo($"StateMachine: Transitioning to final state {finalStateName} during disposal");
-				TransitionTo(FinalState);
-			}
-			else
-			{
-				Logger.LogInfo($"StateMachine: Already in final state ({finalStateName}), skipping transition");
-			}
+			LogAndTransitionToFinalState(currentStateName, finalStateName);
 
 			Logger.LogDebug($"StateMachine: Exiting current state {CurrentState.GetType().Name} during disposal");
 			CurrentState.Exit();
@@ -125,6 +117,19 @@ public abstract class StateMachineBase
 		{
 			Logger.LogInfo("StateMachine: Disposal complete");
 		}
+	}
+
+	private void LogAndTransitionToFinalState(string currentStateName, string finalStateName)
+	{
+		if (currentStateName == finalStateName)
+		{
+			Logger.LogInfo($"StateMachine: Already in final state ({finalStateName}), skipping transition");
+
+			return;
+		}
+
+		Logger.LogInfo($"StateMachine: Transitioning to final state {finalStateName} during disposal");
+		TransitionTo(FinalState);
 	}
 
 	public void InvokeFinish()

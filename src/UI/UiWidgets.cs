@@ -13,7 +13,7 @@ namespace AuthorTimeHunting.UI;
 ///     rather than three - once a counter is drawn in two places by two methods, it stops
 ///     being drawn the same way.
 /// </summary>
-internal static class UiWidgets
+public static class UiWidgets
 {
 	/// <summary>
 	///     A medal sprite with its count beside it. Falls back to a coloured dot when the game
@@ -27,16 +27,21 @@ internal static class UiWidgets
 		// Zero is not news. Greying the whole counter sends the eye to the ones that moved.
 		Color32 tint = count == 0 ? HudPalette.Muted : colour;
 
-		if (sprite != null)
-		{
-			gui.Image(sprite, Square(icon), true);
-		}
-		else
+		DrawMedalIcon(gui, icon, sprite, iconSize, tint);
+
+		UiText.Draw(gui, UiNumbers.Text(count), tint, countRect, gui.Style.Layout.TextSize * 1.5f, 0f);
+	}
+
+	private static void DrawMedalIcon(ImGui gui, ImRect icon, Sprite sprite, float iconSize, Color32 tint)
+	{
+		if (sprite == null)
 		{
 			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, tint);
+
+			return;
 		}
 
-		UiText.Draw(gui, count.ToString(), tint, countRect, gui.Style.Layout.TextSize * 1.5f, 0f);
+		gui.Image(sprite, Square(icon), true);
 	}
 
 	/// <summary>
@@ -64,6 +69,25 @@ internal static class UiWidgets
 
 		UiText.Left(gui, label, HudPalette.Muted, labelRect);
 		UiText.Left(gui, value, valueColour, valueRect);
+	}
+
+	/// <summary>
+	///     One column of a row split by weight rather than evenly, for the table-shaped lists.
+	///     Every list in the mod had its own copy of this loop with its own weights declared
+	///     inside it, which meant a fresh array per cell per row per frame - forty of them on a
+	///     level list. The weights belong to the list and are declared once by the caller; this
+	///     only does the arithmetic.
+	/// </summary>
+	public static ImRect Cell(ImRect row, ReadOnlySpan<float> weights, int column)
+	{
+		float offset = 0f;
+
+		for (int i = 0; i < column; i++)
+		{
+			offset += weights[i];
+		}
+
+		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
 	}
 
 	/// <summary>Splits a row into equal columns with the theme's own gap between them.</summary>

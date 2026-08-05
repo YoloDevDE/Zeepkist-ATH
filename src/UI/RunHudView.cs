@@ -19,6 +19,12 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public class RunHudView
 {
+	/// <summary>The frame cache. See <see cref="ForFrame" />.</summary>
+	private static int _frame = -1;
+
+	private static AthCtx _ctx;
+	private static RunHudView _view;
+
 	private RunHudView()
 	{
 	}
@@ -40,16 +46,53 @@ public class RunHudView
 	public IReadOnlyList<HudRow> Details { get; private set; }
 
 	/// <summary>
+	///     The view for this frame, built at most once no matter how many panels ask for it.
+	///     Two drawers read it - the run HUD and the control panel - and each used to build its
+	///     own, which meant the same six strings were formatted twice per frame and thrown away
+	///     twice. They are separate windows but they are one frame, and the numbers cannot differ
+	///     between them: there is nothing between the two draws that could change a run.
+	///     Kept as static state rather than handed down, because the drawers are called by the
+	///     game one at a time with nothing in between that could hold a shared frame.
+	/// </summary>
+	public static RunHudView ForFrame(AthCtx ctx)
+	{
+		if (_frame == Time.frameCount && ReferenceEquals(_ctx, ctx))
+		{
+			return _view;
+		}
+
+		_view = From(ctx);
+		_frame = Time.frameCount;
+		_ctx = ctx;
+
+		return _view;
+	}
+
+	/// <summary>
+	///     Lets go of the run the cache is holding. Static state outlives the run it was built
+	///     from, and an AthCtx is the whole hunt - every level played, with its name, author and
+	///     times - so a finished run kept here would sit in memory until the next one displaced
+	///     it. Called when the run ends, from the one place that knows it has.
+	/// </summary>
+	public static void Clear()
+	{
+		_frame = -1;
+		_ctx = null;
+		_view = null;
+	}
+
+	/// <summary>
 	///     Null when no level has been loaded yet, which happens between /ath start and the
 	///     first level. Callers should skip drawing entirely in that case.
 	/// </summary>
-	public static RunHudView From(AthCtx ctx, bool paused)
+	private static RunHudView From(AthCtx ctx)
 	{
 		if (ctx?.CurrentLevel == null)
 		{
 			return null;
 		}
 
+		bool paused = ctx.IsPaused;
 		double remaining = ctx.GetRemainingTime().TotalMilliseconds;
 
 		// The budget only drains while the level clock is counting, so anything else - the
@@ -146,25 +189,6 @@ public class RunHudView
 		}
 
 		return ctx.IsTimeRunningLow ? HudPalette.Fatal : HudPalette.Penalty;
-	}
-
-	/// <summary>One label/value pair. The colour applies to the value, not the label.</summary>
-	public readonly struct HudRow
-	{
-		public HudRow(string label, string value) : this(label, value, HudPalette.Default)
-		{
-		}
-
-		public HudRow(string label, string value, Color32 valueColour)
-		{
-			Label = label;
-			Value = value;
-			ValueColour = valueColour;
-		}
-
-		public string Label { get; }
-		public string Value { get; }
-		public Color32 ValueColour { get; }
 	}
 
 	#region Time Budget

@@ -58,7 +58,7 @@ public class RunOverlay : IZeepGUIDrawer
 			return;
 		}
 
-		RunHudView view = RunHudView.From(run.Ctx, run.Ctx.IsPaused);
+		RunHudView view = RunHudView.ForFrame(run.Ctx);
 
 		if (view == null)
 		{
@@ -111,7 +111,7 @@ public class RunOverlay : IZeepGUIDrawer
 			// Only ever present once a penalty has been taken - what the run would still have, and
 			// what the skipping has cost. Kept here rather than dropped, because the whole point of
 			// showing them is that the cost of a skip does not quietly vanish into the one clock.
-			foreach (RunHudView.HudRow detail in view.Details)
+			foreach (HudRow detail in view.Details)
 			{
 				UiWidgets.Row(gui, Row(gui, 1f), detail.Label, detail.Value, detail.ValueColour);
 			}

@@ -37,8 +37,17 @@ public class ResultsScreen : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
 
+	/// <summary>
+	///     Column layout for the level list, as shares of the row. Fixed widths would either
+	///     crush the level name or waste half the screen on a two digit attempt count.
+	/// </summary>
+	private static readonly float[] LevelWeights = [0.06f, 0.44f, 0.2f, 0.12f, 0.18f];
+
+	/// <summary>The same, for the run history: when, how long, the medals, the score.</summary>
+	private static readonly float[] HistoryWeights = [0.26f, 0.24f, 0.24f, 0.11f, 0.15f];
+
 	/// <summary>The level whose detail view is open, or null while the list is showing.</summary>
-	private RunReportView.LevelRow _level;
+	private LevelRow _level;
 
 	private bool _mouseOverWindow;
 	private RunReportView _report;
@@ -186,9 +195,9 @@ public class ResultsScreen : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawRows(ImGui gui, IReadOnlyList<RunReportView.ReportRow> rows)
+	private static void DrawRows(ImGui gui, IReadOnlyList<ReportRow> rows)
 	{
-		foreach (RunReportView.ReportRow row in rows)
+		foreach (ReportRow row in rows)
 		{
 			UiWidgets.Row(gui, Row(gui, 1f), row.Label, row.Value, row.ValueColour);
 		}
@@ -207,7 +216,7 @@ public class ResultsScreen : IZeepGUIDrawer
 			return;
 		}
 
-		IReadOnlyList<RunReportView.LevelRow> levels = report.Levels;
+		IReadOnlyList<LevelRow> levels = report.Levels;
 
 		if (levels.Count == 0)
 		{
@@ -221,7 +230,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 		try
 		{
-			foreach (RunReportView.LevelRow level in levels)
+			foreach (LevelRow level in levels)
 			{
 				if (DrawLevelRow(gui, level))
 				{
@@ -240,7 +249,7 @@ public class ResultsScreen : IZeepGUIDrawer
 	///     lists forty of these as one line each, which answers how the run went and nothing
 	///     about how any single level went.
 	/// </summary>
-	private void DrawLevelDetail(ImGui gui, RunReportView.LevelRow level)
+	private void DrawLevelDetail(ImGui gui, LevelRow level)
 	{
 		float text = gui.Style.Layout.TextSize;
 
@@ -256,22 +265,15 @@ public class ResultsScreen : IZeepGUIDrawer
 			DrawThumbnail(gui, level);
 
 			UiText.Centre(gui, level.Name, HudPalette.LevelName, Row(gui, 1.6f), text * 1.4f);
-			UiText.Centre(gui, $"by {level.Author}", HudPalette.AuthorName, Row(gui, 1f), text * 0.9f);
-			UiText.Centre(gui, level.Status.ToUpperInvariant(), level.StatusColour, Row(gui, 1.8f), text * 1.5f);
+			UiText.Centre(gui, level.ByAuthor, HudPalette.AuthorName, Row(gui, 1f), text * 0.9f);
+			UiText.Centre(gui, level.StatusUpper, level.StatusColour, Row(gui, 1.8f), text * 1.5f);
 			gui.AddSpacing();
 
 			DrawMedalTime(gui, GameSprites.AuthorMedal, "Author Time", level.AuthorTime, HudPalette.Author);
 			DrawMedalTime(gui, GameSprites.GoldMedal, "Gold Time", level.GoldTime, HudPalette.Gold);
 
-			if (level.PersonalBest == null)
-			{
-				UiWidgets.Row(gui, Row(gui, 1f), "Your Best", "never finished", HudPalette.Muted);
-			}
-			else
-			{
-				UiWidgets.Row(gui, Row(gui, 1f), "Your Best", $"{level.PersonalBest}   ({level.AuthorDelta})",
-					level.StatusColour);
-			}
+			UiWidgets.Row(gui, Row(gui, 1f), "Your Best", level.BestWithDelta ?? "never finished",
+				level.BestWithDelta == null ? HudPalette.Muted : level.StatusColour);
 
 			gui.AddSpacing();
 			UiWidgets.Heading(gui, Row(gui, 0.85f), "EFFORT");
@@ -291,7 +293,7 @@ public class ResultsScreen : IZeepGUIDrawer
 	///     asynchronously, so the first frame or two draw the placeholder - see
 	///     <see cref="LevelThumbnails" />.
 	/// </summary>
-	private static void DrawThumbnail(ImGui gui, RunReportView.LevelRow level)
+	private static void DrawThumbnail(ImGui gui, LevelRow level)
 	{
 		float width = Mathf.Min(gui.GetLayoutWidth(), ThumbnailMaxWidth);
 		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), width * 9f / 16f);
@@ -316,16 +318,20 @@ public class ResultsScreen : IZeepGUIDrawer
 
 		ImRect icon = row.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect rest);
 
-		if (sprite != null)
-		{
-			gui.Image(sprite, icon, true);
-		}
-		else
+		DrawMedalIcon(gui, icon, sprite, iconSize, colour);
+		UiWidgets.Row(gui, rest, label, time, colour);
+	}
+
+	private static void DrawMedalIcon(ImGui gui, ImRect icon, Sprite sprite, float iconSize, Color32 colour)
+	{
+		if (sprite == null)
 		{
 			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, colour);
+
+			return;
 		}
 
-		UiWidgets.Row(gui, rest, label, time, colour);
+		gui.Image(sprite, icon, true);
 	}
 
 	/// <summary>
@@ -340,7 +346,7 @@ public class ResultsScreen : IZeepGUIDrawer
 			return;
 		}
 
-		IReadOnlyList<RunReportView.HistoryRow> history = report.History;
+		IReadOnlyList<HistoryRow> history = report.History;
 
 		if (history.Count == 0)
 		{
@@ -354,7 +360,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 		try
 		{
-			foreach (RunReportView.HistoryRow record in history)
+			foreach (HistoryRow record in history)
 			{
 				if (DrawHistoryRow(gui, record))
 				{
@@ -405,7 +411,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 			DrawLevelHeader(gui);
 
-			foreach (RunReportView.LevelRow level in run.Levels)
+			foreach (LevelRow level in run.Levels)
 			{
 				if (DrawLevelRow(gui, level))
 				{
@@ -432,7 +438,7 @@ public class ResultsScreen : IZeepGUIDrawer
 	}
 
 	/// <summary>True on the frame the row was clicked.</summary>
-	private static bool DrawHistoryRow(ImGui gui, RunReportView.HistoryRow record)
+	private static bool DrawHistoryRow(ImGui gui, HistoryRow record)
 	{
 		ImRect row = Row(gui, 1f);
 		bool clicked = Clickable(gui, row);
@@ -442,8 +448,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 		UiText.Left(gui, record.When, when, HistoryCell(row, 0));
 		UiText.Left(gui, record.Gamemode, HudPalette.Default, HistoryCell(row, 1));
-		UiText.Left(gui, $"{record.AuthorMedals} / {record.GoldMedals} / {record.Penalties}", HudPalette.Author,
-			HistoryCell(row, 2));
+		UiText.Left(gui, record.Medals, HudPalette.Author, HistoryCell(row, 2));
 		UiText.Right(gui, record.Levels, HudPalette.Default, HistoryCell(row, 3), gui.Style.Layout.TextSize);
 		UiText.Right(gui, record.Driven, HudPalette.Default, HistoryCell(row, 4), gui.Style.Layout.TextSize);
 
@@ -474,15 +479,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 	private static ImRect HistoryCell(ImRect row, int column)
 	{
-		float[] weights = [0.26f, 0.24f, 0.24f, 0.11f, 0.15f];
-		float offset = 0f;
-
-		for (int i = 0; i < column; i++)
-		{
-			offset += weights[i];
-		}
-
-		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
+		return UiWidgets.Cell(row, HistoryWeights, column);
 	}
 
 	private static void DrawLevelHeader(ImGui gui)
@@ -498,13 +495,13 @@ public class ResultsScreen : IZeepGUIDrawer
 	}
 
 	/// <summary>True on the frame the row was clicked.</summary>
-	private static bool DrawLevelRow(ImGui gui, RunReportView.LevelRow level)
+	private static bool DrawLevelRow(ImGui gui, LevelRow level)
 	{
 		ImRect row = Row(gui, 1f);
 		bool clicked = Clickable(gui, row);
 
-		UiText.Left(gui, level.Index.ToString(), HudPalette.Muted, Cell(row, 0));
-		UiText.Left(gui, $"{level.Name}  ({level.Author})", HudPalette.LevelName, Cell(row, 1));
+		UiText.Left(gui, UiNumbers.Text(level.Index), HudPalette.Muted, Cell(row, 0));
+		UiText.Left(gui, level.Title, HudPalette.LevelName, Cell(row, 1));
 		UiText.Left(gui, level.Status, level.StatusColour, Cell(row, 2));
 		UiText.Right(gui, level.Attempts, HudPalette.Default, Cell(row, 3), gui.Style.Layout.TextSize);
 		UiText.Right(gui, level.Duration, HudPalette.Default, Cell(row, 4), gui.Style.Layout.TextSize);
@@ -518,15 +515,7 @@ public class ResultsScreen : IZeepGUIDrawer
 	/// </summary>
 	private static ImRect Cell(ImRect row, int column)
 	{
-		float[] weights = [0.06f, 0.44f, 0.2f, 0.12f, 0.18f];
-		float offset = 0f;
-
-		for (int i = 0; i < column; i++)
-		{
-			offset += weights[i];
-		}
-
-		return new ImRect(row.X + row.W * offset, row.Y, row.W * weights[column], row.H);
+		return UiWidgets.Cell(row, LevelWeights, column);
 	}
 
 	/// <summary>A layout row <paramref name="scale" /> times the theme's text size tall.</summary>

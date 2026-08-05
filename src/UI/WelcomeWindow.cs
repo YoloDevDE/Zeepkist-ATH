@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AuthorTimeHunting.Gamemodes;
 using Imui.Controls;
 using Imui.Core;
@@ -34,10 +35,30 @@ public class WelcomeWindow : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
 
+	/// <summary>The modes as this screen prints them, prepared when it opens. See <see cref="WelcomeMode" />.</summary>
+	private WelcomeMode[] _modes = [];
+
 	private bool _mouseOverWindow;
 
-	/// <summary>Up or not. Set from the top bar, from the config on startup, and by the buttons here.</summary>
-	public bool Visible { get; set; }
+	/// <summary>
+	///     Up or not. Set from the top bar, from /ath, and by the buttons here.
+	///     Opening is also when the text is prepared: a window that draws itself sixty times a
+	///     second should not be composing the same prose sixty times with it.
+	/// </summary>
+	public bool Visible
+	{
+		get;
+		set
+		{
+			bool wasVisible = field;
+			field = value;
+
+			if (value && !wasVisible)
+			{
+				_modes = BuildModes();
+			}
+		}
+	}
 
 	public void OnZeepGUI(ImGui gui)
 	{
@@ -120,7 +141,7 @@ public class WelcomeWindow : IZeepGUIDrawer
 	///     of its own so the scrollable stops above the footer - left in the window's own frame
 	///     it would swallow the whole remainder and take the buttons with it.
 	/// </summary>
-	private static void DrawBody(ImGui gui)
+	private void DrawBody(ImGui gui)
 	{
 		float footer = UiMetrics.ButtonHeight(gui) + gui.GetRowHeight() + gui.Style.Layout.Spacing * 3f;
 		ImRect body = gui.AddLayoutRect(gui.GetLayoutWidth(),
@@ -148,22 +169,21 @@ public class WelcomeWindow : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawGamemodes(ImGui gui)
+	private void DrawGamemodes(ImGui gui)
 	{
-		GamemodeRegistry registry = Plugin.Instance.Services.Gamemodes;
 		float text = gui.Style.Layout.TextSize;
 
 		UiWidgets.Heading(gui, Row(gui, 1f), "THE GAMEMODE");
 
-		foreach (IGamemode mode in registry.All)
+		foreach (WelcomeMode mode in _modes)
 		{
-			UiText.Draw(gui, mode.DisplayName, HudPalette.Author, Row(gui, 1.3f), text * 1.15f, 0f);
+			UiText.Draw(gui, mode.Name, HudPalette.Author, Row(gui, 1.3f), text * 1.15f, 0f);
 			UiText.Paragraph(gui, mode.Description, HudPalette.Default);
 			gui.AddSpacing();
 
 			foreach (string rule in mode.Rules)
 			{
-				UiText.Paragraph(gui, $"- {rule}", HudPalette.Default);
+				UiText.Paragraph(gui, rule, HudPalette.Default);
 			}
 
 			gui.AddSpacing();
@@ -231,5 +251,18 @@ public class WelcomeWindow : IZeepGUIDrawer
 	private static ImRect Row(ImGui gui, float scale)
 	{
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * scale);
+	}
+
+	private static WelcomeMode[] BuildModes()
+	{
+		IReadOnlyList<IGamemode> modes = Plugin.Instance.Services.Gamemodes.All;
+		WelcomeMode[] built = new WelcomeMode[modes.Count];
+
+		for (int i = 0; i < modes.Count; i++)
+		{
+			built[i] = new WelcomeMode(modes[i]);
+		}
+
+		return built;
 	}
 }

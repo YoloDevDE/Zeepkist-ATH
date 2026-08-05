@@ -4,26 +4,13 @@ using UnityEngine;
 
 namespace AuthorTimeHunting.UI;
 
-/// <summary>What a control does, as a transport-bar shape.</summary>
-internal enum UiIcon
-{
-	None,
-	Play,
-	Pause,
-	Stop,
-	Skip,
-	Restart,
-	Warning,
-	Info
-}
-
 /// <summary>
 ///     The transport symbols, drawn as triangles and bars rather than typed as characters.
 ///     A glyph would be one line of code, but only if the font has it: Imui ships its own
 ///     font atlas, and a missing U+23ED is a tofu box on the player's screen with nothing in
 ///     the log to explain it. Three points and a rect always render.
 /// </summary>
-internal static class UiIcons
+public static class UiIcons
 {
 	public static void Draw(ImGui gui, ImRect rect, UiIcon icon, Color32 colour)
 	{

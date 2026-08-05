@@ -24,7 +24,7 @@ namespace AuthorTimeHunting.Service;
 ///     when the player has turned on online_auto_subscribe themselves, and returns straight
 ///     away when the item is already installed and current.
 /// </summary>
-public partial class WorkshopDownloadService
+public class WorkshopDownloadService
 {
 	/// <summary>
 	///     How long a caller will wait for a level before going ahead without it. Long enough
@@ -119,7 +119,7 @@ public partial class WorkshopDownloadService
 	///     Looks at what the lobby says is coming next and makes sure it is on disk. Called
 	///     every frame; does nothing unless the answer changed.
 	/// </summary>
-	private void PrefetchNextLevel()
+	public void PrefetchNextLevel()
 	{
 		OnlineZeeplevel next = GetNextLevel();
 

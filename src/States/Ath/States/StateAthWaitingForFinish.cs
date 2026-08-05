@@ -41,24 +41,24 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 			return;
 		}
 
-		Level.LevelStatus previousStatus = currentLevel.Status;
+		LevelStatus previousStatus = currentLevel.Status;
 
 		currentLevel.PersonalBestTime = currentResult.Time;
-		Level.LevelStatus runMedalStatus = ResolveRunMedalStatus(currentResult.Time, currentLevel);
+		LevelStatus runMedalStatus = ResolveRunMedalStatus(currentResult.Time, currentLevel);
 
 		AthStateMachine.Ctx.LastRunTime = currentResult.Time;
 		AthStateMachine.Ctx.LastRunMedalStatus = runMedalStatus;
 		AthStateMachine.Ctx.LastRunMedalWasNew = GetMedalRank(runMedalStatus) > GetMedalRank(previousStatus);
 
-		bool wasGoldMedalAcquiredBeforeRun = GetMedalRank(previousStatus) >= GetMedalRank(Level.LevelStatus.GOLD);
+		bool wasGoldMedalAcquiredBeforeRun = GetMedalRank(previousStatus) >= GetMedalRank(LevelStatus.GOLD);
 
-		if (currentLevel.Status == Level.LevelStatus.AUTHOR)
+		if (currentLevel.Status == LevelStatus.AUTHOR)
 		{
 			StateMachine.TransitionTo(new StateAthWaitingForRespawn(AthStateMachine));
 			return;
 		}
 
-		if (runMedalStatus == Level.LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
+		if (runMedalStatus == LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
 		{
 			ToastNotification.Gold("Gold medal claimed!<br>You can now skip without penalty");
 		}
@@ -88,26 +88,26 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 		}
 	}
 
-	private static int GetMedalRank(Level.LevelStatus status)
+	private static int GetMedalRank(LevelStatus status)
 	{
 		return status switch
 		{
-			Level.LevelStatus.AUTHOR => 2, Level.LevelStatus.GOLD => 1, _ => 0
+			LevelStatus.AUTHOR => 2, LevelStatus.GOLD => 1, _ => 0
 		};
 	}
 
-	private static Level.LevelStatus ResolveRunMedalStatus(float runTime, Level level)
+	private static LevelStatus ResolveRunMedalStatus(float runTime, Level level)
 	{
 		if (runTime <= level.AuthorTime)
 		{
-			return Level.LevelStatus.AUTHOR;
+			return LevelStatus.AUTHOR;
 		}
 
 		if (runTime <= level.GoldTime)
 		{
-			return Level.LevelStatus.GOLD;
+			return LevelStatus.GOLD;
 		}
 
-		return Level.LevelStatus.UNKNOWN;
+		return LevelStatus.UNKNOWN;
 	}
 }

@@ -13,7 +13,7 @@ namespace AuthorTimeHunting.UI;
 ///     the screen has to be centred in the rect too, or it starts at an offset that moves
 ///     with the resolution.
 /// </summary>
-internal static class UiText
+public static class UiText
 {
 	/// <summary>Left aligned, vertically centred, at the body text size.</summary>
 	public static void Left(ImGui gui, string text, Color32 colour, ImRect rect)
@@ -45,7 +45,7 @@ internal static class UiText
 			return;
 		}
 
-		gui.Text(text.AsSpan(), colour, true, ImTextOverflow.Overflow);
+		gui.Text(text.AsSpan(), colour, true);
 	}
 
 	public static void Draw(ImGui gui, string text, Color32 colour, ImRect rect, float size, float alignX)

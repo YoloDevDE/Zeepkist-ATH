@@ -32,3 +32,5 @@ riderModule.iml
 *.slnf
 *.slnx
 /docs/
+/scratch/
+/CLAUDE.md

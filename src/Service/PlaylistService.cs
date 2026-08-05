@@ -103,15 +103,15 @@ public class PlaylistService
 			Logger.LogInfo(
 				$"PlaylistService: Enqueued server playlist update. Queue length is now {_updateQueue.Count}.");
 
-			if (_processingTask == null || _processingTask.IsCompleted)
-			{
-				Logger.LogInfo("PlaylistService: Starting queue processing task.");
-				_processingTask = ProcessQueueAsync();
-			}
-			else
+			if (_processingTask != null && !_processingTask.IsCompleted)
 			{
 				Logger.LogInfo("PlaylistService: Queue processing task already running, update appended.");
+
+				return _processingTask;
 			}
+
+			Logger.LogInfo("PlaylistService: Starting queue processing task.");
+			_processingTask = ProcessQueueAsync();
 
 			return _processingTask;
 		}

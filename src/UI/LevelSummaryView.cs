@@ -25,18 +25,19 @@ public class LevelSummaryView
 	}
 
 	public string Name { get; private set; }
-	public string Author { get; private set; }
 
-	/// <summary>What the level ended as, in the words the report uses.</summary>
-	public string Status { get; private set; }
+	/// <summary>
+	///     The byline and the shouted status as the card draws them. Composed here because the
+	///     card holds one of these for the whole loading screen and redraws it every frame.
+	/// </summary>
+	public string ByAuthor { get; private set; }
+
+	public string StatusUpper { get; private set; }
+
+	/// <summary>The time with its delta beside it, or null when the level was never finished.</summary>
+	public string BestWithDelta { get; private set; }
 
 	public Color32 StatusColour { get; private set; }
-
-	/// <summary>The time that settled it, or null when the level was never finished.</summary>
-	public string YourBest { get; private set; }
-
-	/// <summary>How far that time was off the author time, signed. Null without a time.</summary>
-	public string AuthorDelta { get; private set; }
 
 	public string AuthorTime { get; private set; }
 	public string Attempts { get; private set; }
@@ -44,7 +45,7 @@ public class LevelSummaryView
 	public string TimeHere { get; private set; }
 
 	/// <summary>The last few levels of the run, oldest first. Includes the one just finished.</summary>
-	public IReadOnlyList<RunReportView.LevelRow> Recent { get; private set; }
+	public IReadOnlyList<LevelRow> Recent { get; private set; }
 
 	/// <summary>Where the run stands, so the summary is not only about one level.</summary>
 	public string Score { get; private set; }
@@ -63,12 +64,12 @@ public class LevelSummaryView
 		LevelSummaryView view = new()
 		{
 			Name = level.Name,
-			Author = level.Author,
-			Status = level.StatusString,
-			StatusColour = ColourOf(level),
+			ByAuthor = $"by {level.Author}",
+			StatusUpper = level.StatusString?.ToUpperInvariant(),
+			StatusColour = RunReportView.StatusColour(level),
 			AuthorTime = TimeFormatter.FormatTime(level.AuthorTime),
-			Attempts = level.Attempt.ToString(),
-			Crashes = level.Crashes.ToString(),
+			Attempts = UiNumbers.Text(level.Attempt),
+			Crashes = UiNumbers.Text(level.Crashes),
 			TimeHere = level.GetPlayDuration().ToFormattedString(),
 			Recent = Tail(ctx.Levels),
 			Score = $"{ctx.AuthorMedals} AT   {ctx.GoldMedals} gold   {ctx.Penalties} penalty",
@@ -82,13 +83,13 @@ public class LevelSummaryView
 
 		double delta = level.PersonalBestTime - level.AuthorTime;
 
-		view.YourBest = TimeFormatter.FormatTime(level.PersonalBestTime);
-		view.AuthorDelta = TimeFormatter.FormatDelta(delta);
+		view.BestWithDelta =
+			$"{TimeFormatter.FormatTime(level.PersonalBestTime)}   ({TimeFormatter.FormatDelta(delta)})";
 
 		return view;
 	}
 
-	private static RunReportView.LevelRow[] Tail(IReadOnlyList<Level> levels)
+	private static LevelRow[] Tail(IReadOnlyList<Level> levels)
 	{
 		if (levels == null || levels.Count == 0)
 		{
@@ -103,7 +104,7 @@ public class LevelSummaryView
 			recent.Add(levels[i]);
 		}
 
-		RunReportView.LevelRow[] rows = RunReportView.BuildLevels(recent);
+		LevelRow[] rows = RunReportView.BuildLevels(recent);
 
 		// BuildLevels numbers from one; these are the tail of a longer run and have to keep
 		// the numbers they had, or the list claims the run only ever played eight levels.
@@ -113,18 +114,5 @@ public class LevelSummaryView
 		}
 
 		return rows;
-	}
-
-	private static Color32 ColourOf(Level level)
-	{
-		return level.Status switch
-		{
-			Level.LevelStatus.AUTHOR => HudPalette.Author,
-			Level.LevelStatus.GOLD => HudPalette.Gold,
-			Level.LevelStatus.FREE => HudPalette.FreeSkip,
-			Level.LevelStatus.BROKEN => HudPalette.Warning,
-			Level.LevelStatus.FAILED => HudPalette.Penalty,
-			_ => HudPalette.Muted
-		};
 	}
 }

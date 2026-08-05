@@ -47,6 +47,39 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private const double CloseFraction = 0.85;
 
+	/// <summary>
+	///     One space per character of the label below, plus the space after it. Derived rather
+	///     than counted out, so renaming a label cannot quietly knock the two columns apart.
+	///     Built once at type init - this is not per-frame work.
+	/// </summary>
+	private static readonly string AuthorIndent = new(' ', AuthorLabel.Length + 1);
+
+	private static readonly string GoldIndent = new(' ', GoldLabel.Length + 1);
+
+	// The colours this display can use, as TMP hex, formatted once at type init. The set is
+	// closed - every call site below names a palette entry - so formatting them per frame was
+	// the same seven strings over and over.
+	private static readonly string PlainHex = Hex(HudPalette.White);
+	private static readonly string DangerHex = Hex(HudPalette.Danger);
+	private static readonly string AuthorHex = Hex(HudPalette.Author);
+	private static readonly string GoldHex = Hex(HudPalette.Gold);
+
+	private static readonly string SafeHex = Hex(HudPalette.PaceSafe);
+	private static readonly string CloseHex = Hex(HudPalette.PaceClose);
+	private static readonly string LostHex = Hex(HudPalette.PaceLost);
+	private static readonly string CriticalHex = Hex(HudPalette.PaceCritical);
+	private static readonly string GoneHex = Hex(HudPalette.PaceGone);
+
+	/// <summary>The line for a lost medal never varies - no time in it, no colour choice.</summary>
+	private static readonly string MissedLine = Line(MissedLabel, DangerHex);
+
+	/// <summary>The two target lines and the level they were written for. See <see cref="TargetLine" />.</summary>
+	private static string _authorLine;
+
+	private static string _goldLine;
+	private static double _lineAuthorTime = -1;
+	private static double _lineGoldTime = -1;
+
 	private readonly RaceTimeBehaviour _behaviour;
 
 	/// <summary>Restored when we stop writing, because we did not own them.</summary>
@@ -97,7 +130,7 @@ public class RaceTimeDisplay : IDisposable
 		}
 	}
 
-	private void LateUpdate()
+	public void LateUpdate()
 	{
 		if (!IsActive)
 		{
@@ -191,7 +224,7 @@ public class RaceTimeDisplay : IDisposable
 	{
 		PluginConfig config = Plugin.Instance.MyConfig;
 
-		string colour = config.RaceTimeColorChange.Value ? Hex(TimeColour(elapsed, goldTime, authorTime)) : Hex(HudPalette.White);
+		string colour = config.RaceTimeColorChange.Value ? PaceHex(elapsed, goldTime, authorTime) : PlainHex;
 
 		string time = TimeFormatter.FormatTime(elapsed);
 
@@ -203,19 +236,34 @@ public class RaceTimeDisplay : IDisposable
 		if (elapsed >= goldTime)
 		{
 			// Nothing left to chase. No indent either - there is no label to clear.
-			return Line(time, colour) + "\n" + Line(MissedLabel, Hex(HudPalette.Danger));
+			return Line(time, colour) + "\n" + MissedLine;
 		}
 
 		bool author = elapsed < authorTime;
-		string label = author ? AuthorLabel : GoldLabel;
-		Color32 medal = author ? HudPalette.Author : HudPalette.Gold;
-		string target = TimeFormatter.FormatTime(author ? authorTime : goldTime);
 
 		// The running time is pushed right by the label plus its separating space, so the two
 		// times sit in the same column. Monospacing is what makes counting characters legal.
-		string indent = new(' ', label.Length + 1);
+		string indent = author ? AuthorIndent : GoldIndent;
 
-		return Line(indent + time, colour) + "\n" + Line($"{label} {target}", Hex(medal));
+		return Line(indent + time, colour) + "\n" + TargetLine(author, goldTime, authorTime);
+	}
+
+	/// <summary>
+	///     The target line, which is fixed for as long as the level is - the two medal times come
+	///     off the loaded level and do not move. This runs from LateUpdate on every frame of every
+	///     attempt, so the line is written once per level rather than sixty times a second.
+	/// </summary>
+	private static string TargetLine(bool author, double goldTime, double authorTime)
+	{
+		if (authorTime != _lineAuthorTime || goldTime != _lineGoldTime)
+		{
+			_lineAuthorTime = authorTime;
+			_lineGoldTime = goldTime;
+			_authorLine = Line($"{AuthorLabel} {TimeFormatter.FormatTime(authorTime)}", AuthorHex);
+			_goldLine = Line($"{GoldLabel} {TimeFormatter.FormatTime(goldTime)}", GoldHex);
+		}
+
+		return author ? _authorLine : _goldLine;
 	}
 
 	private static string Line(string text, string colour)
@@ -232,24 +280,24 @@ public class RaceTimeDisplay : IDisposable
 	///     line. The ladder answers the question actually being asked mid-run: is this attempt
 	///     still worth finishing.
 	/// </summary>
-	private static Color32 TimeColour(double elapsed, double goldTime, double authorTime)
+	private static string PaceHex(double elapsed, double goldTime, double authorTime)
 	{
 		if (elapsed >= goldTime)
 		{
-			return HudPalette.PaceGone;
+			return GoneHex;
 		}
 
 		if (elapsed >= goldTime * CloseFraction)
 		{
-			return HudPalette.PaceCritical;
+			return CriticalHex;
 		}
 
 		if (elapsed >= authorTime)
 		{
-			return HudPalette.PaceLost;
+			return LostHex;
 		}
 
-		return elapsed >= authorTime * CloseFraction ? HudPalette.PaceClose : HudPalette.PaceSafe;
+		return elapsed >= authorTime * CloseFraction ? CloseHex : SafeHex;
 	}
 
 	private static string Hex(Color32 colour)
@@ -309,41 +357,5 @@ public class RaceTimeDisplay : IDisposable
 		}
 
 		_borrowed.Clear();
-	}
-
-	/// <summary>What a label looked like before ATH took it over.</summary>
-	private readonly struct LabelState
-	{
-		public LabelState(TextOverflowModes overflow, bool autoSizing, float fontSize, bool wordWrapping)
-		{
-			Overflow = overflow;
-			AutoSizing = autoSizing;
-			FontSize = fontSize;
-			WordWrapping = wordWrapping;
-		}
-
-		public TextOverflowModes Overflow { get; }
-		public bool AutoSizing { get; }
-		public float FontSize { get; }
-		public bool WordWrapping { get; }
-	}
-
-	/// <summary>
-	///     The frame hook. Separate because RaceTimeDisplay is a plain service and only a
-	///     MonoBehaviour gets a LateUpdate - the same split AthStateMachine uses.
-	/// </summary>
-	private sealed class RaceTimeBehaviour : MonoBehaviour
-	{
-		private RaceTimeDisplay _owner;
-
-		private void LateUpdate()
-		{
-			_owner?.LateUpdate();
-		}
-
-		public void Bind(RaceTimeDisplay owner)
-		{
-			_owner = owner;
-		}
 	}
 }
