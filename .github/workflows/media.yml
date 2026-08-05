@@ -1,0 +1,16 @@
+name: Media
+
+# assets/media is the mod page's gallery. Add, replace or delete a picture there, push, and the
+# page matches. The steps live in YoloDevDE/zeepkist-build.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'assets/media/**' ]
+  workflow_dispatch:
+
+jobs:
+  media:
+    uses: YoloDevDE/zeepkist-build/.github/workflows/media.yml@v1
+    with:
+      modio-mod-id: ${{ vars.MODIO_MOD_ID }}
+    secrets: inherit

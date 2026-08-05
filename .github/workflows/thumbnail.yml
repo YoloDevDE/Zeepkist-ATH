@@ -1,0 +1,16 @@
+name: Thumbnail
+
+# Change the picture in assets/thumbnail, push, and mod.io has it. The steps live in
+# YoloDevDE/zeepkist-build.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'assets/thumbnail/**' ]
+  workflow_dispatch:
+
+jobs:
+  thumbnail:
+    uses: YoloDevDE/zeepkist-build/.github/workflows/thumbnail.yml@v1
+    with:
+      modio-mod-id: ${{ vars.MODIO_MOD_ID }}
+    secrets: inherit
