@@ -1,7 +1,8 @@
 # Media
 
-The gallery on the mod page - the screenshots under the description. Pushing a change here to `main` runs
-`.github/workflows/media.yml`, and the gallery ends up as exactly this folder: a picture deleted here is deleted there.
+The gallery on the mod page - the screenshots under the description. Arrange it here, then start `Media` from the
+Actions tab on GitHub: the gallery ends up as exactly this folder, so a picture deleted here is deleted there. Pushing
+alone changes nothing on the mod page.
 
 - jpg, jpeg and png only. mod.io ignores everything else, this README included.
 - 8MB each at most.

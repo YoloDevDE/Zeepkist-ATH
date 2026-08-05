@@ -1,11 +1,11 @@
 name: Media
 
-# assets/media is the mod page's gallery. Add, replace or delete a picture there, push, and the
-# page matches. The steps live in YoloDevDE/zeepkist-build.
+# Started by hand, from the Actions tab. Nothing reaches mod.io because a branch moved - the
+# folder assets/media is the gallery that will be uploaded, and when it goes up is a separate
+# decision, the same way a release is.
+#
+# The steps live in YoloDevDE/zeepkist-build.
 on:
-  push:
-    branches: [ main ]
-    paths: [ 'assets/media/**' ]
   workflow_dispatch:
 
 jobs:

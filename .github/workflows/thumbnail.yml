@@ -1,11 +1,11 @@
 name: Thumbnail
 
-# Change the picture in assets/thumbnail, push, and mod.io has it. The steps live in
-# YoloDevDE/zeepkist-build.
+# Started by hand, from the Actions tab. Nothing reaches mod.io because a branch moved - the
+# picture in assets/thumbnail is the one that will be uploaded, and when it goes up is a
+# separate decision, the same way a release is.
+#
+# The steps live in YoloDevDE/zeepkist-build.
 on:
-  push:
-    branches: [ main ]
-    paths: [ 'assets/thumbnail/**' ]
   workflow_dispatch:
 
 jobs:
