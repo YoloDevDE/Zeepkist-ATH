@@ -1,10 +1,16 @@
 name: Release
 
-# A push to `release` publishes. The steps live in YoloDevDE/zeepkist-build; what stays here
-# is what is actually about this mod.
+# Pushing a `v*` tag publishes that version. Merging into `main` does not - updating the branch
+# and releasing a version are two decisions, and only the second one is worth a tag.
+#
+# The upload is parked rather than live: `activate: false` puts the zip on the mod page's Files
+# tab, where the changelog and the version can be read back, and nobody is told there is an
+# update until you set it live on mod.io yourself.
+#
+# The steps live in YoloDevDE/zeepkist-build; what stays here is what is actually about this mod.
 on:
   push:
-    branches: [ release ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 
 jobs:
@@ -15,4 +21,5 @@ jobs:
     with:
       project: AuthorTimeHunting
       modio-mod-id: ${{ vars.MODIO_MOD_ID }}
+      activate: false
     secrets: inherit

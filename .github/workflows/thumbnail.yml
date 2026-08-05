@@ -1,0 +1,16 @@
+name: Thumbnail
+
+# Started by hand, from the Actions tab. Nothing reaches mod.io because a branch moved - the
+# picture in assets/thumbnail is the one that will be uploaded, and when it goes up is a
+# separate decision, the same way a release is.
+#
+# The steps live in YoloDevDE/zeepkist-build.
+on:
+  workflow_dispatch:
+
+jobs:
+  thumbnail:
+    uses: YoloDevDE/zeepkist-build/.github/workflows/thumbnail.yml@v1
+    with:
+      modio-mod-id: ${{ vars.MODIO_MOD_ID }}
+    secrets: inherit
