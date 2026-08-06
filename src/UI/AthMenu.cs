@@ -7,6 +7,7 @@ using AuthorTimeHunting.Util;
 using BepInEx.Configuration;
 using Imui.Controls;
 using Imui.Core;
+using Imui.Style;
 using UnityEngine;
 using ZeepkistClient;
 using ZeepSDK.UI;
@@ -21,6 +22,11 @@ namespace AuthorTimeHunting.UI;
 ///     starting a hunt, looking up an old one, changing what the run is worth. This is the one
 ///     place all of it is listed, and it is a menu rather than a panel because a menu is what a
 ///     game puts up before a round, not while one is being played.
+///     Which is why it takes the whole screen. Nothing is happening behind it that the player
+///     is watching - a hunt has not started yet, or the one that did is between levels - so the
+///     screen is free, and a menu that owns the screen is a menu nobody has to hunt for. The
+///     window itself is fullscreen and its side padding is what holds the content to a column in
+///     the middle; a choice spread across an ultrawide is not a choice anyone aims at.
 ///     One window with pages instead of five windows: a player picking a gamemode is not
 ///     reading the history at the same time, and a page that replaces the one before it cannot
 ///     end up behind it.
@@ -33,19 +39,22 @@ public class AthMenu : IZeepGUIDrawer
 {
 	private const string WindowTitle = "Author Time Hunting";
 
+	private const string Title = "AUTHOR TIME HUNTING";
+
+	private const string Footer = "/ath, or the ATH button in the top bar, opens and closes this screen.";
+
 	private const string ClassicId = "classic";
 
-	private const float WidthFraction = 0.3f;
-	private const float HeightFraction = 0.62f;
-	private const float MinWidth = 400f;
-	private const float MinHeight = 440f;
+	private const float TitleSize = 2f;
 
-	private const float TitleSize = 1.8f;
+	private const float TileRows = 3.4f;
+	private const int TileColumns = 2;
 
 	private const int MinMinutes = 1;
 	private const int MaxMinutes = 240;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
+	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing | ImWindowFlag.NoMoving |
+	                                         ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton;
 
 	private IReadOnlyList<HistoryRow> _history = [];
 
@@ -64,6 +73,7 @@ public class AthMenu : IZeepGUIDrawer
 			if (value && !wasVisible)
 			{
 				_page = AthMenuPage.Root;
+				Plugin.Instance.Services.LevelSummary.Hide();
 			}
 		}
 	}
@@ -77,10 +87,7 @@ public class AthMenu : IZeepGUIDrawer
 
 		try
 		{
-			using (UiScale.Push(gui))
-			{
-				Draw(gui);
-			}
+			Draw(gui);
 		}
 		catch (Exception e)
 		{
@@ -96,47 +103,82 @@ public class AthMenu : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
-		ImRect screen = gui.Canvas.SafeScreenRect;
-		float width = Mathf.Min(Mathf.Max(screen.W * WidthFraction, MinWidth), screen.W);
-		float height = Mathf.Min(Mathf.Max(screen.H * HeightFraction, MinHeight), screen.H);
+		ImRect screen = UiScreen.Full(gui);
+		ImStyleWindow previous = gui.Style.Window;
 
-		ImRect rect = new(screen.Left + (screen.W - width) * 0.5f,
-			screen.Bottom + (screen.H - height) * 0.5f,
-			width,
-			height);
+		Fullscreen(gui, screen);
 
+		try
+		{
+			DrawWindow(gui, screen);
+		}
+		finally
+		{
+			gui.Style.Window = previous;
+		}
+	}
+
+	/// <summary>
+	///     Turns the window into the screen: no border, no rounded corners, the mod's backdrop
+	///     behind it, and side padding wide enough to leave a column in the middle. Imui hands the
+	///     content rect out after the padding, so every row laid out inside is already centred and
+	///     no control has to be told how wide the screen is.
+	/// </summary>
+	private static void Fullscreen(ImGui gui, ImRect screen)
+	{
+		float side = (screen.W - UiScreen.Width(screen)) * 0.5f;
+		float top = UiMetrics.Margin(gui) * 2f;
+
+		gui.Style.Window.Box.BackColor = Color.Style.Surface.Backdrop;
+		gui.Style.Window.Box.BorderThickness = 0f;
+		gui.Style.Window.Box.BorderRadius = 0f;
+		gui.Style.Window.ContentPadding.Left = side;
+		gui.Style.Window.ContentPadding.Right = side;
+		gui.Style.Window.ContentPadding.Top = top;
+		gui.Style.Window.ContentPadding.Bottom = top;
+	}
+
+	private void DrawWindow(ImGui gui, ImRect screen)
+	{
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, screen, WindowFlags))
 		{
 			return;
 		}
 
 		try
 		{
-			DrawHeadline(gui);
+			if (DrawHeadline(gui))
+			{
+				return;
+			}
+
 			DrawPage(gui);
 		}
 		finally
 		{
 			gui.EndWindow();
 		}
-
-		if (!open)
-		{
-			Visible = false;
-		}
 	}
 
-	private void DrawHeadline(ImGui gui)
+	/// <summary>
+	///     The title band, and the Back button parked in it. Back lives up here rather than as a
+	///     row of its own because a full-width button above a page reads as part of the page.
+	/// </summary>
+	/// <returns>True when Back was pressed, which leaves nothing under the band worth drawing.</returns>
+	private bool DrawHeadline(ImGui gui)
 	{
 		float text = gui.Style.Layout.TextSize;
+		ImRect band = Row(gui, TitleSize * 1.6f);
 
-		UiText.Centre(gui, "AUTHOR TIME HUNTING", Color.Style.Surface.White, Row(gui, TitleSize * 1.2f),
-			text * TitleSize);
-		UiText.Centre(gui, Subtitle(), Color.Zeepkist.Medal.Author, Row(gui, 1.2f), text);
+		UiText.Centre(gui, UiScreen.Spaced(Title), Color.Zeepkist.Medal.Author, band, text * TitleSize);
+		UiText.Centre(gui, Subtitle(), Color.Style.Text.Muted, Row(gui, 1.5f), text * 1.05f);
+		UiScreen.Rule(gui, Row(gui, 1f), Color.Zeepkist.Medal.Author);
 
 		gui.AddSpacing();
+
+		return Back(gui, band);
 	}
 
 	private string Subtitle()
@@ -173,60 +215,70 @@ public class AthMenu : IZeepGUIDrawer
 		}
 	}
 
+	/// <summary>
+	///     Six tiles in two columns, sitting in the middle of whatever height is left, with the
+	///     line about /ath at the bottom of it.
+	/// </summary>
 	private void DrawRoot(ImGui gui)
 	{
 		bool idle = Plugin.Instance.Services.Control.ActiveRun == null;
 
-		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Play, "Quickstart", Color.Style.Action.Resume, idle))
+		Spacer(gui, (gui.GetLayoutHeight() - GridHeight(gui) - FooterHeight(gui)) * 0.5f);
+
+		ImRect first = TileRow(gui);
+
+		if (UiWidgets.Card(gui, Tile(gui, first, 0), UiIcon.Play, "Quickstart",
+			    "Classic ATH, on the settings it has always had.", Color.Style.Action.Resume, idle))
 		{
 			Quickstart();
 		}
 
-		Caption(gui, "Classic ATH, on the settings it has always had.");
-
-		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Skip, "Play", Color.Style.Action.Skip, idle))
+		if (UiWidgets.Card(gui, Tile(gui, first, 1), UiIcon.Skip, "Play",
+			    "Pick the gamemode and what the run is worth first.", Color.Style.Action.Skip, idle))
 		{
 			_page = AthMenuPage.Play;
 		}
 
-		Caption(gui, "Pick the gamemode and what the run is worth first.");
+		ImRect second = TileRow(gui);
 
-		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Info, "Challenge History", Color.Style.Action.Restart))
+		if (UiWidgets.Card(gui, Tile(gui, second, 0), UiIcon.Info, "Challenge History",
+			    "Every hunt this machine has recorded.", Color.Style.Action.Restart, true))
 		{
 			OpenHistory();
 		}
 
-		Caption(gui, "Every hunt this machine has recorded.");
-
-		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Info, "Status", Color.Style.Action.Restart))
+		if (UiWidgets.Card(gui, Tile(gui, second, 1), UiIcon.Info, "Status",
+			    "Whether the backends are up, and where this level came from.", Color.Style.Action.Restart, true))
 		{
 			Plugin.Instance.Services.Status.Visible = true;
 		}
 
-		Caption(gui, "Whether the backends are up, and where this level came from.");
+		ImRect third = TileRow(gui);
 
-		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Restart, "Settings", Color.Style.Action.Restart))
+		if (UiWidgets.Card(gui, Tile(gui, third, 0), UiIcon.Restart, "Settings",
+			    "What the mod draws and how loud it is.", Color.Style.Action.Restart, true))
 		{
 			_page = AthMenuPage.Settings;
 		}
 
-		Caption(gui, "What the mod draws and how loud it is.");
-
-		if (UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Stop, "Quit", Color.Style.Action.Stop))
+		if (UiWidgets.Card(gui, Tile(gui, third, 1), UiIcon.Stop, "Quit",
+			    "Puts every ATH window away, this one included.", Color.Style.Action.Stop, true))
 		{
 			Plugin.Instance.Services.HideUi();
 		}
 
-		Caption(gui, "Puts every ATH window away. /ath brings this one back.");
+		DrawFooter(gui);
+	}
+
+	private static void DrawFooter(ImGui gui)
+	{
+		Spacer(gui, gui.GetLayoutHeight() - FooterHeight(gui));
+
+		UiText.Centre(gui, Footer, Color.Style.Text.Muted, Row(gui, 1.4f), gui.Style.Layout.TextSize * 0.9f);
 	}
 
 	private void DrawPlay(ImGui gui)
 	{
-		if (Back(gui))
-		{
-			return;
-		}
-
 		DrawGamemode(gui);
 		DrawRunSettings(gui);
 
@@ -274,14 +326,10 @@ public class AthMenu : IZeepGUIDrawer
 
 	private void DrawHistory(ImGui gui)
 	{
-		if (Back(gui))
-		{
-			return;
-		}
-
 		if (_history.Count == 0)
 		{
 			UiText.Left(gui, "No runs recorded yet.", Color.Style.Text.Muted, Row(gui, 1f));
+
 			return;
 		}
 
@@ -302,13 +350,8 @@ public class AthMenu : IZeepGUIDrawer
 		}
 	}
 
-	private void DrawSettings(ImGui gui)
+	private static void DrawSettings(ImGui gui)
 	{
-		if (Back(gui))
-		{
-			return;
-		}
-
 		PluginConfig config = Plugin.Instance.MyConfig;
 
 		DrawWindowToggles(gui);
@@ -399,9 +442,17 @@ public class AthMenu : IZeepGUIDrawer
 		AthRequests.Start();
 	}
 
-	private bool Back(ImGui gui)
+	private bool Back(ImGui gui, ImRect band)
 	{
-		if (!UiWidgets.IconButton(gui, ButtonRow(gui), UiIcon.Restart, "Back", Color.Style.Action.Restart))
+		if (_page == AthMenuPage.Root)
+		{
+			return false;
+		}
+
+		float height = UiMetrics.ButtonHeight(gui);
+		ImRect rect = new(band.X, band.Y + (band.H - height) * 0.5f, height * 3.6f, height);
+
+		if (!UiWidgets.IconButton(gui, rect, UiIcon.Restart, "Back", Color.Style.Action.Restart))
 		{
 			return false;
 		}
@@ -434,11 +485,6 @@ public class AthMenu : IZeepGUIDrawer
 		return minutes;
 	}
 
-	private static void Caption(ImGui gui, string text)
-	{
-		UiText.Draw(gui, text, Color.Style.Text.Muted, Row(gui, 0.9f), gui.Style.Layout.TextSize * 0.85f, 0f);
-	}
-
 	private static int SelectedIndex(GamemodeRegistry registry)
 	{
 		for (int i = 0; i < registry.All.Count; i++)
@@ -462,6 +508,41 @@ public class AthMenu : IZeepGUIDrawer
 		}
 
 		return names;
+	}
+
+	private static ImRect Tile(ImGui gui, ImRect row, int column)
+	{
+		return UiWidgets.Column(gui, row, column, TileColumns);
+	}
+
+	private static ImRect TileRow(ImGui gui)
+	{
+		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), TileHeight(gui));
+	}
+
+	private static float TileHeight(ImGui gui)
+	{
+		return gui.GetRowHeight() * TileRows;
+	}
+
+	private static float GridHeight(ImGui gui)
+	{
+		return TileHeight(gui) * 3f + gui.Style.Layout.Spacing * 3f;
+	}
+
+	private static float FooterHeight(ImGui gui)
+	{
+		return gui.GetRowHeight() * 2.4f;
+	}
+
+	private static void Spacer(ImGui gui, float height)
+	{
+		if (height <= 0f)
+		{
+			return;
+		}
+
+		gui.AddLayoutRect(gui.GetLayoutWidth(), height);
 	}
 
 	private static ImRect Row(ImGui gui, float scale)

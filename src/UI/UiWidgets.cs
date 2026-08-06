@@ -62,6 +62,56 @@ public static class UiWidgets
 		UiText.Left(gui, value, valueColour, valueRect);
 	}
 
+	/// <summary>
+	///     One choice on a fullscreen menu: an icon, what it does, and a line saying what that
+	///     means, on a tile the whole of which is the button.
+	///     A row of buttons stacked down a window is the right shape for a panel and the wrong one
+	///     for a screen - a screen has room to say what each choice costs before it is taken.
+	/// </summary>
+	public static bool Card(ImGui gui, ImRect rect, UiIcon icon, string title, string caption, Color32 accent,
+		bool enabled)
+	{
+		if (!enabled)
+		{
+			DrawCard(gui, rect, icon, title, caption, Color.Style.Text.Muted, ColorExtensions.SurfaceColors.Track,
+				Color.Style.Text.Muted);
+
+			return false;
+		}
+
+		uint id = gui.GetNextControlId();
+		bool clicked = gui.InvisibleButton(id, rect);
+		bool hovered = gui.IsControlHovered(id);
+
+		DrawCard(gui, rect, icon, title, caption, accent,
+			hovered ? Color.Style.Surface.TileHovered : Color.Style.Surface.Tile, Color.Style.Surface.White);
+
+		return clicked;
+	}
+
+	private static void DrawCard(ImGui gui, ImRect rect, UiIcon icon, string title, string caption, Color32 accent,
+		Color32 back, Color32 titleColour)
+	{
+		float text = gui.Style.Layout.TextSize;
+		float pad = rect.H * 0.16f;
+
+		gui.Canvas.Rect(rect, back, rect.H * 0.1f);
+
+		ImRect inner = new(rect.X + pad, rect.Y + pad, rect.W - pad * 2f, rect.H - pad * 2f);
+		float iconSize = inner.H * 0.3f;
+		float bar = Mathf.Max(2f, inner.H * 0.05f);
+
+		ImRect head = new(inner.X, inner.Top - iconSize, inner.W, iconSize);
+		ImRect box = head.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect titleRect);
+
+		UiIcons.Draw(gui, box, icon, accent);
+		UiText.Draw(gui, title, titleColour, titleRect, text * 1.2f, 0f);
+
+		gui.Canvas.Rect(new ImRect(inner.X, inner.Y, inner.W * 0.2f, bar), accent);
+		UiText.Wrapped(gui, caption, Color.Style.Text.Muted,
+			new ImRect(inner.X, inner.Y + bar, inner.W, inner.H - iconSize - bar - pad * 0.5f), text * 0.9f);
+	}
+
 	public static bool Clickable(ImGui gui, ImRect row)
 	{
 		uint id = gui.GetNextControlId();

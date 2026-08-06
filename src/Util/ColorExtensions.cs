@@ -144,6 +144,20 @@ public static class ColorExtensions
 
 		public Color White => new Color32(255, 255, 255, 255);
 
+		/// <summary>What a screen that takes the whole game over puts over the game.</summary>
+		public Color Backdrop => new Color32(8, 9, 12, 242);
+
+		/// <summary>
+		///     The same, for a screen the player still has to see past - the podium behind the level
+		///     summary is where "press Y" is written, and covering that up would strand them.
+		/// </summary>
+		public Color Shade => new Color32(8, 9, 12, 208);
+
+		/// <summary>A tile lifted off that backdrop, and the same tile under the pointer.</summary>
+		public Color Tile => new Color32(255, 255, 255, 20);
+
+		public Color TileHovered => new Color32(255, 255, 255, 48);
+
 		/// <summary>A lamp that is not lit yet: visible enough to be counted, dark enough to be off.</summary>
 		public Color Unlit => new Color32(64, 64, 64, 255);
 	}

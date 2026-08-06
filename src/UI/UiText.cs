@@ -40,6 +40,18 @@ public static class UiText
 		gui.Text(text.AsSpan(), colour, true);
 	}
 
+	/// <summary>A line of text that breaks into the rect rather than being cut off at its edge.</summary>
+	public static void Wrapped(ImGui gui, string text, Color32 colour, ImRect rect, float size)
+	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return;
+		}
+
+		ImTextSettings settings = new(size, 0f, 0f, true, ImTextOverflow.Ellipsis);
+		gui.Text(text.AsSpan(), in settings, colour, rect);
+	}
+
 	public static void Draw(ImGui gui, string text, Color32 colour, ImRect rect, float size, float alignX)
 	{
 		if (string.IsNullOrEmpty(text))
