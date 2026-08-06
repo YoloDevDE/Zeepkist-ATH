@@ -14,10 +14,6 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public class LevelSummaryView
 {
-	/// <summary>
-	///     How many levels the run-so-far list shows. The loading screen is a few seconds long
-	///     and the point is the shape of the run, not an audit - the full list is in the report.
-	/// </summary>
 	private const int RecentLevels = 8;
 
 	private LevelSummaryView()
@@ -26,15 +22,10 @@ public class LevelSummaryView
 
 	public string Name { get; private set; }
 
-	/// <summary>
-	///     The byline and the shouted status as the card draws them. Composed here because the
-	///     card holds one of these for the whole loading screen and redraws it every frame.
-	/// </summary>
 	public string ByAuthor { get; private set; }
 
 	public string StatusUpper { get; private set; }
 
-	/// <summary>The time with its delta beside it, or null when the level was never finished.</summary>
 	public string BestWithDelta { get; private set; }
 
 	public Color32 StatusColour { get; private set; }
@@ -44,10 +35,8 @@ public class LevelSummaryView
 	public string Crashes { get; private set; }
 	public string TimeHere { get; private set; }
 
-	/// <summary>The last few levels of the run, oldest first. Includes the one just finished.</summary>
 	public IReadOnlyList<LevelRow> Recent { get; private set; }
 
-	/// <summary>Where the run stands, so the summary is not only about one level.</summary>
 	public string Score { get; private set; }
 
 	public string TimeLeft { get; private set; }
@@ -106,8 +95,6 @@ public class LevelSummaryView
 
 		LevelRow[] rows = RunReportView.BuildLevels(recent);
 
-		// BuildLevels numbers from one; these are the tail of a longer run and have to keep
-		// the numbers they had, or the list claims the run only ever played eight levels.
 		for (int i = 0; i < rows.Length; i++)
 		{
 			rows[i] = rows[i].Renumbered(first + i + 1);

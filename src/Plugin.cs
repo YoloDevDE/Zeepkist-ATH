@@ -14,10 +14,6 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-	/// <summary>
-	///     Prefix shown on every toast notification. MyPluginInfo only carries the full
-	///     plugin name, which is too long for the corner of the screen.
-	/// </summary>
 	private const string ToastTag = "ATH";
 
 	private Harmony _harmony;
@@ -26,25 +22,14 @@ public class Plugin : BaseUnityPlugin
 	private Plugin()
 	{
 		Util.Logger.Initialize(Logger);
-		ToastNotification.Initialize(ToastTag);
+		FrogNotification.Initialize(ToastTag);
 		Instance = this;
 	}
 
-	/// <summary>
-	///     Singleton instance of the plugin
-	/// </summary>
 	public static Plugin Instance { get; private set; }
 
-	/// <summary>
-	///     Configuration settings for the plugin
-	/// </summary>
 	public PluginConfig MyConfig { get; private set; }
 
-	/// <summary>
-	///     The session's services. Public because the chat commands are instantiated by
-	///     ZeepSDK and have nowhere else to reach them from - the state machines are handed
-	///     theirs properly.
-	/// </summary>
 	public ModServices Services { get; private set; }
 
 	private void Awake()
@@ -53,8 +38,6 @@ public class Plugin : BaseUnityPlugin
 		Services = new ModServices();
 		UIApi.AddZeepGUIDrawer(Services.RunOverlay);
 
-		// Before the control panel, which hangs under it and needs this frame's rect rather
-		// than last frame's - otherwise it lags a frame behind every height change.
 		UIApi.AddZeepGUIDrawer(Services.LevelStats);
 		UIApi.AddZeepGUIDrawer(Services.Control);
 		UIApi.AddZeepGUIDrawer(Services.Leaderboard);
@@ -62,13 +45,15 @@ public class Plugin : BaseUnityPlugin
 		UIApi.AddZeepGUIDrawer(Services.Results);
 		UIApi.AddZeepGUIDrawer(Services.Help);
 
-		// Last of the windows, so it draws over anything that happens to be up behind it. It is
-		// the first thing a player sees and nothing should be in front of it.
 		UIApi.AddZeepGUIDrawer(Services.Welcome);
+		UIApi.AddZeepGUIDrawer(Services.Menu);
+		UIApi.AddZeepGUIDrawer(Services.Status);
 		UIApi.AddZeepGUIDrawer(Services.Debug);
+
+		UIApi.AddZeepGUIDrawer(Services.Loading);
 		UIApi.AddToolbarDrawer(Services.Toolbar);
-		CommandAth.CommandTrigger += Services.ToggleUi;
-		CommandAthDebug.CommandTrigger += Services.Debug.Toggle;
+		UIApi.AddToolbarDrawer(Services.DebugToolbar);
+		CommandAth.CommandTrigger += Services.Menu.Toggle;
 		InitializeHarmony();
 		RegisterChatCommands();
 		InitializeStateMachine();
@@ -76,13 +61,11 @@ public class Plugin : BaseUnityPlugin
 		Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 	}
 
-
 	private void OnDestroy()
 	{
 		if (Services != null)
 		{
-			CommandAth.CommandTrigger -= Services.ToggleUi;
-			CommandAthDebug.CommandTrigger -= Services.Debug.Toggle;
+			CommandAth.CommandTrigger -= Services.Menu.Toggle;
 			UIApi.RemoveZeepGUIDrawer(Services.RunOverlay);
 			UIApi.RemoveZeepGUIDrawer(Services.Control);
 			UIApi.RemoveZeepGUIDrawer(Services.LevelStats);
@@ -91,12 +74,18 @@ public class Plugin : BaseUnityPlugin
 			UIApi.RemoveZeepGUIDrawer(Services.Results);
 			UIApi.RemoveZeepGUIDrawer(Services.Help);
 			UIApi.RemoveZeepGUIDrawer(Services.Welcome);
+			UIApi.RemoveZeepGUIDrawer(Services.Menu);
+			UIApi.RemoveZeepGUIDrawer(Services.Status);
 			UIApi.RemoveZeepGUIDrawer(Services.Debug);
+			UIApi.RemoveZeepGUIDrawer(Services.Loading);
 			UIApi.RemoveToolbarDrawer(Services.Toolbar);
+			UIApi.RemoveToolbarDrawer(Services.DebugToolbar);
 		}
 
 		Services?.RaceTime.Dispose();
 		Services?.GameState.Dispose();
+		Services?.Trace.Dispose();
+		Services?.Health.Dispose();
 		Services?.WorkshopDownloads.Dispose();
 		_harmony?.UnpatchSelf();
 		_harmony = null;
@@ -115,13 +104,7 @@ public class Plugin : BaseUnityPlugin
 
 	private void RegisterChatCommands()
 	{
-		ChatCommandApi.RegisterLocalChatCommand<CommandRestart>();
-		ChatCommandApi.RegisterLocalChatCommand<CommandStop>();
-		ChatCommandApi.RegisterLocalChatCommand<CommandStart>();
-		ChatCommandApi.RegisterLocalChatCommand<CommandSkipBroken>();
 		ChatCommandApi.RegisterLocalChatCommand<CommandAth>();
-		ChatCommandApi.RegisterLocalChatCommand<CommandAthDebug>();
-		ChatCommandApi.RegisterLocalChatCommand<CommandAthHistory>();
 	}
 
 	private void InitializeStateMachine()

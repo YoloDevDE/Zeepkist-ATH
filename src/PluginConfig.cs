@@ -20,24 +20,14 @@ public class PluginConfig
 
 		Minimalist = config.Bind("Misc", "Minimalist", false, "Makes it a bit less text");
 
-		ShowWelcome = config.Bind("Misc", "Show the Welcome Screen", true,
-			"Puts the welcome screen up whenever /ath opens the mod. It explains the gamemode and can always "
-			+ "be reopened from the ATH menu in the top bar.");
-
 		InGameHud = config.Bind("Misc", "In-Game HUD", true,
 			"Draws the run HUD as a movable in-game window instead of the server message block.");
 
 		SavePlaylistOnRunEnd = config.Bind("Misc", "Save Playlist on Run End", false,
 			"Literally what it says. what did you expect");
 
-		RaceTimeColorChange = config.Bind("Race Timer", "Colour the Run Time", true,
-			"Tints the running time by the medal it is currently on: author, gold, or neither.");
-
-		// Off by default since the medals moved into the leaderboard. Both at once put the
-		// author and gold times on screen three times over - board, timer, level panel.
-		RaceTimeShowTarget = config.Bind("Race Timer", "Show Next Medal", false,
-			"Adds a line under the running time naming the best medal still within reach and the time it needs. "
-			+ "Redundant while the leaderboard carries the medals.");
+		StartLights = config.Bind("Race Timer", "Start Lights", true,
+			"Replaces the running time with three lights during the start countdown.");
 
 		LeaderboardMedals = config.Bind("Race Timer", "Medals in the Leaderboard", true,
 			"Adds the author and gold times to the small in-race leaderboard as if they were two more players, "
@@ -45,63 +35,32 @@ public class PluginConfig
 
 		GraphQlUrl = config.Bind("Backend", "GraphQL URL", "https://graphql.zeepki.st/",
 			"GraphQL endpoint used for level queries.");
+
+		GtrUrl = config.Bind("Backend", "GTR URL", "https://backend.zeepki.st/",
+			"GTR backend, checked by the status window. ATH does not call it - it is here because a hunt is "
+			+ "worth little if the times are not being recorded.");
 	}
 
-	/// <summary>
-	///     When enabled, the playlist will be saved when a run ends
-	/// </summary>
 	public ConfigEntry<bool> SavePlaylistOnRunEnd { get; }
 
-	/// <summary>
-	///     When enabled, shows less text in the UI
-	/// </summary>
 	public ConfigEntry<bool> Minimalist { get; }
 
-	/// <summary>
-	///     Whether the welcome screen comes up on its own when /ath opens the mod. Written by the
-	///     checkbox on that screen, which is the only place a player will look for the switch.
-	/// </summary>
-	public ConfigEntry<bool> ShowWelcome { get; }
-
-	/// <summary>
-	///     When enabled, the run HUD is drawn as an in-game window instead of being written
-	///     into the game's server message area
-	/// </summary>
 	public ConfigEntry<bool> InGameHud { get; }
 
-	/// <summary>
-	///     When enabled, the playlist will be random
-	/// </summary>
 	public ConfigEntry<bool> RandomPlaylist { get; }
 
-	/// <summary>
-	///     Total run duration in seconds
-	/// </summary>
 	public ConfigEntry<int> Duration { get; }
 
-	/// <summary>
-	///     Penalty time per failed level in seconds
-	/// </summary>
 	public ConfigEntry<int> PenaltyTime { get; }
 
-	/// <summary>
-	///     GraphQL endpoint URL
-	/// </summary>
 	public ConfigEntry<string> GraphQlUrl { get; }
+
+	public ConfigEntry<string> GtrUrl { get; }
 
 	#region Race Timer
 
-	// The three switches over the game's own running-time display. Kept separate rather
-	// than one "style" enum because they are genuinely independent: colour without deltas
-	// is a perfectly reasonable setup, and so is the reverse.
+	public ConfigEntry<bool> StartLights { get; }
 
-	/// <summary>Tint the running time by the medal it currently sits on.</summary>
-	public ConfigEntry<bool> RaceTimeColorChange { get; }
-
-	/// <summary>Show the medal still in reach, and its time, under the running time.</summary>
-	public ConfigEntry<bool> RaceTimeShowTarget { get; }
-
-	/// <summary>Sort the author and gold times into the small in-race leaderboard.</summary>
 	public ConfigEntry<bool> LeaderboardMedals { get; }
 
 	#endregion

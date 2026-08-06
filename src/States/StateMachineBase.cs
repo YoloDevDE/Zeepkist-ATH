@@ -12,19 +12,14 @@ namespace AuthorTimeHunting.States;
 /// </summary>
 public abstract class StateMachineBase
 {
-	/// <summary>The state the machine is in. Only transitions change this.</summary>
 	public StateBase CurrentState { get; private set; }
 
-	/// <summary>Where <see cref="Init" /> starts.</summary>
 	public abstract StateBase InitialState { get; }
 
-	/// <summary>Where <see cref="StopGracefully" /> ends up.</summary>
 	public abstract StateBase FinalState { get; }
 
-	/// <summary>Raised once the machine has finished its work.</summary>
 	public event Action StateMachineFinished;
 
-	/// <summary>Enters <see cref="InitialState" />.</summary>
 	public void Init()
 	{
 		Logger.LogInfo($"StateMachine: Initializing with initial state {InitialState.GetType().Name}");
@@ -63,11 +58,6 @@ public abstract class StateMachineBase
 		}
 	}
 
-	/// <summary>
-	///     One frame of the machine: ticks the current state and whatever machine is nested
-	///     inside it. Nothing calls this on its own - a machine that needs a frame loop is
-	///     driven from a MonoBehaviour, or by the parent machine it hangs under.
-	/// </summary>
 	public virtual void Update()
 	{
 		if (CurrentState == null)
@@ -79,11 +69,6 @@ public abstract class StateMachineBase
 		CurrentState.SubStateMachine?.Update();
 	}
 
-	/// <summary>
-	///     Winds the machine down into <see cref="FinalState" />. Called on the sub-machine of
-	///     a state that is being left, so it has to swallow its own failures - the parent
-	///     transition must complete either way.
-	/// </summary>
 	public void StopGracefully()
 	{
 		try
@@ -111,7 +96,6 @@ public abstract class StateMachineBase
 		catch (Exception ex)
 		{
 			Logger.LogError(ex, "StateMachine.StopGracefully");
-			// Ensure resources are released even if exception occurs
 		}
 		finally
 		{

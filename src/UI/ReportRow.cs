@@ -1,3 +1,4 @@
+using AuthorTimeHunting.Util;
 using UnityEngine;
 
 namespace AuthorTimeHunting.UI;
@@ -5,7 +6,7 @@ namespace AuthorTimeHunting.UI;
 /// <summary>One label/value pair. The colour applies to the value, not the label.</summary>
 public readonly struct ReportRow
 {
-	public ReportRow(string label, string value) : this(label, value, HudPalette.Default)
+	public ReportRow(string label, string value) : this(label, value, Color.Style.Text.Default)
 	{
 	}
 

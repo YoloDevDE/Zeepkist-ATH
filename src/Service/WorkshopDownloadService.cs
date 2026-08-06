@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Steamworks.Data;
+using Steamworks.Ugc;
 using UnityEngine;
 using ZeepkistClient;
 using ZeepkistNetworking;
@@ -20,24 +21,24 @@ namespace AuthorTimeHunting.Service;
 ///     already accounts for random playlists and wrapping around the end. That makes this
 ///     work for a plain lobby playlist just as well as for ATH's own random levels - it never
 ///     has to know who put the level there.
-///     Downloading is not subscribing. WorkshopManager.DownloadWorkshopLevel only subscribes
-///     when the player has turned on online_auto_subscribe themselves, and returns straight
-///     away when the item is already installed and current.
+///     It talks to Steam directly instead of going through WorkshopManager, and that is the
+///     whole point. WorkshopManager.DownloadWorkshopLevel puts the item into a dictionary of
+///     tracked downloads and only takes it out again once Steam reports it installed. While it
+///     sits in there, the game's own ZeepkistNetwork.LoadLevelToSendToServer - which the server
+///     triggers to have this client upload the level - calls TrackItemManually, an unguarded
+///     Dictionary.Add on the same key. It throws, the upload sends an empty level data packet,
+///     and the lobby skips the level. Prefetching the next level is exactly the case where both
+///     happen to the same id at the same time, so the pre-download was reliably breaking the
+///     level it was meant to speed up.
+///     Steam does the deduplicating itself, so nothing is lost by not being tracked: an item
+///     already installed and current returns immediately, and OnItemInstalled still fires, which
+///     is what gets the level into LevelManager.
+///     Downloading is not subscribing - this never subscribes the player to anything.
 /// </summary>
 public class WorkshopDownloadService
 {
-	/// <summary>
-	///     How long a caller will wait for a level before going ahead without it. Long enough
-	///     for a normal workshop level on a normal line, short enough that a dead Steam does not
-	///     hang the run - going ahead early only risks the failure that used to be certain.
-	/// </summary>
 	public static readonly TimeSpan ReadyTimeout = TimeSpan.FromSeconds(30);
 
-	/// <summary>
-	///     Downloads handed to Steam this session, by workshop id, so a second caller joins the
-	///     first one's download instead of starting another. Dropped again on failure so a later
-	///     attempt can retry.
-	/// </summary>
 	private readonly Dictionary<ulong, Task<bool>> _downloads = new();
 
 	private PrefetchBehaviour _behaviour;
@@ -52,25 +53,15 @@ public class WorkshopDownloadService
 		_behaviour.Bind(this);
 	}
 
-	/// <summary>
-	///     Starts the download and returns immediately - callers are mid-playlist-edit or
-	///     mid-frame and must not wait for Steam. Failures are logged, never thrown: a missed
-	///     pre-download costs time, it does not break the run.
-	/// </summary>
 	public void EnsureDownloaded(OnlineZeeplevel level)
 	{
 		_ = EnsureDownloadedAsync(level);
 	}
 
-	/// <summary>
-	///     The same download, as something that can be waited on. One task per workshop id: a
-	///     second caller joins the first one's download rather than asking Steam twice.
-	/// </summary>
 	public Task<bool> EnsureDownloadedAsync(OnlineZeeplevel level)
 	{
 		if (level == null || level.WorkshopID == 0)
 		{
-			// Levels from local playlists carry no workshop id - they are already on disk.
 			return Task.FromResult(true);
 		}
 
@@ -85,17 +76,6 @@ public class WorkshopDownloadService
 		return download;
 	}
 
-	/// <summary>
-	///     Waits until the level is on disk, or until <see cref="ReadyTimeout" /> gives up on it.
-	///     Nothing may switch the lobby to a level before this returns.
-	///     The game loads a level off disk to send it to the server the moment the lobby moves
-	///     to it. Doing that while Steam is still writing the item made the game's own loader
-	///     throw ("An item with the same key has already been added"), which it reports by
-	///     sending an empty level packet - the server then skips, ATH sees a level that is not
-	///     the one it queued, calls it broken, draws a replacement, and does the whole thing
-	///     again. A restarted run could burn through its level pool that way without ever
-	///     loading a single level.
-	/// </summary>
 	public async Task WaitUntilReadyAsync(OnlineZeeplevel level)
 	{
 		if (level == null || level.WorkshopID == 0)
@@ -115,10 +95,6 @@ public class WorkshopDownloadService
 			+ $"{ReadyTimeout.TotalSeconds:F0}s, going ahead without it.");
 	}
 
-	/// <summary>
-	///     Looks at what the lobby says is coming next and makes sure it is on disk. Called
-	///     every frame; does nothing unless the answer changed.
-	/// </summary>
 	public void PrefetchNextLevel()
 	{
 		OnlineZeeplevel next = GetNextLevel();
@@ -162,22 +138,27 @@ public class WorkshopDownloadService
 	{
 		try
 		{
-			if (WorkshopManager.Instance == null)
+			Item? item = await Item.GetAsync(new PublishedFileId { Value = workshopId });
+
+			if (item == null)
 			{
-				Logger.LogWarning("WorkshopDownloadService: No WorkshopManager, skipping pre-download.");
 				_downloads.Remove(workshopId);
+				Logger.LogWarning($"WorkshopDownloadService: Steam does not know '{levelName}' ({workshopId}).");
+
 				return false;
+			}
+
+			if (item.Value.IsInstalled && !item.Value.NeedsUpdate)
+			{
+				return true;
 			}
 
 			Logger.LogInfo($"WorkshopDownloadService: Pre-downloading '{levelName}' ({workshopId}).");
 
-			// No ConfigureAwait(false): this is a game API and the continuation below touches
-			// _downloads, which the main thread also writes.
-			bool downloaded = await WorkshopManager.Instance.DownloadWorkshopLevel(new PublishedFileId { Value = workshopId });
-
-			if (downloaded)
+			if (await item.Value.DownloadAsync())
 			{
 				Logger.LogInfo($"WorkshopDownloadService: '{levelName}' ({workshopId}) is ready.");
+
 				return true;
 			}
 

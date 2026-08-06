@@ -11,10 +11,6 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public static class UiNumbers
 {
-	/// <summary>
-	///     How far the table goes. Comfortably past anything a single level produces - a
-	///     hundred-attempt level is a level that was skipped long ago.
-	/// </summary>
 	private const int Max = 256;
 
 	private static readonly string[] Labels = Build();

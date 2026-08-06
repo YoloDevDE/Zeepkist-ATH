@@ -10,7 +10,6 @@ public class StateAthWaitingForExtraLevel(AthStateMachine stateMachine) : AthSta
 {
 	private const int MaxConsecutiveDuplicates = 3;
 
-
 	public override async void Enter()
 	{
 		AthStateMachine.Ctx.ConsecutiveDuplicateCount++;
@@ -32,9 +31,8 @@ public class StateAthWaitingForExtraLevel(AthStateMachine stateMachine) : AthSta
 		}
 		catch (Exception ex)
 		{
-			// async void - nothing above us can catch this.
 			Logger.LogError($"StateAthWaitingForExtraLevel: Could not draw a replacement level: {ex.Message}");
-			ToastNotification.Error("Could not find another level to play");
+			FrogNotification.Error("Could not find another level to play");
 			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 		}
 	}

@@ -15,7 +15,6 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public readonly struct UiScale : IDisposable
 {
-	/// <summary>What the game's theme is multiplied by. 0.67 is the requested third off.</summary>
 	public const float Factor = 0.67f;
 
 	private readonly ImGui _gui;
@@ -29,10 +28,6 @@ public readonly struct UiScale : IDisposable
 		_padding = padding;
 	}
 
-	/// <summary>
-	///     Turns the theme down and hands back the token that puts it back. Must wrap the window
-	///     placement too, not just the drawing: the placement reads the spacing for its margins.
-	/// </summary>
 	public static UiScale Push(ImGui gui)
 	{
 		ImStyleLayout layout = gui.Style.Layout;

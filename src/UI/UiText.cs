@@ -15,7 +15,6 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public static class UiText
 {
-	/// <summary>Left aligned, vertically centred, at the body text size.</summary>
 	public static void Left(ImGui gui, string text, Color32 colour, ImRect rect)
 	{
 		Draw(gui, text, colour, rect, gui.Style.Layout.TextSize, 0f);
@@ -31,13 +30,6 @@ public static class UiText
 		Draw(gui, text, colour, rect, size, 1f);
 	}
 
-	/// <summary>
-	///     A block of prose that wraps and takes as many layout rows as it needs.
-	///     The only text in the mod that is read rather than glanced at, so it is the only text
-	///     that wraps: everything else lives in a fixed row and is cut with an ellipsis. Sized by
-	///     the layout rather than by a caller-supplied rect, because how tall a paragraph comes
-	///     out depends on the window width, and nobody can be asked to know that in advance.
-	/// </summary>
 	public static void Paragraph(ImGui gui, string text, Color32 colour)
 	{
 		if (string.IsNullOrEmpty(text))
@@ -55,8 +47,6 @@ public static class UiText
 			return;
 		}
 
-		// Ellipsis rather than overflow: level and author names are arbitrary length and
-		// must not paint over whatever sits beside them.
 		ImTextSettings settings = new(size, alignX, 0.5f, false, ImTextOverflow.Ellipsis);
 		gui.Text(text.AsSpan(), in settings, colour, rect);
 	}

@@ -10,14 +10,8 @@ public class Level
 	{
 	}
 
-	/// <summary>
-	///     The same data without the Unity object it normally comes from. A
-	///     LevelScriptableObject cannot be constructed outside the running game, so this is
-	///     what makes the entity - and everything that reads it - reachable from a test.
-	/// </summary>
 	public Level(string levelUid, string name, string author, double authorTime, double goldTime)
 	{
-		// Initialize immutable properties
 		LevelUid = levelUid;
 		Name = name;
 		Author = author;
@@ -25,37 +19,23 @@ public class Level
 		GoldTime = goldTime;
 	}
 
-	// Basic level information (immutable after creation)
 	public string LevelUid { get; }
 
-	// Raw, unformatted. The <noparse> wrapping these used to carry belongs to the chat
-	// renderer - an in-game window would have shown the tags literally.
 	public string Name { get; }
 	public string Author { get; }
 	public double AuthorTime { get; }
 	public double GoldTime { get; }
 
-	// Game state
 	public int Attempt { get; set; }
 
-	/// <summary>
-	///     How often the car was wrecked here. Counted across every attempt on this level, and
-	///     deliberately not reset by <see cref="Start" /> - a level's crash count is about the
-	///     level, not about the run currently on it.
-	/// </summary>
 	public int Crashes { get; private set; }
 
-	/// <summary>
-	///     Wheels torn off here. Counted per wheel, so one bad landing can add four - which is
-	///     the honest number, and exactly why it is kept apart from <see cref="Crashes" />.
-	/// </summary>
 	public int WheelsLost { get; private set; }
 
 	public bool Skipped { get; set; }
 	public bool FreeSkipped { get; set; }
 	public bool LevelBroken { get; set; }
 
-	// Status als zentrale Eigenschaft
 	public LevelStatus Status
 	{
 		get
@@ -91,7 +71,6 @@ public class Level
 		}
 	}
 
-	// Boolean Properties basierend auf Status
 	public bool AuthorTimeAcquired => Status == LevelStatus.AUTHOR;
 	public bool GoldMedalAcquired => Status is LevelStatus.GOLD or LevelStatus.AUTHOR;
 	public bool PenaltySkipped => Status == LevelStatus.FAILED && Skipped;
@@ -120,13 +99,13 @@ public class Level
 			return Status switch
 			{
 				LevelStatus.AUTHOR => "Completed", LevelStatus.GOLD => "Gold-Skipped",
-				LevelStatus.FREE => "Free-Skipped", LevelStatus.BROKEN => "Broken", LevelStatus.FAILED => "Failed",
+				LevelStatus.FREE => "Free-Skipped", LevelStatus.BROKEN => "Broken",
+				LevelStatus.FAILED => "Failed",
 				_ => "Unknown"
 			};
 		}
 	}
 
-	// Rest der Klasse bleibt gleich...
 	public DateTime StartTime { get; set; }
 
 	public DateTime EndTime
@@ -137,15 +116,8 @@ public class Level
 
 	private List<DateTime> TimeStamps { get; } = [];
 
-	/// <summary>True while play time is being counted.</summary>
 	public bool IsTiming => TimeStamps.Count % 2 == 1;
 
-
-	/// <summary>
-	///     Stops counting play time. Idempotent: an interval is only closed when one is open.
-	///     Play time is stored as pairs of timestamps, so pausing is simply closing the open
-	///     pair - the model was built for exactly this.
-	/// </summary>
 	public void PauseTiming()
 	{
 		if (TimeStamps.Count % 2 == 1)
@@ -154,7 +126,6 @@ public class Level
 		}
 	}
 
-	/// <summary>Starts counting again. Idempotent, same reasoning as PauseTiming.</summary>
 	public void ResumeTiming()
 	{
 		if (TimeStamps.Count % 2 == 0)
@@ -173,11 +144,16 @@ public class Level
 		WheelsLost++;
 	}
 
+	/// <summary>
+	///     A fresh level has no attempts on it. They are counted when the zeepkists are actually
+	///     released, so that during a countdown the attempt about to start is always
+	///     <c>Attempt + 1</c> - which is what the start lights put on screen.
+	/// </summary>
 	public void Start()
 	{
 		StartTime = DateTime.Now;
 		TimeStamps.Clear();
-		Attempt++;
+		Attempt = 0;
 	}
 
 	public void Stop()

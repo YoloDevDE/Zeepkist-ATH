@@ -1,4 +1,5 @@
 ﻿using AuthorTimeHunting.Entities;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
@@ -6,11 +7,19 @@ using ZeepkistNetworking;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
+/// <summary>
+///     The level is being driven. The clock runs here and nowhere else.
+///     A finish only ends the state when it is one the game would score - every checkpoint
+///     passed. Crossing the line short of that is a dnf, and a dnf costs the same as never
+///     having reached the finish at all: the level's clock keeps running and the player gets
+///     another attempt.
+/// </summary>
 public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	public override void Enter()
 	{
-		// A run resumed while the player paused ATH must not restart the clock.
+		AthStateMachine.Ctx.CurrentLevel.Attempt++;
+
 		if (!AthStateMachine.Ctx.IsPaused)
 		{
 			AthStateMachine.Ctx.CurrentLevel.ResumeTiming();
@@ -31,6 +40,15 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 
 	public override void OnCrossedFinishLine(float time)
 	{
+		if (!GameStateObserver.AllCheckpointsPassed)
+		{
+			Logger.LogInfo(
+				"StateAthWaitingForFinish: Finish crossed without every checkpoint, the level keeps running.");
+			FrogNotification.Warn("Checkpoint missed - that run does not count");
+
+			return;
+		}
+
 		ZeepkistNetworkPlayer networkPlayer = ZeepkistNetwork.LocalPlayer;
 		PlayerBase.Result currentResult = networkPlayer?.CurrentResult;
 		Level currentLevel = AthStateMachine.Ctx.CurrentLevel;
@@ -60,7 +78,7 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 
 		if (runMedalStatus == LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
 		{
-			ToastNotification.Gold("Gold medal claimed!<br>You can now skip without penalty");
+			FrogNotification.Gold("Gold medal claimed!<br>You can now skip without penalty");
 		}
 
 		StateMachine.TransitionTo(new StateAthWaitingForNextRun(AthStateMachine));
@@ -84,7 +102,7 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 
 		if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
 		{
-			ToastNotification.Info("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
+			FrogNotification.Info("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
 		}
 	}
 

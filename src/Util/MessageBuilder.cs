@@ -31,7 +31,6 @@ public class MessageBuilder
 
 	public MessageBuilder AddSeperator(string headline)
 	{
-		// Remove TMP tags for length calculation
 		string plainHeadline = Regex.Replace(headline, "<.*?>", "");
 
 		if (plainHeadline.Length >= TotalWidth)

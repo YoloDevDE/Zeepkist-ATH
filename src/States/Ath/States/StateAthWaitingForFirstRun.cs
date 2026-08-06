@@ -24,12 +24,6 @@ public class StateAthWaitingForFirstRun(AthStateMachine stateMachine) : AthState
 		}
 	}
 
-	/// <summary>
-	///     Pre-loads the level after the current one so the playlist never runs dry. Started
-	///     without awaiting - the run continues either way - so it has to swallow and report
-	///     its own failures. Unhandled, they would end up in an unobserved Task and the
-	///     playlist would simply be empty at the end with nothing in the log to explain it.
-	/// </summary>
 	private async Task AddLevelAsync()
 	{
 		if (!AthStateMachine.Ctx.Settings.RandomPlaylist)
@@ -46,10 +40,9 @@ public class StateAthWaitingForFirstRun(AthStateMachine stateMachine) : AthState
 		catch (Exception e)
 		{
 			Logger.LogError($"StateAthWaitingForFirstRun: Could not pre-load the next level: {e.Message}");
-			ToastNotification.Warn("Could not load the next level - the playlist may run out");
+			FrogNotification.Warn("Could not load the next level - the playlist may run out");
 		}
 	}
-
 
 	public override void OnRoundStarted()
 	{

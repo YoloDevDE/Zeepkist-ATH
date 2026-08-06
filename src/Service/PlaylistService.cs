@@ -21,34 +21,62 @@ public class PlaylistService
 	private static List<OnlineZeeplevel> CurrentLobbyPlaylist => ZeepkistNetwork.CurrentLobby.Playlist;
 	private static int CurrentPlaylistIndex => ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex;
 
-	// A Playlist cant be empty
-	public void StartNewPlaylist(OnlineZeeplevel initialLevel)
+	/// <summary>
+	///     The returned task completes once the playlist has actually reached the server, which
+	///     can be up to the rate limit later than this call. A skip sent before that lands on the
+	///     playlist the lobby still had.
+	/// </summary>
+	public Task StartNewPlaylist(OnlineZeeplevel initialLevel)
 	{
+		Logger.LogInfo(
+			$"PlaylistService: Starting a new playlist from index {CurrentPlaylistIndex} of {CurrentLobbyPlaylist.Count} entries with {Describe(initialLevel)}.");
+		WarnIfUnplayable(initialLevel);
+
 		CurrentLobbyPlaylist.Clear();
 		CurrentLobbyPlaylist.Add(initialLevel);
 
-		// The lobby is still pointing wherever the last run left it. After a run that played
-		// three levels that is index 2, and the playlist it indexes into is now one entry
-		// long - every read of Playlist[CurrentPlaylistIndex] throws until the server's own
-		// skip catches up. That window was long enough to kill the second run of a session
-		// the moment its first level finished loading. The /fs 0 that follows moves the
-		// server; this moves us, now, so nothing has to survive the gap.
 		ZeepkistNetwork.CurrentLobby.CurrentPlaylistIndex = 0;
 
 		_workshopDownloads.EnsureDownloaded(initialLevel);
-		QueueServerPlaylistUpdate();
+
+		return QueueServerPlaylistUpdate();
 	}
 
 	public void AddLevelToCurrentPlaylist(OnlineZeeplevel level)
 	{
+		WarnIfUnplayable(level);
 		PlaylistItem playlistItem = new(level.UID, level.WorkshopID, level.Name, level.Author);
 		MultiplayerApi.AddLevelToPlaylist(playlistItem, true);
 		Logger.LogInfo(
-			$"PlaylistService: Added level '{level.Name}' (UID: {level.UID}) to playlist. Playlist count is now {CurrentLobbyPlaylist.Count}.");
-		// This is the level the run will skip to next round. Fetch it now, while the player
-		// is still driving, instead of letting the podium wait for Steam.
+			$"PlaylistService: Added {Describe(level)} to the playlist. Playlist count is now {CurrentLobbyPlaylist.Count}, current index {CurrentPlaylistIndex}.");
 		_workshopDownloads.EnsureDownloaded(level);
 		QueueServerPlaylistUpdate();
+	}
+
+	private static string Describe(OnlineZeeplevel level)
+	{
+		if (level == null)
+		{
+			return "no level at all";
+		}
+
+		return $"'{level.Name}' by {level.Author} (UID {level.UID}, workshop {level.WorkshopID})";
+	}
+
+	/// <summary>
+	///     A level with no workshop id cannot be handed out by the server: it answers the other
+	///     clients with an empty level data packet and the lobby skips on the spot, which from
+	///     inside the run looks like a level that will not load however often it is retried.
+	/// </summary>
+	private static void WarnIfUnplayable(OnlineZeeplevel level)
+	{
+		if (level != null && level.WorkshopID != 0)
+		{
+			return;
+		}
+
+		Logger.LogError(
+			$"PlaylistService: {Describe(level)} has no workshop id - the server cannot serve it and the lobby will skip it.");
 	}
 
 	public void ReplaceLevelInCurrentPlaylist(OnlineZeeplevel oldLevel, OnlineZeeplevel newLevel)
@@ -61,21 +89,16 @@ public class PlaylistService
 			return;
 		}
 
+		WarnIfUnplayable(newLevel);
 		CurrentLobbyPlaylist[index] = newLevel;
-		Logger.LogInfo($"PlaylistService: Replaced level '{oldLevel.Name}' with '{newLevel.Name}' at index {index}");
+		Logger.LogInfo(
+			$"PlaylistService: Replaced '{oldLevel.Name}' with {Describe(newLevel)} at index {index}, current index {CurrentPlaylistIndex}.");
 		_workshopDownloads.EnsureDownloaded(newLevel);
 		QueueServerPlaylistUpdate();
 	}
 
 	#region ServerPlaylistUpdateQueue
 
-	// A playlist can only be pushed to the server once every 5 seconds. To respect that limit
-	// without blocking callers, server updates are queued and drained by a single async loop
-	// that keeps a minimum interval between consecutive updates.
-	//
-	// The loop is asynchronous but NOT concurrent: it runs on Unity's main thread throughout,
-	// because MultiplayerApi.UpdateServerPlaylist may only be called from there. _queueLock
-	// is therefore uncontended today and kept purely as a guard for future callers.
 	private static readonly TimeSpan MinUpdateInterval = TimeSpan.FromSeconds(5);
 
 	private readonly Queue<Action> _updateQueue = new();
@@ -83,17 +106,10 @@ public class PlaylistService
 	private Task _processingTask;
 	private DateTime _lastUpdate = DateTime.MinValue;
 
-	/// <summary>
-	///     Queues a server playlist update. Returns immediately; the update is applied
-	///     asynchronously while respecting the 5 second rate limit. The returned task
-	///     completes once the whole queue (including this update) has been processed,
-	///     so callers may optionally await it before continuing.
-	/// </summary>
 	private Task QueueServerPlaylistUpdate()
 	{
 		return Enqueue(MultiplayerApi.UpdateServerPlaylist);
 	}
-
 
 	private Task Enqueue(Action update)
 	{
@@ -119,9 +135,6 @@ public class PlaylistService
 
 	private async Task ProcessQueueAsync()
 	{
-		// Yield before touching the queue: Enqueue starts this loop from inside its lock,
-		// and the update below must not run synchronously in there. The continuation
-		// comes back on Unity's SynchronizationContext - see the comment at update().
 		await Task.Yield();
 
 		Logger.LogInfo("PlaylistService: Queue processing loop started.");
@@ -140,7 +153,8 @@ public class PlaylistService
 				}
 
 				update = _updateQueue.Dequeue();
-				Logger.LogInfo($"PlaylistService: Dequeued update. {_updateQueue.Count} update(s) remaining in queue.");
+				Logger.LogInfo(
+					$"PlaylistService: Dequeued update. {_updateQueue.Count} update(s) remaining in queue.");
 			}
 
 			TimeSpan sinceLastUpdate = DateTime.UtcNow - _lastUpdate;
@@ -155,9 +169,6 @@ public class PlaylistService
 
 			try
 			{
-				// MultiplayerApi.UpdateServerPlaylist touches lobby state and has to run on
-				// Unity's main thread. This loop used to be started via Task.Run, which put
-				// every single update on a thread pool thread instead.
 				Logger.LogInfo("PlaylistService: Applying server playlist update now.");
 				update();
 				Logger.LogInfo("PlaylistService: Server playlist update applied successfully.");
@@ -172,7 +183,6 @@ public class PlaylistService
 	}
 
 	#endregion
-
 
 	#region SkipLevelCommands
 
@@ -208,18 +218,25 @@ public class PlaylistService
 
 	private static void SkipCommand(int command)
 	{
-		ChatApi.SendMessage($"/fs {command}");
+		Send($"/fs {command}");
 	}
 
 	private static void SkipCommand(string command = null)
 	{
 		if (command == null)
 		{
-			ChatApi.SendMessage("/fs");
+			Send("/fs");
 			return;
 		}
 
-		ChatApi.SendMessage($"/fs {command}");
+		Send($"/fs {command}");
+	}
+
+	private static void Send(string command)
+	{
+		Logger.LogInfo(
+			$"PlaylistService: Sending '{command}' at index {CurrentPlaylistIndex} of {CurrentLobbyPlaylist.Count} entries.");
+		ChatApi.SendMessage(command);
 	}
 
 	#endregion

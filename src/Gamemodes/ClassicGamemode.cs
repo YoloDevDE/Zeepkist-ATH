@@ -18,13 +18,6 @@ public class ClassicGamemode : IGamemode
 
 	public string Description => "Collect as many author medals as you can before the clock runs out.";
 
-	/// <summary>
-	///     Read off the player's own config rather than hard-coded, because this is the one mode
-	///     whose numbers they can change - a welcome screen promising sixty minutes to somebody
-	///     who set it to twenty would be the mod lying about itself on the first screen.
-	///     Read once when the welcome screen opens, which is the only place that asks - so this
-	///     builds fresh every time and the screen keeps what it got.
-	/// </summary>
 	public IReadOnlyList<string> Rules
 	{
 		get
@@ -56,7 +49,6 @@ public class ClassicGamemode : IGamemode
 		};
 	}
 
-	/// <summary>Seconds as whole minutes, for prose. Rounded up - "0 minutes" is not a rule.</summary>
 	private static int Minutes(int seconds)
 	{
 		return Math.Max(1, (int)Math.Round(seconds / 60.0, MidpointRounding.AwayFromZero));

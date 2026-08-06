@@ -19,7 +19,6 @@ public class GraphQLService
 		InitializeGraphQLClient();
 	}
 
-
 	private void InitializeGraphQLClient()
 	{
 		string graphQlUrl = Plugin.Instance.MyConfig.GraphQlUrl.Value;
@@ -34,8 +33,24 @@ public class GraphQLService
 		Logger.LogInfo("GraphQL client initialized.");
 	}
 
+	/// <summary>
+	///     Runs the cheapest query the schema allows. Returns null when the endpoint answered
+	///     it, and the reason it did not otherwise.
+	/// </summary>
+	public async Task<string> PingAsync()
+	{
+		GraphQLRequest query = new() { Query = "query Ping { __typename }" };
 
-	// Method to get a random level
+		GraphQLResponse<Root> response = await _graphQLClient.SendQueryAsync<Root>(query).ConfigureAwait(false);
+
+		if (response.Errors == null || !response.Errors.Any())
+		{
+			return null;
+		}
+
+		return string.Join(", ", response.Errors.Select(e => e.Message));
+	}
+
 	public async Task<List<LevelItem>> GetRandomLevelAsync(int amount = 100, int maxAuthorTime = 180)
 	{
 		try
@@ -85,7 +100,6 @@ public class GraphQLService
 				return null;
 			}
 
-			// Convert all Nodes to LevelItems safely
 			List<LevelItem> levelItems = new();
 
 			foreach (Node node in response.Data.ZRtm.Nodes)

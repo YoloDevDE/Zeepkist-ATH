@@ -34,26 +34,14 @@ public class LevelRow
 
 	public int Index { get; private set; }
 
-	/// <summary>
-	///     Name and author as the list draws them. Composed here rather than at the draw,
-	///     because the list is redrawn every frame the report is up and neither half of this
-	///     can change while it is.
-	/// </summary>
 	public string Title { get; }
 
-	/// <summary>
-	///     The byline, the shouted status, and the best time with its delta - all as the
-	///     detail view draws them. Same reason as <see cref="Title" />: a detail view is on
-	///     screen for as long as it is being read, and none of this changes while it is.
-	/// </summary>
 	public string ByAuthor { get; }
 
 	public string StatusUpper { get; }
 
-	/// <summary>Null when the level was never finished, which is also how the view asks.</summary>
 	public string BestWithDelta { get; }
 
-	/// <summary>The level's own id, which is what a thumbnail is looked up by.</summary>
 	public string Uid { get; }
 
 	public string Name { get; }
@@ -68,10 +56,6 @@ public class LevelRow
 	public string Crashes { get; }
 	public string WheelsLost { get; }
 
-	/// <summary>
-	///     The same row under a different number. For a list that shows only the tail of a
-	///     run and still has to say which levels these actually were.
-	/// </summary>
 	public LevelRow Renumbered(int index)
 	{
 		Index = index;

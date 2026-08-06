@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using AuthorTimeHunting.Gamemodes;
+using AuthorTimeHunting.Util;
 using Imui.Controls;
 using Imui.Core;
 using UnityEngine;
@@ -35,16 +36,10 @@ public class WelcomeWindow : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
 
-	/// <summary>The modes as this screen prints them, prepared when it opens. See <see cref="WelcomeMode" />.</summary>
 	private WelcomeMode[] _modes = [];
 
 	private bool _mouseOverWindow;
 
-	/// <summary>
-	///     Up or not. Set from the top bar, from /ath, and by the buttons here.
-	///     Opening is also when the text is prepared: a window that draws itself sixty times a
-	///     second should not be composing the same prose sixty times with it.
-	/// </summary>
 	public bool Visible
 	{
 		get;
@@ -76,7 +71,6 @@ public class WelcomeWindow : IZeepGUIDrawer
 		}
 		catch (Exception e)
 		{
-			// Inside the game's shared GUI pass - a throwing drawer would throw every frame.
 			Logger.LogError($"WelcomeWindow: Draw failed, closing it: {e.Message}\n{e.StackTrace}");
 			Visible = false;
 		}
@@ -93,8 +87,6 @@ public class WelcomeWindow : IZeepGUIDrawer
 		float width = Mathf.Min(Mathf.Max(screen.W * WidthFraction, MinWidth), screen.W);
 		float height = Mathf.Min(Mathf.Max(screen.H * HeightFraction, MinHeight), screen.H);
 
-		// Centred and placed fresh every frame, like the run report: this is a moment in front
-		// of everything else, not a panel that belongs in a corner.
 		ImRect rect = new(screen.Left + (screen.W - width) * 0.5f,
 			screen.Bottom + (screen.H - height) * 0.5f,
 			width,
@@ -128,19 +120,16 @@ public class WelcomeWindow : IZeepGUIDrawer
 	{
 		float text = gui.Style.Layout.TextSize;
 
-		UiText.Centre(gui, "WELCOME TO", HudPalette.Muted, Row(gui, 1f), text * 0.9f);
-		UiText.Centre(gui, "Author Time Hunting", HudPalette.White, Row(gui, TitleSize * 1.2f), text * TitleSize);
-		UiText.Centre(gui, "Beat the author's time. Then do it again, until the hour is gone.", HudPalette.Author,
+		UiText.Centre(gui, "WELCOME TO", Color.Style.Text.Muted, Row(gui, 1f), text * 0.9f);
+		UiText.Centre(gui, "Author Time Hunting", Color.Style.Surface.White, Row(gui, TitleSize * 1.2f),
+			text * TitleSize);
+		UiText.Centre(gui, "Beat the author's time. Then do it again, until the hour is gone.",
+			Color.Zeepkist.Medal.Author,
 			Row(gui, 1.3f), text * 1.05f);
 
 		gui.AddSpacing();
 	}
 
-	/// <summary>
-	///     Everything between the headline and the buttons, scrolled. Drawn into a layout frame
-	///     of its own so the scrollable stops above the footer - left in the window's own frame
-	///     it would swallow the whole remainder and take the buttons with it.
-	/// </summary>
 	private void DrawBody(ImGui gui)
 	{
 		float footer = UiMetrics.ButtonHeight(gui) + gui.GetRowHeight() + gui.Style.Layout.Spacing * 3f;
@@ -177,13 +166,13 @@ public class WelcomeWindow : IZeepGUIDrawer
 
 		foreach (WelcomeMode mode in _modes)
 		{
-			UiText.Draw(gui, mode.Name, HudPalette.Author, Row(gui, 1.3f), text * 1.15f, 0f);
-			UiText.Paragraph(gui, mode.Description, HudPalette.Default);
+			UiText.Draw(gui, mode.Name, Color.Zeepkist.Medal.Author, Row(gui, 1.3f), text * 1.15f, 0f);
+			UiText.Paragraph(gui, mode.Description, Color.Style.Text.Default);
 			gui.AddSpacing();
 
 			foreach (string rule in mode.Rules)
 			{
-				UiText.Paragraph(gui, rule, HudPalette.Default);
+				UiText.Paragraph(gui, rule, Color.Style.Text.Default);
 			}
 
 			gui.AddSpacing();
@@ -191,16 +180,11 @@ public class WelcomeWindow : IZeepGUIDrawer
 
 		UiText.Paragraph(gui,
 			"More modes are on the way. Classic is the one that exists today, and it is the one every "
-			+ "other mode will be measured against.", HudPalette.Muted);
+			+ "other mode will be measured against.", Color.Style.Text.Muted);
 
 		gui.AddSpacing();
 	}
 
-	/// <summary>
-	///     The one warning worth putting on the first screen. Broken-skip refunds the time spent
-	///     on the level, which makes it the only button in the mod that can undo a bad five
-	///     minutes - and therefore the only one worth begging people not to reach for.
-	/// </summary>
 	private static void DrawBrokenLevels(ImGui gui)
 	{
 		UiWidgets.Heading(gui, Row(gui, 1f), "WHEN A LEVEL IS BROKEN");
@@ -209,7 +193,7 @@ public class WelcomeWindow : IZeepGUIDrawer
 			"The workshop has levels that simply cannot be finished - a checkpoint that never arms, a jump "
 			+ "that does not exist any more, an author time nobody including the author has ever driven. "
 			+ "'Level is Broken' throws that level out, refunds every second you spent on it, and draws "
-			+ "another one.", HudPalette.Default);
+			+ "another one.", Color.Style.Text.Default);
 
 		gui.AddSpacing();
 
@@ -217,32 +201,23 @@ public class WelcomeWindow : IZeepGUIDrawer
 			"Which is exactly why it must not be used on a level that is merely hard. A run where the hard "
 			+ "ones were declared broken is not a run - there is nothing left in it to be proud of, and "
 			+ "nothing in it worth comparing to anybody else's. Hard levels get skipped, at the price the "
-			+ "gamemode asks. Broken ones get reported.", HudPalette.Alert);
+			+ "gamemode asks. Broken ones get reported.", Color.Style.Status.Alert);
 
 		gui.AddSpacing();
 	}
 
 	private void DrawFooter(ImGui gui)
 	{
-		bool show = Plugin.Instance.MyConfig.ShowWelcome.Value;
-
-		if (gui.Checkbox(ref show, "Show this when ATH opens".AsSpan(), Row(gui, 1f)))
-		{
-			// Written straight through: BepInEx persists the file itself, and the switch has no
-			// meaning until the next launch anyway.
-			Plugin.Instance.MyConfig.ShowWelcome.Value = show;
-		}
-
 		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), UiMetrics.ButtonHeight(gui));
 
 		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 0, 2), UiIcon.Info, "How do I use this?",
-			    HudPalette.ActionRestart))
+			    Color.Style.Action.Restart))
 		{
 			Plugin.Instance.Services.Help.Visible = true;
 		}
 
 		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 1, 2), UiIcon.Play, "Let's hunt",
-			    HudPalette.ActionResume))
+			    Color.Style.Action.Resume))
 		{
 			Visible = false;
 		}

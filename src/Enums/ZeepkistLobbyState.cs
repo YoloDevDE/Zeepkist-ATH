@@ -16,12 +16,9 @@ namespace AuthorTimeHunting.Enums;
 /// </summary>
 public enum ZeepkistLobbyState
 {
-	/// <summary>The race is on. Also the value of a lobby that has not reported yet.</summary>
 	Racing = 0,
 
-	/// <summary>The round is over, the game shows the end-of-round buffer screen.</summary>
 	Ending = 1,
 
-	/// <summary>The podium is showing, the next level is about to load.</summary>
 	Podium = 2
 }

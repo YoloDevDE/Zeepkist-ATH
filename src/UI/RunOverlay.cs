@@ -1,52 +1,49 @@
 using System;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
 using Imui.Controls;
 using Imui.Core;
+using UnityEngine;
 using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.UI;
 
 /// <summary>
-///     The run itself - clock, budget bar and score - across the top centre of the screen.
-///     It used to sit in the corner as part of the control panel, which put the one thing a
-///     player reads every few seconds in the one place they are not looking. Centred above the
-///     track it is on the way to everything else.
-///     Built as an ordinary panel, the same way <see cref="LevelStatsPanel" /> and
-///     <see cref="ControlPanel" /> are, down to the title bar. Two cleverer versions came first
-///     and neither drew a single character: shapes painted straight onto the canvas outside a
-///     window, and then a borderless window with its height counted out by hand. Both put the
-///     backdrop and the medal sprites on screen and left the text off it. The recipe that works
-///     three times over in this mod is a window with a title bar, rows measured in
-///     <c>GetRowHeight</c>, and a height read back from the layout - so this is that, and the
-///     title bar is the price of the clock being visible.
+///     What is left of the hour, across the top of the screen: the clock, the budget behind it
+///     as a bar, and the medals earned so far.
+///     It had a title bar reading "Run" and a footer repeating the skip type, and both were
+///     there for the wrong reason - the title bar because an earlier attempt at drawing text
+///     outside a window drew nothing, the footer because the panel it grew out of had room for
+///     it. A strip of chrome across the top of the screen is the one place a player is looking
+///     while driving, and neither line was worth the height. Imui draws text fine inside a
+///     window without a title bar, so that is what this is now, and the skip type lives where
+///     the skip button is.
+///     One number is large, everything else is small. Nothing here is read on purpose - it is
+///     read out of the corner of an eye, mid-air, and the layout has to survive that.
 /// </summary>
 public class RunOverlay : IZeepGUIDrawer
 {
-	private const string WindowTitle = "Run";
+	private const string WindowTitle = "ATH Run";
 
-	/// <summary>Share of the screen width, before the clamp below.</summary>
-	private const float WidthFraction = 0.2f;
+	private const float WidthFraction = 0.16f;
 
-	private const float MinWidth = 240f;
-	private const float MaxWidth = 380f;
+	private const float MinWidth = 200f;
+	private const float MaxWidth = 300f;
 
-	// Multiples of the theme's text size, which UiScale has already turned down.
-	private const float ClockSize = 2.2f;
-	private const float MedalRowSize = 1.5f;
-	private const float FooterSize = 0.85f;
+	private const float ClockSize = 2.4f;
+	private const float MedalRowSize = 1.4f;
+	private const float PenaltySize = 0.85f;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
+	private const ImWindowFlag WindowFlags =
+		ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton | ImWindowFlag.NoMovingAndResizing;
 
-	/// <summary>Height the content came to last frame, or 0 before the first one.</summary>
 	private float _contentHeight;
 
 	private bool _mouseOverWindow;
 
-	/// <summary>The run currently in progress, or null when ATH is idle. Set by StateMasterOn.</summary>
 	public AthStateMachine ActiveRun { get; set; }
 
-	/// <summary>Toggled by /ath along with the panels.</summary>
 	public bool Visible { get; set; }
 
 	public void OnZeepGUI(ImGui gui)
@@ -71,7 +68,6 @@ public class RunOverlay : IZeepGUIDrawer
 		}
 		catch (Exception e)
 		{
-			// Inside the game's shared GUI pass - a throwing drawer would throw every frame.
 			Logger.LogError($"RunOverlay: Draw failed, hiding it: {e.Message}\n{e.StackTrace}");
 			Visible = false;
 		}
@@ -101,22 +97,11 @@ public class RunOverlay : IZeepGUIDrawer
 
 		try
 		{
-			float text = gui.Style.Layout.TextSize;
-
-			UiText.Centre(gui, view.TimeLeft, view.TimeColour, Row(gui, ClockSize * 1.2f), text * ClockSize);
-			UiWidgets.Bar(gui, Row(gui, 0.35f), view.RemainingFraction, view.TimeColour);
+			DrawClock(gui, view);
+			UiWidgets.Bar(gui, Row(gui, 0.3f), view.RemainingFraction, view.TimeColour);
 			DrawMedals(gui, Row(gui, MedalRowSize), view);
-			DrawFooter(gui, Row(gui, 1f), view, text * FooterSize);
+			DrawPenalties(gui, view);
 
-			// Only ever present once a penalty has been taken - what the run would still have, and
-			// what the skipping has cost. Kept here rather than dropped, because the whole point of
-			// showing them is that the cost of a skip does not quietly vanish into the one clock.
-			foreach (HudRow detail in view.Details)
-			{
-				UiWidgets.Row(gui, Row(gui, 1f), detail.Label, detail.Value, detail.ValueColour);
-			}
-
-			// While the window's layout frame is still open, so it can report what it holds.
 			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
 		finally
@@ -125,57 +110,51 @@ public class RunOverlay : IZeepGUIDrawer
 		}
 	}
 
-	/// <summary>
-	///     The score, as the game's own medals. Sprites rather than words because this is the
-	///     line a player checks mid-run, and three shapes are read faster than three labels.
-	/// </summary>
-	private static void DrawMedals(ImGui gui, ImRect row, RunHudView view)
+	private static void DrawClock(ImGui gui, RunHudView view)
 	{
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 0, 3), GameSprites.AuthorMedal, view.AuthorMedals,
-			HudPalette.Author);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 1, 3), GameSprites.GoldMedal, view.GoldMedals,
-			HudPalette.Gold);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 2, 3), GameSprites.YouTriedMedal, view.Penalties,
-			HudPalette.Penalty);
-	}
-
-	/// <summary>
-	///     What the run was given on the left of centre, what a skip costs right of it. Both are
-	///     pushed against the middle rather than the edges, so the pair stays a pair on a wide
-	///     screen instead of drifting apart into two unrelated notes.
-	/// </summary>
-	private static void DrawFooter(ImGui gui, ImRect row, RunHudView view, float size)
-	{
-		float gutter = gui.Style.Layout.InnerSpacing;
-		float half = row.W * 0.5f;
-		ImRect left = new(row.X, row.Y, half - gutter, row.H);
-		ImRect right = new(row.X + half + gutter, row.Y, half - gutter, row.H);
-
-		UiText.Right(gui, $"of {view.Duration}", HudPalette.Muted, left, size);
+		float size = gui.Style.Layout.TextSize * ClockSize;
+		ImRect row = Row(gui, ClockSize * 1.15f);
 
 		if (view.Paused)
 		{
-			UiText.Draw(gui, "PAUSED", HudPalette.Warning, right, size, 0f);
+			UiText.Centre(gui, "PAUSED", Color.Style.Status.Warning, row, size);
+
 			return;
 		}
 
-		UiText.Draw(gui, view.SkipType, view.SkipColour, right, size, 0f);
+		UiText.Centre(gui, view.TimeLeft, view.TimeColour, row, size);
 	}
 
-	/// <summary>A layout row <paramref name="scale" /> times the theme's row height tall.</summary>
+	private static void DrawMedals(ImGui gui, ImRect row, RunHudView view)
+	{
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 0, 3), GameSprites.AuthorMedal, view.AuthorMedals,
+			Color.Zeepkist.Medal.Author);
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 1, 3), GameSprites.GoldMedal, view.GoldMedals,
+			Color.Zeepkist.Medal.Gold);
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, row, 2, 3), GameSprites.YouTriedMedal, view.Penalties,
+			Color.Style.Status.Penalty);
+	}
+
+	private static void DrawPenalties(ImGui gui, RunHudView view)
+	{
+		if (view.Penalties == 0)
+		{
+			return;
+		}
+
+		UiText.Centre(gui, $"-{view.TimeLostToPenalties} in penalties", Color.Style.Status.Bad, Row(gui, 1f),
+			gui.Style.Layout.TextSize * PenaltySize);
+	}
+
 	private static ImRect Row(ImGui gui, float scale)
 	{
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * scale);
 	}
 
-	/// <summary>
-	///     Last frame's content plus the window's own chrome. See <see cref="UiMetrics.ContentHeight" />
-	///     for why this is measured rather than counted.
-	/// </summary>
 	private float Height(ImGui gui)
 	{
-		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 8f;
+		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 6f;
 
-		return content + UiMetrics.WindowChrome(gui) + UiMetrics.Slack(gui);
+		return content + UiMetrics.ContentPadding(gui) + UiMetrics.Slack(gui);
 	}
 }

@@ -22,23 +22,14 @@ public class MatchHistoryService
 {
 	private const string FileName = "AuthorTimeHunting.history.json";
 
-	/// <summary>
-	///     How many runs are kept. Old runs are dropped from the end rather than the file being
-	///     allowed to grow forever, because nothing reads past the first screenful anyway.
-	/// </summary>
 	private const int MaxRecords = 200;
 
 	private List<RunRecord> _records;
 
 	private static string Path => System.IO.Path.Combine(Paths.ConfigPath, FileName);
 
-	/// <summary>Newest first. Empty when nothing has been recorded or the file could not be read.</summary>
 	public IReadOnlyList<RunRecord> Records => _records ??= Load();
 
-	/// <summary>
-	///     Records a finished run and writes the file straight away. Not batched: the next thing
-	///     that usually happens after a run ends is the game being closed.
-	/// </summary>
 	public void Add(RunRecord record)
 	{
 		if (record == null)
@@ -69,12 +60,11 @@ public class MatchHistoryService
 
 			List<RunRecord> records = JsonConvert.DeserializeObject<List<RunRecord>>(File.ReadAllText(Path));
 
-			// A record written by a future version can deserialise to nulls rather than throw.
-			return records?.Where(record => record != null).OrderByDescending(record => record.EndedAt).ToList() ?? [];
+			return records?.Where(record => record != null).OrderByDescending(record => record.EndedAt).ToList() ??
+			       [];
 		}
 		catch (Exception e)
 		{
-			// A corrupt history is not worth losing a run over - it starts again from empty.
 			Logger.LogError($"MatchHistoryService: Could not read {Path}: {e.Message}");
 			return [];
 		}

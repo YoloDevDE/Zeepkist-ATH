@@ -24,12 +24,6 @@ public class GameStateObserver
 	private bool _lastIsRacing;
 	private bool _lastKnownStateValid;
 
-	/// <summary>
-	///     Nullable, because "no lobby" is a state the observer has to be able to remember. It
-	///     used to be stored as Racing, so every frame outside a lobby compared unequal to the
-	///     null it had just read and reported a change that had not happened - a few thousand
-	///     identical lines per session.
-	/// </summary>
 	private ZeepkistLobbyState? _lastLobbyState;
 
 	public GameStateObserver()
@@ -41,30 +35,43 @@ public class GameStateObserver
 		_behaviour.Bind(this);
 	}
 
-	/// <summary>True while connected to an online lobby.</summary>
 	public static bool IsInOnlineLobby => ZeepkistNetwork.CurrentLobby != null;
 
 	/// <summary>
-	///     The lobby's reported state, or null when there is no lobby. Remember that
-	///     <see cref="ZeepkistLobbyState.Racing" /> is also what an unreported lobby says -
-	///     prefer <see cref="IsRacing" /> for "may we act now".
+	///     Whether the lobby is ours to run. Everything a hunt does to a lobby - the playlist,
+	///     the round time, every skip - is a host power, so a lobby somebody else hosts is not
+	///     one a hunt can happen in.
 	/// </summary>
+	public static bool IsLobbyHost => IsInOnlineLobby && ZeepkistNetwork.IsMasterClient;
+
 	public static ZeepkistLobbyState? LobbyState =>
 		ZeepkistNetwork.CurrentLobby == null ? null : (ZeepkistLobbyState)ZeepkistNetwork.CurrentLobby.GameState;
 
-	/// <summary>
-	///     The one guard worth trusting: in a lobby, the lobby says racing, and the level has
-	///     finished loading.
-	///     The level check is what makes this different from a plain GameState comparison. The
-	///     game pairs the two the same way in NetworkedZeepkistGhost before it draws anyone.
-	/// </summary>
 	public static bool IsRacing => IsInOnlineLobby && LobbyState == ZeepkistLobbyState.Racing && IsLevelReady;
 
 	/// <summary>
-	///     False while the game is between levels. GameMaster.loadNewLevel is set when the
-	///     podium hands over to the next level and clears itself when the new GameMaster is
-	///     created on scene load.
+	///     Whether the local player has every checkpoint of the current level. The game lets you
+	///     cross the finish without them - it just refuses to score the run, shows the counter in
+	///     red and calls it a dnf. ATH has to make the same distinction: a finish that does not
+	///     count is not a finish, and the level's clock keeps running.
+	///     A level with no checkpoints at all has nothing to miss, so racePoints of zero is
+	///     always satisfied.
 	/// </summary>
+	public static bool AllCheckpointsPassed
+	{
+		get
+		{
+			GameMaster master = PlayerManager.Instance == null ? null : PlayerManager.Instance.currentMaster;
+
+			if (master == null || master.playerResults == null || master.playerResults.Count == 0)
+			{
+				return false;
+			}
+
+			return master.playerResults[0].racepoints >= master.racePoints;
+		}
+	}
+
 	public static bool IsLevelReady
 	{
 		get
@@ -83,16 +90,10 @@ public class GameStateObserver
 		}
 	}
 
-	/// <summary>Raised when the lobby state changes, including when a lobby is left (null).</summary>
 	public event Action<ZeepkistLobbyState?> LobbyStateChanged;
 
-	/// <summary>
-	///     Raised on the frame a race actually becomes runnable. This is the signal to wait
-	///     for before starting a run.
-	/// </summary>
 	public event Action BecameRacing;
 
-	/// <summary>Raised on the frame a running race stops being runnable.</summary>
 	public event Action StoppedRacing;
 
 	public void Tick()
@@ -120,10 +121,6 @@ public class GameStateObserver
 		Raise(racing ? BecameRacing : StoppedRacing, racing ? nameof(BecameRacing) : nameof(StoppedRacing));
 	}
 
-	/// <summary>
-	///     Subscribers run inside our per-frame tick; one of them throwing must not stop the
-	///     observer from reporting to the rest.
-	/// </summary>
 	private static void Raise(Action raise, string eventName)
 	{
 		try

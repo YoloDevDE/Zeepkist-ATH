@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
@@ -23,12 +24,11 @@ namespace AuthorTimeHunting.States.Ath.StateMachine;
 /// </summary>
 public class AthStateMachine : StateMachineBase
 {
-	/// <summary>
-	///     How many frames in a row the tick may throw before the run is given up on.
-	/// </summary>
 	private const int MaxConsecutiveTickFailures = 10;
 
 	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
+
+	private readonly Queue<Action> _deferredEvents = new();
 
 	private AthLoopBehaviour _behaviour;
 	private int _consecutiveTickFailures;
@@ -38,8 +38,6 @@ public class AthStateMachine : StateMachineBase
 
 	public AthStateMachine(ModServices services, IGamemode gamemode)
 	{
-		// One AthStateMachine per run, so this is the run's starting line: fresh context,
-		// and a level pool that does not carry the exclusions of previous runs.
 		Services = services;
 		Gamemode = gamemode;
 		Ctx = new AthCtx(gamemode.CreateSettings());
@@ -56,47 +54,27 @@ public class AthStateMachine : StateMachineBase
 
 	public AthCtx Ctx { get; }
 
-	/// <summary>True between <see cref="StartTimer" /> and <see cref="StopTimer" />.</summary>
 	public bool IsTimerRunning { get; private set; }
 
-	/// <summary>
-	///     The mode this run is being played in. Held rather than looked up, so a mode change
-	///     between runs cannot rewrite the run that is already going.
-	/// </summary>
 	public IGamemode Gamemode { get; }
 
-	/// <summary>Session-scoped services shared with the rest of the mod.</summary>
 	public ModServices Services { get; }
 
-	/// <summary>This run's level pool. A new run gets a new one.</summary>
 	public RandomLevelService RandomLevels { get; }
 
 	public override StateBase InitialState { get; }
 	public override StateBase FinalState { get; }
 
-	/// <summary>
-	///     True while the player is off the track between two attempts on the same level - after
-	///     a crash, a finish, or an author time waiting to be respawned out of. The level's
-	///     attempt counter is bumped when the next one actually starts, so this is what tells the
-	///     panel that the number it is showing is one respawn behind.
-	/// </summary>
 	public bool IsBetweenAttempts =>
 		Ctx.CurrentLevel != null && CurrentState is StateAthWaitingForNextRun or StateAthWaitingForRespawn;
 
-	/// <summary>
-	///     Refreshes the run HUD. Either renders it into the game's server message area or
-	///     hands a snapshot to the in-game window, depending on the config.
-	/// </summary>
 	public void SetServerMessage(bool paused)
 	{
-		// No level yet means /ath start followed straight by /ath stop - there is
-		// nothing to render and every CurrentLevel access below would throw.
 		if (Ctx.CurrentLevel == null)
 		{
 			return;
 		}
 
-		// The window reads the run directly every frame, so nothing has to be pushed to it.
 		if (Plugin.Instance.MyConfig.InGameHud.Value)
 		{
 			return;
@@ -109,7 +87,7 @@ public class AthStateMachine : StateMachineBase
 				: Ctx.IsTimeRunningLow ? "#bf3939"
 				: Ctx.IsTimeAfterSkipRunningLow ? "#b3b300"
 				: "#42b336",
-			Author = ColorDefinitions.Author.CTToHexRGB(),
+			Author = Color.Zeepkist.Medal.Author.CTToHexRGB(),
 			Default = "#e6e6e6",
 			AuthorSkip = "#e600e6",
 			GoldSkip = "#FFD600",
@@ -133,7 +111,6 @@ public class AthStateMachine : StateMachineBase
 			"" :
 			$"(<color={colors.TimeLeft}>{TimeFormatter.FormatDuration((int)Ctx.GetRemainingTimeWithoutPunishments().TotalMilliseconds)}</color> - <color=#ff4a4a>{TimeSpan.FromMilliseconds(Ctx.PenaltyTimeInMilliseconds * Ctx.Penalties).ToFormattedString()}</color>)";
 
-		// string message = $"/servermessage white 0 " +
 		string message =
 			$"<size=\"20%\"><align=left><b><color=#{colors.Author}><uppercase>Author-Time-Hunting</uppercase></color></b><br>" +
 			$"<color={colors.Section}><b>=== Run Settings ===</b></color><br>" +
@@ -148,7 +125,6 @@ public class AthStateMachine : StateMachineBase
 			$"<color={colors.Default}>Skip Type     : {skipText}</color><br>" +
 			$"<color={colors.Default}>Attempt       : {Ctx.CurrentLevel.Attempt}</color><br>" + "</align></size>";
 
-		// ChatApi.SendMessage(message);
 		DateTime now = DateTime.UtcNow;
 
 		if (message == _lastServerMessage && now - _lastServerMessageTime < ServerMessageThrottle)
@@ -163,12 +139,6 @@ public class AthStateMachine : StateMachineBase
 
 	#region Event Forwarding
 
-	/// <summary>
-	///     Forwards a game event to the current state without letting an exception in that
-	///     state escape. These handlers run inside ZeepSDK's event dispatch, which other mods
-	///     subscribe to as well - an exception escaping here is not ours alone to lose.
-	///     Returns false when the state threw.
-	/// </summary>
 	private bool TryForward(string eventName, Action<AthState> forward)
 	{
 		if (CurrentState is not AthState state)
@@ -189,7 +159,6 @@ public class AthStateMachine : StateMachineBase
 		}
 	}
 
-	/// <summary>Stops the run clock until <see cref="ResumeRun" />.</summary>
 	public void PauseRun()
 	{
 		if (Ctx.IsPaused)
@@ -202,7 +171,6 @@ public class AthStateMachine : StateMachineBase
 		Logger.LogInfo("AthStateMachine: Run paused.");
 	}
 
-	/// <summary>Starts the clock again, but only if a level is actually being played.</summary>
 	public void ResumeRun()
 	{
 		if (!Ctx.IsPaused)
@@ -222,6 +190,8 @@ public class AthStateMachine : StateMachineBase
 
 	public override void Update()
 	{
+		DrainDeferredEvents();
+
 		if (TryForward(nameof(Update), state => state.Update()))
 		{
 			_consecutiveTickFailures = 0;
@@ -229,9 +199,6 @@ public class AthStateMachine : StateMachineBase
 			return;
 		}
 
-		// The tick runs every frame: a state that keeps throwing would spam the log forever
-		// while the run silently stops working. Tolerate a hiccup - a single null reference
-		// during a level transition should not end an hour-long run - but not a pattern.
 		_consecutiveTickFailures++;
 
 		if (_consecutiveTickFailures < MaxConsecutiveTickFailures)
@@ -269,9 +236,28 @@ public class AthStateMachine : StateMachineBase
 		TryForward(nameof(OnPlayerSpawned), state => state.OnPlayerSpawned());
 	}
 
+	/// <summary>
+	///     The one event that is not handled where it arrives. Crossing the finish reaches us
+	///     from inside the trigger the physics step is running, and everything a finish sets off
+	///     - scoring the run, ending the level, drawing the next one - happens on that stack, in
+	///     the middle of a frame that still has to be simulated. The frame it lands in stutters.
+	///     So the finish is written down and handled at the start of the next Update instead. The
+	///     work is the same, but the frame is ours: nothing is waiting on it, and a state that
+	///     wants to read the game reads it one frame later, before anything has reset.
+	///     Only the finish. The other events are cheap and go straight through.
+	/// </summary>
 	private void OnCrossedFinishLine(float time)
 	{
-		TryForward(nameof(OnCrossedFinishLine), state => state.OnCrossedFinishLine(time));
+		_deferredEvents.Enqueue(() =>
+			TryForward(nameof(OnCrossedFinishLine), state => state.OnCrossedFinishLine(time)));
+	}
+
+	private void DrainDeferredEvents()
+	{
+		while (_deferredEvents.Count > 0)
+		{
+			_deferredEvents.Dequeue()();
+		}
 	}
 
 	private void OnLevelLoaded()
@@ -284,17 +270,11 @@ public class AthStateMachine : StateMachineBase
 		TryForward(nameof(OnPhotoModeEntered), state => state.OnPhotoModeEntered());
 	}
 
-	/// <summary>
-	///     Counted rather than forwarded: no state cares that a crash happened, the level
-	///     stats panel just wants the tally. Giving every state an OnCrashed override to
-	///     ignore would be twelve no-ops for one counter.
-	/// </summary>
 	private void OnCrashed(CrashReason reason)
 	{
 		Ctx.CurrentLevel?.RegisterCrash();
 	}
 
-	/// <summary>Fires once per wheel, so a bad landing can add four. Same reasoning as above.</summary>
 	private void OnWheelBroken()
 	{
 		Ctx.CurrentLevel?.RegisterWheelLost();
@@ -368,8 +348,6 @@ public class AthStateMachine : StateMachineBase
 	{
 		StopTimer();
 
-		// Unity's overloaded == reports a destroyed object as null, so this covers both
-		// "already disposed" and "the GameObject went away underneath us".
 		if (_behaviour == null)
 		{
 			return;

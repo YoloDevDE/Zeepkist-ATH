@@ -17,18 +17,11 @@ public class LevelStatsView
 
 	public string Name { get; private set; }
 
-	/// <summary>The author, already written the way the panel says it.</summary>
 	public string ByAuthor { get; private set; }
 
 	public string AuthorTime { get; private set; }
 	public string GoldTime { get; private set; }
 
-	/// <summary>
-	///     Best time on this level so far and how far off the author time it is, or null when the
-	///     level has never been finished. Composed here rather than at the draw, like the two
-	///     sibling view models: the panel is redrawn every frame, the sentence is not new every
-	///     frame.
-	/// </summary>
 	public string BestWithDelta { get; private set; }
 
 	public Color32 PersonalBestColour { get; private set; }
@@ -40,13 +33,6 @@ public class LevelStatsView
 
 	public LevelPace Pace { get; private set; }
 
-	/// <summary>
-	///     True while the attempt counter is about to move. The counter is bumped on the frame
-	///     the player respawns into a running level, so between attempts it names the attempt
-	///     that has just ended rather than the one about to start - which read as the panel
-	///     having missed the crash. Saying "(+1)" is the honest version: the number is right,
-	///     it is simply one respawn behind.
-	/// </summary>
 	public bool AttemptPending { get; private set; }
 
 	public static LevelStatsView From(AthCtx ctx, bool attemptPending)
@@ -81,9 +67,9 @@ public class LevelStatsView
 
 		view.BestWithDelta =
 			$"{TimeFormatter.FormatTime(level.PersonalBestTime)}   ({TimeFormatter.FormatDelta(delta)})";
-		view.PersonalBestColour = level.AuthorTimeAcquired ? HudPalette.Author
-			: level.GoldMedalAcquired ? HudPalette.Gold
-			: HudPalette.Default;
+		view.PersonalBestColour = level.AuthorTimeAcquired ? Color.Zeepkist.Medal.Author
+			: level.GoldMedalAcquired ? Color.Zeepkist.Medal.Gold
+			: Color.Style.Text.Default;
 
 		return view;
 	}
@@ -103,10 +89,10 @@ public class LevelStatsView
 	{
 		return pace switch
 		{
-			LevelPace.Good => HudPalette.Good,
-			LevelPace.Okay => HudPalette.Warning,
-			LevelPace.Bad => HudPalette.Danger,
-			_ => HudPalette.Muted
+			LevelPace.Good => Color.Style.Status.Good,
+			LevelPace.Okay => Color.Style.Status.Warning,
+			LevelPace.Bad => Color.Style.Status.Danger,
+			_ => Color.Style.Text.Muted
 		};
 	}
 }

@@ -14,17 +14,10 @@ namespace AuthorTimeHunting.UI;
 /// </summary>
 public static class LevelThumbnails
 {
-	/// <summary>Thumbnails already loaded. Null means "asked for and there is none".</summary>
 	private static readonly Dictionary<string, Texture2D> Loaded = new();
 
-	/// <summary>Level ids currently being loaded, so a redraw does not start the load again.</summary>
 	private static readonly HashSet<string> Pending = new();
 
-	/// <summary>
-	///     The thumbnail for a level, or null while it is still coming - and permanently null
-	///     for a level that has none. Callers are expected to draw a placeholder for null rather
-	///     than wait.
-	/// </summary>
 	public static Texture2D Get(string levelUid)
 	{
 		if (string.IsNullOrEmpty(levelUid) || ThumbnailManager.Instance == null)
@@ -37,8 +30,6 @@ public static class LevelThumbnails
 			return cached;
 		}
 
-		// The game keeps its own cache of what it has already shown; a level the player has
-		// just played is usually in it, and then there is nothing to load at all.
 		if (ThumbnailManager.Instance.TryGetLevelThumbnail(levelUid, out Texture2D ready) && ready != null)
 		{
 			Loaded[levelUid] = ready;
@@ -60,8 +51,6 @@ public static class LevelThumbnails
 		{
 			Texture2D thumbnail = await ThumbnailManager.Instance.GetLevelThumbnailAsync(levelUid);
 
-			// Stored even when null: a level without a thumbnail must not be asked for again on
-			// every frame the report is open.
 			Loaded[levelUid] = thumbnail;
 		}
 		catch (Exception e)

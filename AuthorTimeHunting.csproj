@@ -15,11 +15,16 @@
         <None Remove="tests\**"/>
     </ItemGroup>
 
+    <!-- The mod's own picture, for the loading screen. Embedded so there is nothing to install. -->
+    <ItemGroup>
+        <EmbeddedResource Include="assets\thumbnail\ATH_16-9.png" LogicalName="AuthorTimeHunting.Thumbnail.png"/>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>
         <PackageReference Include="Zeepkist.GameLibs" Version="17.32.1912" PrivateAssets="all"/>
-        <PackageReference Include="ZeepSDK" Version="2.6.1" PrivateAssets="all"/>
+        <PackageReference Include="ZeepSDK" Version="2.6.2" PrivateAssets="all"/>
 
         <!-- Costura embeds the dependencies above into the plugin DLL. -->
         <PackageReference Include="Fody" Version="6.9.3" PrivateAssets="all"/>

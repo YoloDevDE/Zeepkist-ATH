@@ -9,47 +9,45 @@ using ZeepSDK.Multiplayer;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
+/// <summary>
+///     Nothing here waits on a clock any more. A run used to sit through five silent seconds
+///     before skipping to its first level, which was a guess at how long the playlist takes to
+///     reach the server. The playlist service says when the push actually went out, so the
+///     skip goes out right behind it - and the player, who has just watched a ten second
+///     countdown on the welcome screen, gets the level they were counting down to.
+/// </summary>
 public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	private CancellationTokenSource _cts;
-	// Constructor
-
-	// Properties
-
-	// Public Methods
 
 	public override async void Enter()
 	{
+		_cts = new CancellationTokenSource();
+		CancellationToken stopped = _cts.Token;
+
 		try
 		{
-			// Sende Startmeldung
-
-			// ATH owns the clock - the lobby round timer must not cut a level short.
-			// This used to sit in the non-RTM branch only, so in the default (RTM)
-			// mode the lobby timer stayed live.
 			ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
 
 			if (!AthStateMachine.Ctx.Settings.RandomPlaylist)
 			{
-				await Task.Delay(2500);
+				await Task.Delay(2500, stopped);
 				MultiplayerApi.UpdateServerPlaylist();
-				await Task.Delay(500);
-				await RunCountdown();
+				await Task.Delay(500, stopped);
 				PlaylistService.SkipLevel();
 				StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
 				return;
 			}
 
-			// Starte neue Playlist mit Fehlerbehandlung
 			OnlineZeeplevel firstLevel = null;
-			int retryCount = 3; // Maximal 3 Versuche
+			int retryCount = 3;
 
 			while (firstLevel == null && retryCount > 0)
 			{
 				try
 				{
 					OnlineZeeplevel level = await RandomLevels.DrawRandomLevelAsync();
-					PlaylistService.StartNewPlaylist(level);
+					await PlaylistService.StartNewPlaylist(level);
 					firstLevel = level;
 				}
 				catch (Exception ex)
@@ -59,24 +57,15 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 
 					if (retryCount <= 0)
 					{
-						ToastNotification.Error("Failed to start playlist after multiple attempts");
-						// Weiter zum nächsten Schritt trotz Fehler
+						FrogNotification.Error("Failed to start playlist after multiple attempts");
 					}
 
-					// Kurze Pause vor dem nächsten Versuch
-					await Task.Delay(500);
+					await Task.Delay(500, stopped);
 				}
 			}
 
-			await RunCountdown();
-
-			// The countdown is five seconds and a workshop level is not always five seconds.
-			// Switching the lobby to a level Steam is still writing makes the game's own
-			// loader throw, and the run then spends its whole level pool replacing levels
-			// that were never broken - see WorkshopDownloadService.WaitUntilReadyAsync.
 			await AthStateMachine.Services.WorkshopDownloads.WaitUntilReadyAsync(firstLevel);
 
-			// Versuche zum nächsten Level zu springen, auch wenn die Playlist nicht gestartet wurde
 			try
 			{
 				PlaylistService.SkipToFirstLevel();
@@ -84,51 +73,26 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			catch (Exception ex)
 			{
 				Logger.LogError($"Failed to skip level: {ex.Message}");
-				ToastNotification.Error("Error while skipping to the first level");
+				FrogNotification.Error("Error while skipping to the first level");
 			}
 
 			StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
 		}
+		catch (OperationCanceledException)
+		{
+		}
 		catch (Exception ex)
 		{
 			Logger.LogError($"Enter failed: {ex.Message}\nStack trace: {ex.StackTrace}");
-			ToastNotification.Error("Something went wrong while starting the hunt");
-
-			// Optional: Transition zu einem Fehler-State oder Reset-State
-			// StateMachine.TransitionTo(new StateAthError(AthStateMachine));
+			FrogNotification.Error("Something went wrong while starting the hunt");
 		}
 	}
 
 	public override void Exit()
 	{
 		_cts?.Cancel();
-	}
-
-	private async Task RunCountdown()
-	{
-		_cts = new CancellationTokenSource();
-
-		try
-		{
-			for (int i = 5; i >= 1; i--)
-				// Used to be .ContinueWith(_ => { }), which swallowed not just the
-				// cancellation but every other exception along with it.
-			{
-				await Task.Delay(1000, _cts.Token);
-			}
-		}
-		catch (OperationCanceledException)
-		{
-			// Exit() cancelled us because the state is going away. Nothing to clean up
-			// beyond the finally block.
-		}
-		finally
-		{
-			// Null first: Exit() may still call Cancel(), and that throws on a disposed source.
-			CancellationTokenSource cts = _cts;
-			_cts = null;
-			cts?.Dispose();
-		}
+		_cts?.Dispose();
+		_cts = null;
 	}
 
 	public override void OnRoundEnded()

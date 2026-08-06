@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.Util;
 using Imui.Controls;
 using Imui.Core;
 using UnityEngine;
@@ -20,7 +21,6 @@ public class LevelStatsPanel : IZeepGUIDrawer
 {
 	private const string WindowTitle = "Current Level";
 
-	/// <summary>Share of the screen width, before the clamp below.</summary>
 	private const float WidthFraction = 0.14f;
 
 	private const float MinWidth = 200f;
@@ -31,26 +31,12 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
-	/// <summary>Height the content came to last frame, or 0 before the first one.</summary>
 	private float _contentHeight;
 
 	private bool _mouseOverWindow;
 
-	/// <summary>The run currently in progress, or null when ATH is idle. Set by StateMasterOn.</summary>
 	public AthStateMachine ActiveRun { get; set; }
 
-	/// <summary>
-	///     Where the panel ended up last frame, so <see cref="ControlPanel" /> can hang under it.
-	///     Zero-width when the panel drew nothing, which is the signal for "there is nothing to
-	///     hang from". Reported rather than computed by both, because this panel's height follows
-	///     its content and only it knows what that came to.
-	/// </summary>
-	public ImRect LastRect { get; private set; }
-
-	/// <summary>
-	///     Toggled by /ath together with the control panel. There is nothing to show without a
-	///     level, so an idle hunt hides this rather than drawing an empty frame.
-	/// </summary>
 	public bool Visible { get; set; }
 
 	public void OnZeepGUI(ImGui gui)
@@ -59,7 +45,6 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 		if (!Visible || run == null)
 		{
-			LastRect = default;
 			return;
 		}
 
@@ -67,7 +52,6 @@ public class LevelStatsPanel : IZeepGUIDrawer
 
 		if (view == null)
 		{
-			LastRect = default;
 			return;
 		}
 
@@ -77,10 +61,8 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		}
 		catch (Exception e)
 		{
-			// Inside the game's shared GUI pass - a throwing drawer would throw every frame.
 			Logger.LogError($"LevelStatsPanel: Draw failed, hiding the panel: {e.Message}\n{e.StackTrace}");
 			Visible = false;
-			LastRect = default;
 		}
 	}
 
@@ -104,8 +86,6 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.TopRight);
 
-		LastRect = rect;
-
 		bool open = true;
 
 		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
@@ -120,7 +100,6 @@ public class LevelStatsPanel : IZeepGUIDrawer
 			DrawEffort(gui, view);
 			DrawPace(gui, view);
 
-			// While the window's layout frame is still open, so it can report what it holds.
 			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
 		finally
@@ -133,23 +112,19 @@ public class LevelStatsPanel : IZeepGUIDrawer
 	{
 		float text = gui.Style.Layout.TextSize;
 
-		UiText.Draw(gui, view.Name, HudPalette.LevelName, Row(gui, TitleSize * 1.2f), text * TitleSize, 0f);
-		UiText.Draw(gui, view.ByAuthor, HudPalette.AuthorName, Row(gui, 0.9f), text * 0.85f, 0f);
+		UiText.Draw(gui, view.Name, Color.Style.Text.LevelName, Row(gui, TitleSize * 1.2f), text * TitleSize, 0f);
+		UiText.Draw(gui, view.ByAuthor, Color.Style.Text.AuthorName, Row(gui, 0.9f), text * 0.85f, 0f);
 		gui.AddSpacing();
 	}
 
-	/// <summary>
-	///     The two times that matter, with the game's own medals beside them, and the best we
-	///     have managed so far measured against the author time.
-	/// </summary>
 	private static void DrawTargets(ImGui gui, LevelStatsView view)
 	{
-		DrawMedalTime(gui, GameSprites.AuthorMedal, "Author", view.AuthorTime, HudPalette.Author);
-		DrawMedalTime(gui, GameSprites.GoldMedal, "Gold", view.GoldTime, HudPalette.Gold);
+		DrawMedalTime(gui, GameSprites.AuthorMedal, "Author", view.AuthorTime, Color.Zeepkist.Medal.Author);
+		DrawMedalTime(gui, GameSprites.GoldMedal, "Gold", view.GoldTime, Color.Zeepkist.Medal.Gold);
 
 		if (view.BestWithDelta == null)
 		{
-			UiWidgets.Row(gui, Row(gui, 1f), "Your Best", "not finished yet", HudPalette.Muted);
+			UiWidgets.Row(gui, Row(gui, 1f), "Your Best", "not finished yet", Color.Style.Text.Muted);
 			gui.AddSpacing();
 			return;
 		}
@@ -181,24 +156,18 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		gui.Image(sprite, icon, true);
 	}
 
-	/// <summary>What the level has cost so far. The numbers that feed the traffic light.</summary>
 	private static void DrawEffort(ImGui gui, LevelStatsView view)
 	{
 		UiWidgets.Heading(gui, Row(gui, 0.85f), "EFFORT");
 
 		UiWidgets.Row(gui, Row(gui, 1f), "Attempts", view.Attempts,
-			view.AttemptPending ? HudPalette.PaceClose : HudPalette.Default);
-		UiWidgets.Row(gui, Row(gui, 1f), "Crashes", view.Crashes, HudPalette.Default);
-		UiWidgets.Row(gui, Row(gui, 1f), "Wheels Lost", view.WheelsLost, HudPalette.Default);
-		UiWidgets.Row(gui, Row(gui, 1f), "Time Here", view.TimeOnLevel, HudPalette.Default);
+			view.AttemptPending ? Color.Style.Pace.Close : Color.Style.Text.Default);
+		UiWidgets.Row(gui, Row(gui, 1f), "Crashes", view.Crashes, Color.Style.Text.Default);
+		UiWidgets.Row(gui, Row(gui, 1f), "Wheels Lost", view.WheelsLost, Color.Style.Text.Default);
+		UiWidgets.Row(gui, Row(gui, 1f), "Time Here", view.TimeOnLevel, Color.Style.Text.Default);
 		gui.AddSpacing();
 	}
 
-	/// <summary>
-	///     The traffic light. There is no absolute answer to "am I doing badly here" - a two
-	///     minute level is not a bad level - so it is measured against the levels this run has
-	///     already beaten, and stays grey until there are enough of them to mean anything.
-	/// </summary>
 	private static void DrawPace(ImGui gui, LevelStatsView view)
 	{
 		ImRect row = Row(gui, 1.2f);
@@ -211,16 +180,11 @@ public class LevelStatsPanel : IZeepGUIDrawer
 		UiText.Left(gui, LevelStatsView.PaceLabel(view.Pace), colour, rest);
 	}
 
-	/// <summary>A layout row <paramref name="scale" /> times the theme's text size tall.</summary>
 	private static ImRect Row(ImGui gui, float scale)
 	{
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * scale);
 	}
 
-	/// <summary>
-	///     Last frame's content plus the window's own chrome. See <see cref="UiMetrics.ContentHeight" />
-	///     for why this is measured rather than counted.
-	/// </summary>
 	private float Height(ImGui gui)
 	{
 		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 14f;

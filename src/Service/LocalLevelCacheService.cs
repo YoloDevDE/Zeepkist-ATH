@@ -15,14 +15,12 @@ public class LocalLevelCacheService
 {
 	private bool _initialized;
 
+	private int _skippedLocalLevels;
 
 	private List<LevelItem> CachedLevelItems { get; } = new();
 
 	public int LevelCount => CachedLevelItems.Count;
 
-	/// <summary>
-	///     Initializes the cache lazily on first use. Safe to call multiple times.
-	/// </summary>
 	public void EnsureInitialized()
 	{
 		if (_initialized)
@@ -55,7 +53,8 @@ public class LocalLevelCacheService
 			return;
 		}
 
-		Logger.LogInfo($"LocalLevelCacheService: Cached {CachedLevelItems.Count} unique levels.");
+		Logger.LogInfo(
+			$"LocalLevelCacheService: Cached {CachedLevelItems.Count} unique levels, dropped {_skippedLocalLevels} without a workshop id.");
 		TryNotifySuccess($"ATH: Loaded {CachedLevelItems.Count} levels from local playlists.");
 	}
 
@@ -120,7 +119,6 @@ public class LocalLevelCacheService
 
 			HashSet<string> seenUids = new(StringComparer.OrdinalIgnoreCase);
 
-			// Collect already cached UIDs to avoid duplicates with Api results
 			foreach (LevelItem existing in CachedLevelItems)
 			{
 				seenUids.Add(existing.FileUid);
@@ -164,10 +162,23 @@ public class LocalLevelCacheService
 		}
 	}
 
+	/// <summary>
+	///     A level without a workshop id cannot be handed to a lobby: the server has no way to
+	///     fetch it, every client sits on the level it already had, and the run walks into an
+	///     endless "restart the level" loop. Those are counted and dropped here rather than
+	///     found out about halfway through a hunt.
+	/// </summary>
 	private void AddLevel(HashSet<string> seenUids, string uid, ulong workshopId, string name, string author)
 	{
 		if (string.IsNullOrEmpty(uid))
 		{
+			return;
+		}
+
+		if (workshopId == 0)
+		{
+			_skippedLocalLevels++;
+			Logger.LogDebug($"LocalLevelCacheService: Dropped '{name}' (UID {uid}) - no workshop id.");
 			return;
 		}
 
@@ -179,9 +190,6 @@ public class LocalLevelCacheService
 		CachedLevelItems.Add(new LevelItem { FileUid = uid, WorkshopId = workshopId, Name = name, FileAuthor = author });
 	}
 
-	/// <summary>
-	///     Returns a shuffled batch of cached levels, excluding the given UIDs.
-	/// </summary>
 	public List<LevelItem> GetRandomLevelItems(int count, IEnumerable<string> excludedUids = null)
 	{
 		EnsureInitialized();
@@ -211,7 +219,7 @@ public class LocalLevelCacheService
 	{
 		try
 		{
-			ToastNotification.Success(message);
+			FrogNotification.Success(message);
 		}
 		catch (Exception ex)
 		{
@@ -223,7 +231,7 @@ public class LocalLevelCacheService
 	{
 		try
 		{
-			ToastNotification.Warn(message);
+			FrogNotification.Warn(message);
 		}
 		catch (Exception ex)
 		{

@@ -47,7 +47,6 @@ public static class UiIcons
 		}
 	}
 
-	/// <summary>A filled triangle spanning the box, pointing left or right.</summary>
 	private static void Triangle(ImGui gui, ImRect box, Color32 colour, bool right)
 	{
 		float tip = right ? box.Right : box.Left;
@@ -61,7 +60,6 @@ public static class UiIcons
 		gui.Canvas.ConvexFill(points, colour);
 	}
 
-	/// <summary>The pause pair: two bars with a gap of the same width between them.</summary>
 	private static void Bars(ImGui gui, ImRect box, Color32 colour)
 	{
 		float bar = box.W * 0.3f;
@@ -77,11 +75,6 @@ public static class UiIcons
 		gui.Canvas.Rect(new ImRect(box.X + inset, box.Y + inset, box.W - inset * 2f, box.H - inset * 2f), colour);
 	}
 
-	/// <summary>
-	///     Skip and restart are the same shape mirrored - two triangles running into a bar. The
-	///     bar is what makes it "to the end of this" rather than "fast forward", which is exactly
-	///     what both buttons do: skip goes to the next level, restart goes back to the first.
-	/// </summary>
 	private static void Transport(ImGui gui, ImRect box, Color32 colour, bool forward)
 	{
 		float bar = box.W * 0.16f;
@@ -95,7 +88,6 @@ public static class UiIcons
 		gui.Canvas.Rect(new ImRect(forward ? box.Right - bar : box.X, box.Y, bar, box.H), colour);
 	}
 
-	/// <summary>The broken-level marker: a triangle standing on its base, point up.</summary>
 	private static void Warning(ImGui gui, ImRect box, Color32 colour)
 	{
 		Span<Vector2> points =
@@ -106,12 +98,6 @@ public static class UiIcons
 		gui.Canvas.ConvexFill(points, colour);
 	}
 
-	/// <summary>
-	///     A lower-case i: the dot and the stem, nothing around them. Drawn rather than ringed
-	///     because the ring would have to be knocked out of the middle to leave the stem visible,
-	///     and the canvas can fill shapes but not subtract them - a solid disc with a stem the
-	///     same colour is just a disc.
-	/// </summary>
 	private static void Info(ImGui gui, ImRect box, Color32 colour)
 	{
 		float stem = box.W * 0.24f;
@@ -123,7 +109,6 @@ public static class UiIcons
 		gui.Canvas.Rect(new ImRect(x, box.Y, stem, box.H - dot - gap), colour);
 	}
 
-	/// <summary>The largest square that fits, centred, so nothing is ever stretched.</summary>
 	private static ImRect Square(ImRect rect)
 	{
 		float size = Mathf.Min(rect.W, rect.H);

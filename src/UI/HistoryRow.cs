@@ -17,13 +17,8 @@ public readonly struct HistoryRow
 		Medals = $"{authorMedals} / {goldMedals} / {penalties}";
 	}
 
-	/// <summary>The three counts as one column, composed once rather than on every frame.</summary>
 	public string Medals { get; }
 
-	/// <summary>
-	///     What was stored, kept alongside the formatted columns so clicking the row can open
-	///     the whole run rather than the five things this line happens to show.
-	/// </summary>
 	public RunRecord Record { get; }
 
 	public string When { get; }
@@ -31,6 +26,5 @@ public readonly struct HistoryRow
 	public string Levels { get; }
 	public string Driven { get; }
 
-	/// <summary>True for the run that was just played.</summary>
 	public bool IsCurrent { get; }
 }

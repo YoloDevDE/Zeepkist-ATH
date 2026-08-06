@@ -10,12 +10,7 @@ namespace AuthorTimeHunting.States.Ath.States;
 public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(stateMachine)
 {
 	private bool _hasShownMedal;
-	// Constructor
 
-
-	// Properties
-
-	// Public Methods
 	public override void Enter()
 	{
 		_hasShownMedal = false;
@@ -44,32 +39,22 @@ public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(
 		StateMachine.TransitionTo(new StateAthSkippingLevel(AthStateMachine));
 	}
 
-	// Private Methods
 	public override void Update()
 	{
 		AthStateMachine.SetServerMessage(true);
-		// ZeepkistNetwork.PlayerList
-		// ZeepTourney.TourneyApi.startNamedTournament("Pengkob Ranked Mod {rankedId}");
 	}
-
 
 	public override void OnRoundStarted()
 	{
 		StateMachine.TransitionTo(new StateAthWaitingForFinish(AthStateMachine));
 	}
 
-	/// <summary>
-	///     Photo mode is treated as "the player is driving again", because RoundStarted and
-	///     this are the only two ways back into a run from the pause screen.
-	///     It is only that during a race, though. Entering photo mode on the podium or while
-	///     the next level loads used to restart the run clock and bill the player for time
-	///     they spent looking at a screenshot.
-	/// </summary>
 	public override void OnPhotoModeEntered()
 	{
 		if (!GameStateObserver.IsRacing)
 		{
-			Logger.LogInfo("StateAthWaitingForNextRun: Photo mode entered outside a running race, keeping the clock paused.");
+			Logger.LogInfo(
+				"StateAthWaitingForNextRun: Photo mode entered outside a running race, keeping the clock paused.");
 			return;
 		}
 

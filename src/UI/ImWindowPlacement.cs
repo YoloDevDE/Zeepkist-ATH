@@ -11,6 +11,7 @@ public enum ImWindowAnchor
 	TopRight,
 	MiddleLeft,
 	MiddleRight,
+	BottomLeft,
 	BottomRight
 }
 
@@ -22,39 +23,15 @@ public enum ImWindowAnchor
 /// </summary>
 public static class ImWindowPlacement
 {
-	/// <summary>
-	///     For a window the player owns. After the first frame both the position and the size
-	///     are theirs to change: passing a computed size every frame would silently undo every
-	///     drag of the resize handle, which is why the handle appeared to do nothing.
-	/// </summary>
 	public static ImRect Place(ImGui gui, ReadOnlySpan<char> title, float width, float height, ImWindowAnchor anchor)
 	{
 		return Place(gui, title, width, height, anchor, true);
 	}
 
-	/// <summary>
-	///     For a window ATH sizes itself, such as a panel whose height follows its content.
-	///     Keeps the player's position but always applies the given size.
-	/// </summary>
 	public static ImRect PlaceAutoSized(ImGui gui, ReadOnlySpan<char> title, float width, float height,
 		ImWindowAnchor anchor)
 	{
 		return Place(gui, title, width, height, anchor, false);
-	}
-
-	/// <summary>
-	///     Hangs a window directly under another one, every frame, with no memory of its own.
-	///     For panels that are one thing split in two - the level and what you can do about it -
-	///     where letting them drift apart is worse than not being able to drag them. The caller
-	///     is expected to pass NoMoving, so the title bar does not offer a drag that snaps back.
-	/// </summary>
-	public static ImRect Stack(ImGui gui, ImRect above, float height)
-	{
-		ImRect screen = gui.Canvas.SafeScreenRect;
-
-		// above.Y is its bottom edge - the canvas is y-up.
-		return Clamp(new ImRect(above.X, above.Y - height - gui.Style.Layout.Spacing, above.W, height), screen,
-			UiMetrics.Margin(gui));
 	}
 
 	private static ImRect Place(ImGui gui, ReadOnlySpan<char> title, float width, float height, ImWindowAnchor anchor,
@@ -81,6 +58,7 @@ public static class ImWindowPlacement
 				width, height),
 			ImWindowAnchor.TopRight => new ImRect(screen.Right - width - margin, screen.Top - height - margin, width,
 				height),
+			ImWindowAnchor.BottomLeft => new ImRect(screen.Left + margin, screen.Bottom + margin, width, height),
 			ImWindowAnchor.BottomRight => new ImRect(screen.Right - width - margin, screen.Bottom + margin, width,
 				height),
 			ImWindowAnchor.MiddleLeft => new ImRect(screen.Left + margin, screen.Bottom + (screen.H - height) * 0.5f,
@@ -93,17 +71,11 @@ public static class ImWindowPlacement
 		return Clamp(placed, screen, margin);
 	}
 
-	/// <summary>
-	///     Pulls a window back onto the screen. Without this a window placed on a large display
-	///     - or dragged near an edge - stays off-screen after a resolution change, with no way
-	///     to reach its title bar and drag it back.
-	/// </summary>
 	private static ImRect Clamp(ImRect rect, ImRect screen, float margin)
 	{
 		rect.W = Mathf.Min(rect.W, screen.W);
 		rect.H = Mathf.Min(rect.H, screen.H);
 
-		// Keep at least a margin's worth of the window - and with it the title bar - reachable.
 		rect.X = Mathf.Clamp(rect.X, screen.Left + margin - rect.W, screen.Right - margin);
 		rect.Y = Mathf.Clamp(rect.Y, screen.Bottom, screen.Top - rect.H);
 

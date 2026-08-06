@@ -4,8 +4,8 @@ using AuthorTimeHunting.States.Master.States;
 namespace AuthorTimeHunting.States.Master.StateMachine;
 
 /// <summary>
-///     The mod's own lifecycle: off until /ath start, on until /ath stop. The running state
-///     carries the run's machine as a sub-state machine.
+///     The mod's own lifecycle: off until a start is asked for, on until a stop is. The
+///     running state carries the run's machine as a sub-state machine.
 /// </summary>
 public class MasterStateMachine : StateMachineBase
 {
@@ -16,7 +16,6 @@ public class MasterStateMachine : StateMachineBase
 		FinalState = new StateMasterOff(this);
 	}
 
-	/// <summary>Session-scoped services, handed down to the run's machine.</summary>
 	public ModServices Services { get; }
 
 	public override StateBase InitialState { get; }

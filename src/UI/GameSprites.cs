@@ -19,9 +19,5 @@ public static class GameSprites
 
 	public static Sprite BronzeMedal => PlayerManager.Instance == null ? null : PlayerManager.Instance.bronzeMedal;
 
-	/// <summary>
-	///     The game's consolation medal. ATH uses it for penalty skips, which is what it means
-	///     here too: the level was played and not beaten.
-	/// </summary>
 	public static Sprite YouTriedMedal => PlayerManager.Instance == null ? null : PlayerManager.Instance.youTriedMedal;
 }

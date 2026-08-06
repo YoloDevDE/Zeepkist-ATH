@@ -1,5 +1,6 @@
 using System;
 using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.Util;
 using Imui.Controls;
 using Imui.Core;
 using UnityEngine;
@@ -28,18 +29,10 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	private const float TitleSize = 1.4f;
 	private const float StatusSize = 1.8f;
 
-	/// <summary>
-	///     Where the card sits vertically, as a share of the screen measured from the bottom.
-	///     Above the middle rather than on it: the game puts its own round-over text across the
-	///     centre, and two things in the same place is one thing nobody reads.
-	/// </summary>
 	private const float VerticalAnchor = 0.62f;
 
-	// Title bar and measured height, like every other panel here. The borderless, hand-counted
-	// variant is what left the top overlay without a single character on screen.
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
-	/// <summary>Index, name, result, attempts, time - as shares of the row.</summary>
 	private static readonly float[] Weights = [0.07f, 0.42f, 0.24f, 0.09f, 0.18f];
 
 	private float _contentHeight;
@@ -68,22 +61,16 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 		}
 		catch (Exception e)
 		{
-			// Inside the game's shared GUI pass - a throwing drawer would throw every frame.
 			Logger.LogError($"LevelSummaryOverlay: Draw failed, closing it: {e.Message}\n{e.StackTrace}");
 			Hide();
 		}
 	}
 
-	/// <summary>
-	///     Takes the snapshot. Called as the level ends, because a frame later the run has moved
-	///     on to the next one and there is nothing left to summarise.
-	/// </summary>
 	public void Show(AthCtx ctx)
 	{
 		_view = LevelSummaryView.From(ctx);
 	}
 
-	/// <summary>Called when the next level actually starts. Also safe to call when nothing is up.</summary>
 	public void Hide()
 	{
 		_view = null;
@@ -112,7 +99,6 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 			DrawLevel(gui, view);
 			DrawRecent(gui, view);
 
-			// While the window's layout frame is still open, so it can report what it holds.
 			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
 		finally
@@ -125,29 +111,24 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	{
 		float text = gui.Style.Layout.TextSize;
 
-		UiText.Centre(gui, view.Name, HudPalette.LevelName, Row(gui, TitleSize * 1.2f), text * TitleSize);
-		UiText.Centre(gui, view.ByAuthor, HudPalette.AuthorName, Row(gui, 0.9f), text * 0.85f);
+		UiText.Centre(gui, view.Name, Color.Style.Text.LevelName, Row(gui, TitleSize * 1.2f), text * TitleSize);
+		UiText.Centre(gui, view.ByAuthor, Color.Style.Text.AuthorName, Row(gui, 0.9f), text * 0.85f);
 		UiText.Centre(gui, view.StatusUpper, view.StatusColour, Row(gui, StatusSize * 1.2f), text * StatusSize);
 
 		UiWidgets.Row(gui, Row(gui, 1f), "Your Time", view.BestWithDelta ?? "never finished",
-			view.BestWithDelta == null ? HudPalette.Muted : view.StatusColour);
+			view.BestWithDelta == null ? Color.Style.Text.Muted : view.StatusColour);
 
-		UiWidgets.Row(gui, Row(gui, 1f), "Author Time", view.AuthorTime, HudPalette.Author);
-		UiWidgets.Row(gui, Row(gui, 1f), "Attempts", view.Attempts, HudPalette.Default);
-		UiWidgets.Row(gui, Row(gui, 1f), "Crashes", view.Crashes, HudPalette.Default);
-		UiWidgets.Row(gui, Row(gui, 1f), "Time Here", view.TimeHere, HudPalette.Default);
+		UiWidgets.Row(gui, Row(gui, 1f), "Author Time", view.AuthorTime, Color.Zeepkist.Medal.Author);
+		UiWidgets.Row(gui, Row(gui, 1f), "Attempts", view.Attempts, Color.Style.Text.Default);
+		UiWidgets.Row(gui, Row(gui, 1f), "Crashes", view.Crashes, Color.Style.Text.Default);
+		UiWidgets.Row(gui, Row(gui, 1f), "Time Here", view.TimeHere, Color.Style.Text.Default);
 		gui.AddSpacing();
 	}
 
-	/// <summary>
-	///     The run so far, in the shape the report's level list uses. Deliberately the same
-	///     columns: this is a preview of the page the player will read at the end, and learning
-	///     it twice is learning it twice.
-	/// </summary>
 	private static void DrawRecent(ImGui gui, LevelSummaryView view)
 	{
 		UiWidgets.Heading(gui, Row(gui, 0.85f), "RUN SO FAR");
-		UiWidgets.Row(gui, Row(gui, 1f), view.Score, view.TimeLeft, HudPalette.Good);
+		UiWidgets.Row(gui, Row(gui, 1f), view.Score, view.TimeLeft, Color.Style.Status.Good);
 
 		foreach (LevelRow level in view.Recent)
 		{
@@ -160,11 +141,11 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 		ImRect row = Row(gui, 1f);
 		float size = gui.Style.Layout.TextSize * 0.9f;
 
-		UiText.Draw(gui, UiNumbers.Text(level.Index), HudPalette.Muted, Cell(row, 0), size, 0f);
-		UiText.Draw(gui, level.Name, HudPalette.LevelName, Cell(row, 1), size, 0f);
+		UiText.Draw(gui, UiNumbers.Text(level.Index), Color.Style.Text.Muted, Cell(row, 0), size, 0f);
+		UiText.Draw(gui, level.Name, Color.Style.Text.LevelName, Cell(row, 1), size, 0f);
 		UiText.Draw(gui, level.Status, level.StatusColour, Cell(row, 2), size, 0f);
-		UiText.Draw(gui, level.Attempts, HudPalette.Muted, Cell(row, 3), size, 1f);
-		UiText.Draw(gui, level.Duration, HudPalette.Muted, Cell(row, 4), size, 1f);
+		UiText.Draw(gui, level.Attempts, Color.Style.Text.Muted, Cell(row, 3), size, 1f);
+		UiText.Draw(gui, level.Duration, Color.Style.Text.Muted, Cell(row, 4), size, 1f);
 	}
 
 	private static ImRect Cell(ImRect row, int column)
@@ -172,16 +153,11 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 		return UiWidgets.Cell(row, Weights, column);
 	}
 
-	/// <summary>A layout row <paramref name="scale" /> times the theme's row height tall.</summary>
 	private static ImRect Row(ImGui gui, float scale)
 	{
 		return gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), gui.GetRowHeight() * scale);
 	}
 
-	/// <summary>
-	///     Last frame's content plus the window's own chrome. The card is up for a few seconds,
-	///     so the one frame of lag on a size change is the whole cost.
-	/// </summary>
 	private float Height(ImGui gui)
 	{
 		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 16f;
