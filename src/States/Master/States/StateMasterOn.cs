@@ -1,6 +1,5 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Gamemodes;
-using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.States.Master.StateMachine;
 using AuthorTimeHunting.Util;
@@ -67,19 +66,16 @@ public class StateMasterOn : StateBase
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
 	}
 
+	/// <summary>
+	///     A restart is a new run, and a new run gets a new lobby - the same way a start does.
+	///     Restarting inside the lobby the last run left behind meant inheriting its playlist and
+	///     whatever was left of its round, which is the state the mod stopped trusting.
+	/// </summary>
 	private void Restart()
 	{
 		_shuttingDown = true;
-
-		if (GameStateObserver.IsRacing)
-		{
-			StateMachine.TransitionTo(new StateMasterOn(Master, Gamemode));
-			return;
-		}
-
-		Logger.LogInfo("StateMasterOn: Restart requested outside a running race, deferring the new run.");
-		FrogNotification.Info("ATH restarts as soon as the level is loaded");
-		StateMachine.TransitionTo(new StateMasterOff(Master, Gamemode));
+		RestoreGameHud();
+		StateMachine.TransitionTo(new StateMasterConnectingToServer(Master, Gamemode));
 	}
 
 	private void SkipBrokenLevel()

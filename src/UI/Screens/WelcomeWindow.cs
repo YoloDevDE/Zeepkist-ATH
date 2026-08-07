@@ -28,10 +28,10 @@ public class WelcomeWindow : IZeepGUIDrawer
 {
 	private const string WindowTitle = "Welcome to ATH";
 
-	private const float WidthFraction = 0.44f;
-	private const float HeightFraction = 0.66f;
-	private const float MinWidth = 480f;
-	private const float MinHeight = 400f;
+	private const float WidthFraction = 0.6f;
+	private const float HeightFraction = 0.8f;
+	private const float MinWidth = 700f;
+	private const float MinHeight = 560f;
 
 	private const float TitleSize = 2.1f;
 
@@ -65,10 +65,7 @@ public class WelcomeWindow : IZeepGUIDrawer
 
 		try
 		{
-			using (UiScale.Push(gui))
-			{
-				Draw(gui);
-			}
+			Draw(gui);
 		}
 		catch (Exception e)
 		{

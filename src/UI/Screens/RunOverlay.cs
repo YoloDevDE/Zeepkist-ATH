@@ -13,8 +13,8 @@ using Logger = AuthorTimeHunting.Util.Logger;
 namespace AuthorTimeHunting.UI.Screens;
 
 /// <summary>
-///     What is left of the hour, across the top of the screen: the clock, the budget behind it
-///     as a bar, and the medals earned so far.
+///     The run, across the top of the screen: what is left of the hour, the medals taken so far,
+///     and under a rule the level being driven right now.
 ///     It had a title bar reading "Run" and a footer repeating the skip type, and both were
 ///     there for the wrong reason - the title bar because an earlier attempt at drawing text
 ///     outside a window drew nothing, the footer because the panel it grew out of had room for
@@ -22,6 +22,11 @@ namespace AuthorTimeHunting.UI.Screens;
 ///     while driving, and neither line was worth the height. Imui draws text fine inside a
 ///     window without a title bar, so that is what this is now, and the skip type lives where
 ///     the skip button is.
+///     The level half arrived from a second window called "Current Level", which sat in the
+///     opposite corner and had to be opened before it said anything. Two windows asking about
+///     the same moment is one window too many, so the four lines worth reading mid-run - what
+///     the level is called, whose it is, the two times to beat, which attempt this is - moved
+///     in here and the other window went away.
 ///     One number is large, everything else is small. Nothing here is read on purpose - it is
 ///     read out of the corner of an eye, mid-air, and the layout has to survive that.
 /// </summary>
@@ -29,14 +34,18 @@ public class RunOverlay : IZeepGUIDrawer
 {
 	private const string WindowTitle = "ATH Run";
 
-	private const float WidthFraction = 0.16f;
+	private const float WidthFraction = 0.22f;
 
-	private const float MinWidth = 200f;
-	private const float MaxWidth = 300f;
+	private const float MinWidth = 320f;
+	private const float MaxWidth = 480f;
 
 	private const float ClockSize = 2.4f;
 	private const float MedalRowSize = 1.4f;
 	private const float PenaltySize = 0.85f;
+
+	private const float LevelNameSize = 1.1f;
+	private const float AuthorSize = 0.85f;
+	private const float MedalTimeRowSize = 1.2f;
 
 	private const ImWindowFlag WindowFlags =
 		ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton | ImWindowFlag.NoMovingAndResizing;
@@ -58,7 +67,7 @@ public class RunOverlay : IZeepGUIDrawer
 			return;
 		}
 
-		RunHudView view = RunHudView.ForFrame(run.Ctx);
+		RunHudView view = RunHudView.ForFrame(run);
 
 		if (view == null)
 		{
@@ -78,14 +87,6 @@ public class RunOverlay : IZeepGUIDrawer
 
 	private void Draw(ImGui gui, RunHudView view)
 	{
-		using (UiScale.Push(gui))
-		{
-			DrawScaled(gui, view);
-		}
-	}
-
-	private void DrawScaled(ImGui gui, RunHudView view)
-	{
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 
 		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
@@ -104,6 +105,8 @@ public class RunOverlay : IZeepGUIDrawer
 			UiWidgets.Bar(gui, UiMetrics.Row(gui, 0.3f), view.RemainingFraction, view.TimeColour);
 			DrawMedals(gui, UiMetrics.Row(gui, MedalRowSize), view);
 			DrawPenalties(gui, view);
+			UiScreen.Rule(gui, UiMetrics.Row(gui, 0.3f), Color.Zeepkist.Medal.Author);
+			DrawLevel(gui, view);
 
 			_contentHeight = UiMetrics.ContentHeight(gui);
 		}
@@ -149,9 +152,46 @@ public class RunOverlay : IZeepGUIDrawer
 			gui.Style.Layout.TextSize * PenaltySize);
 	}
 
+	private static void DrawLevel(ImGui gui, RunHudView view)
+	{
+		float text = gui.Style.Layout.TextSize;
+
+		UiText.Draw(gui, view.LevelName, Color.Style.Text.LevelName, UiMetrics.Row(gui, LevelNameSize * 1.2f),
+			text * LevelNameSize, 0f);
+		UiText.Draw(gui, view.ByAuthor, Color.Style.Text.AuthorName, UiMetrics.Row(gui, 0.9f), text * AuthorSize, 0f);
+
+		DrawMedalTime(gui, GameSprites.AuthorMedal, "AT", view.AuthorTime, Color.Zeepkist.Medal.Author);
+		DrawMedalTime(gui, GameSprites.GoldMedal, "Gold", view.GoldTime, Color.Zeepkist.Medal.Gold);
+
+		UiWidgets.Row(gui, UiMetrics.Row(gui, 1f), "Attempt", view.Attempts, Color.Style.Text.Default);
+	}
+
+	private static void DrawMedalTime(ImGui gui, Sprite sprite, string label, string time, Color32 colour)
+	{
+		ImRect row = UiMetrics.Row(gui, MedalTimeRowSize);
+		float iconSize = row.H;
+
+		ImRect icon = row.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect rest);
+
+		DrawMedalIcon(gui, icon, sprite, iconSize, colour);
+		UiWidgets.Row(gui, rest, label, time, colour);
+	}
+
+	private static void DrawMedalIcon(ImGui gui, ImRect icon, Sprite sprite, float iconSize, Color32 colour)
+	{
+		if (sprite == null)
+		{
+			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, colour);
+
+			return;
+		}
+
+		gui.Image(sprite, icon, true);
+	}
+
 	private float Height(ImGui gui)
 	{
-		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 6f;
+		float content = _contentHeight > 0f ? _contentHeight : gui.GetRowHeight() * 11f;
 
 		return content + UiMetrics.ContentPadding(gui) + UiMetrics.Slack(gui);
 	}

@@ -388,7 +388,6 @@ public class AthMenu : IZeepGUIDrawer
 
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "WINDOWS");
 		services.RunOverlay.Visible = Window(gui, "Run HUD", services.RunOverlay.Visible);
-		services.LevelStats.Visible = Window(gui, "Current Level", services.LevelStats.Visible);
 		services.Control.Visible = Window(gui, "Controls", services.Control.Visible);
 		services.Leaderboard.Visible = Window(gui, "Leaderboard", services.Leaderboard.Visible);
 		services.Status.Visible = Window(gui, "Status", services.Status.Visible);

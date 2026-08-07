@@ -23,10 +23,10 @@ public class StatusWindow : IZeepGUIDrawer
 {
 	private const string WindowTitle = "ATH Status";
 
-	private const float WidthFraction = 0.2f;
+	private const float WidthFraction = 0.29f;
 
-	private const float MinWidth = 280f;
-	private const float MaxWidth = 400f;
+	private const float MinWidth = 420f;
+	private const float MaxWidth = 600f;
 
 	private const string LobbySource = "Lobby playlist";
 
@@ -62,10 +62,7 @@ public class StatusWindow : IZeepGUIDrawer
 
 		try
 		{
-			using (UiScale.Push(gui))
-			{
-				Draw(gui);
-			}
+			Draw(gui);
 		}
 		catch (Exception e)
 		{

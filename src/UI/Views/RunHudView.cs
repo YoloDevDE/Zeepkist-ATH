@@ -1,26 +1,30 @@
 using System;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath;
+using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI.Toolkit;
 using AuthorTimeHunting.Util;
 using UnityEngine;
 
 namespace AuthorTimeHunting.UI.Views;
 
 /// <summary>
-///     What the control panel shows about the run as a whole, as data. Built from
-///     <see cref="AthCtx" /> once per draw and handed to whatever renders it.
+///     What the run HUD and the control panel show, as data. Built from the run once per draw
+///     and handed to whatever renders it.
 ///     This is the seam the in-game UI is built on. The HUD used to exist only as a single
 ///     40-line string of TextMeshPro colour tags inside AthStateMachine, which meant the
 ///     layout, the numbers and the colours were one inseparable thing. Splitting them lets
 ///     the same run be rendered as an Imui panel without touching the run at all.
-///     Anything about the level being played is in <see cref="LevelStatsView" /> instead - the
-///     split follows the two panels, and the two questions: how is the run going, and how is
-///     this level going.
+///     It answers two questions, because one panel now asks both: how is the run going, and
+///     what is the level it is on. The level half used to be its own view behind its own
+///     window, and a window a player had to open to find out what they were driving was a
+///     window they never opened.
 /// </summary>
 public class RunHudView
 {
 	private static int _frame = -1;
 
-	private static AthCtx _ctx;
+	private static AthStateMachine _run;
 	private static RunHudView _view;
 
 	private RunHudView()
@@ -33,16 +37,16 @@ public class RunHudView
 
 	public Color32 SkipColour { get; private set; }
 
-	public static RunHudView ForFrame(AthCtx ctx)
+	public static RunHudView ForFrame(AthStateMachine run)
 	{
-		if (_frame == Time.frameCount && ReferenceEquals(_ctx, ctx))
+		if (_frame == Time.frameCount && ReferenceEquals(_run, run))
 		{
 			return _view;
 		}
 
-		_view = From(ctx);
+		_view = From(run);
 		_frame = Time.frameCount;
-		_ctx = ctx;
+		_run = run;
 
 		return _view;
 	}
@@ -50,13 +54,16 @@ public class RunHudView
 	public static void Clear()
 	{
 		_frame = -1;
-		_ctx = null;
+		_run = null;
 		_view = null;
 	}
 
-	private static RunHudView From(AthCtx ctx)
+	private static RunHudView From(AthStateMachine run)
 	{
-		if (ctx?.CurrentLevel == null)
+		AthCtx ctx = run?.Ctx;
+		Level level = ctx?.CurrentLevel;
+
+		if (level == null)
 		{
 			return null;
 		}
@@ -64,7 +71,7 @@ public class RunHudView
 		bool paused = ctx.IsPaused;
 		double remaining = ctx.GetRemainingTime().TotalMilliseconds;
 
-		bool running = !paused && ctx.CurrentLevel.IsTiming;
+		bool running = !paused && level.IsTiming;
 
 		return new RunHudView
 		{
@@ -77,7 +84,12 @@ public class RunHudView
 			Penalties = ctx.Penalties,
 			TimeLostToPenalties = TimeSpan.FromMilliseconds(ctx.GetAccumulatedPenaltyTime()).ToFormattedString(),
 			SkipType = SkipTypeLabel(ctx),
-			SkipColour = SkipTypeColour(ctx)
+			SkipColour = SkipTypeColour(ctx),
+			LevelName = level.Name,
+			ByAuthor = $"by {level.Author}",
+			AuthorTime = TimeFormatter.FormatTime(level.AuthorTime),
+			GoldTime = TimeFormatter.FormatTime(level.GoldTime),
+			Attempts = run.IsBetweenAttempts ? $"{level.Attempt} (+1)" : UiNumbers.Text(level.Attempt)
 		};
 	}
 
@@ -153,6 +165,19 @@ public class RunHudView
 	public int Penalties { get; private set; }
 
 	public string TimeLostToPenalties { get; private set; }
+
+	#endregion
+
+	#region Level
+
+	public string LevelName { get; private set; }
+
+	public string ByAuthor { get; private set; }
+
+	public string AuthorTime { get; private set; }
+	public string GoldTime { get; private set; }
+
+	public string Attempts { get; private set; }
 
 	#endregion
 }

@@ -29,6 +29,9 @@ This one stops trying. ATH now draws its own game.
   you are shown where you stand between levels, and you get a full report at the end instead of a line in the chat.
 - **The mod runs the lobby.** ATH hosts the hunt itself now, so nothing outside the run can move the playlist out from
   under you, and the next level is already downloading while you are still driving this one.
+- **Every hunt gets a fresh one.** Start or restart from anywhere - someone else's lobby, your own, the main menu - and
+  ATH leaves what you were in and opens its own. No run ever inherits a playlist or half a round timer from whatever
+  was there before.
 - **You never see it happen.** Starting a hunt puts up ATH's own screen over everything - the game's menus, its loading
   screen, the podium - and keeps the game quiet behind it until your round begins. What you get instead is a checklist
   ticking itself off: creating the lobby, loading the level, fetching levels, starting in 3. It steps aside for the
@@ -48,6 +51,9 @@ This one stops trying. ATH now draws its own game.
 - **Medals instead of initials.** The rows are labelled with the game's own author and gold medal art.
 - **The finish tells you what happened.** Where the game printed your time again, it now says what the run was worth:
   *author time*, *gold unlocked*, *gold*, or *no medal*.
+- **One panel, not two.** The strip at the top of the screen carries the level under the run now: what it is called,
+  whose it is, the author and gold times, and which attempt you are on. The separate *Current Level* window it used to
+  live in - the one you had to go and open - is gone.
 
 ### Between levels
 
@@ -64,5 +70,7 @@ This one stops trying. ATH now draws its own game.
 ### Also
 
 - Everything scales off your screen, so the UI is the same size on a laptop and on an ultrawide.
+- The mod's panels are back at the game's own text size. They had been drawn a third smaller than everything around
+  them, which was a squint you should not have needed.
 - Settings for what the mod draws and how loud it is, in the menu, where settings go.
 - A status screen for when a level will not load and you want to know whose fault it is.

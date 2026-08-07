@@ -39,9 +39,9 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 	private const string AuthorLabel = "AT";
 	private const string GoldLabel = "GOLD";
 
-	private const float WidthFraction = 0.17f;
-	private const float MinWidth = 220f;
-	private const float MaxWidth = 320f;
+	private const float WidthFraction = 0.25f;
+	private const float MinWidth = 330f;
+	private const float MaxWidth = 480f;
 
 	private const int MaxRows = 8;
 
@@ -79,10 +79,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 		try
 		{
-			using (UiScale.Push(gui))
-			{
-				Draw(gui, run.Ctx);
-			}
+			Draw(gui, run.Ctx);
 		}
 		catch (Exception e)
 		{

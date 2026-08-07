@@ -30,10 +30,10 @@ public class ControlPanel : IZeepGUIDrawer
 {
 	private const string WindowTitle = "ATH Controls";
 
-	private const float WidthFraction = 0.15f;
+	private const float WidthFraction = 0.21f;
 
-	private const float MinWidth = 210f;
-	private const float MaxWidth = 300f;
+	private const float MinWidth = 320f;
+	private const float MaxWidth = 440f;
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
@@ -77,16 +77,8 @@ public class ControlPanel : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
-		using (UiScale.Push(gui))
-		{
-			DrawScaled(gui);
-		}
-	}
-
-	private void DrawScaled(ImGui gui)
-	{
 		AthStateMachine run = ActiveRun;
-		RunHudView view = run == null ? null : RunHudView.ForFrame(run.Ctx);
+		RunHudView view = RunHudView.ForFrame(run);
 
 		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
 

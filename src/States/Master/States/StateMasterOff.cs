@@ -70,25 +70,16 @@ public class StateMasterOff : StateBase
 		_pendingGamemode = null;
 	}
 
+	/// <summary>
+	///     Every start builds the hunt its own lobby, even one asked for by a player who is
+	///     already hosting one. Reusing the lobby that happened to be there was a shortcut past
+	///     the whole setup screen: the run began wherever the playlist and the round timer had
+	///     been left, and the player saw none of it happen. A lobby ATH opened itself is the only
+	///     one it knows the state of.
+	/// </summary>
 	private void StartChallenge()
 	{
-		IGamemode gamemode = Master.Services.Gamemodes.Selected;
-
-		if (!GameStateObserver.IsLobbyHost)
-		{
-			StateMachine.TransitionTo(new StateMasterConnectingToServer(Master, gamemode));
-			return;
-		}
-
-		if (!GameStateObserver.IsRacing)
-		{
-			_pendingGamemode = gamemode;
-			FrogNotification.Info($"{gamemode.DisplayName} starts as soon as the level is loaded");
-			Logger.LogInfo($"StateMasterOff: Start requested while {DescribeWait()}, waiting for the race to start.");
-			return;
-		}
-
-		BeginRun(gamemode);
+		StateMachine.TransitionTo(new StateMasterConnectingToServer(Master, Master.Services.Gamemodes.Selected));
 	}
 
 	private void OnBecameRacing()
@@ -124,13 +115,6 @@ public class StateMasterOff : StateBase
 		}
 
 		return true;
-	}
-
-	private static string DescribeWait()
-	{
-		return !GameStateObserver.IsLevelReady ?
-			"the level is loading" :
-			$"the lobby is in {GameStateObserver.LobbyState}";
 	}
 
 	private void StopChallenge()

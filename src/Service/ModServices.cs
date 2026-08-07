@@ -57,8 +57,6 @@ public class ModServices
 
 	public ControlPanel Control { get; } = new();
 
-	public LevelStatsPanel LevelStats { get; } = new();
-
 	public RunOverlay RunOverlay { get; } = new();
 
 	public DebugPanel Debug { get; } = new();
@@ -88,8 +86,6 @@ public class ModServices
 		RunHudView.Clear();
 
 		Control.ActiveRun = run;
-		LevelStats.ActiveRun = run;
-		LevelStats.Visible = run != null;
 		RunOverlay.ActiveRun = run;
 		RunOverlay.Visible = run != null;
 		Debug.ActiveRun = run;
@@ -109,7 +105,6 @@ public class ModServices
 		Menu.Visible = false;
 		Status.Visible = false;
 		Control.Visible = false;
-		LevelStats.Visible = false;
 		RunOverlay.Visible = false;
 		Leaderboard.Visible = false;
 		Welcome.Visible = false;

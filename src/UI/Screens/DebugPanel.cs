@@ -29,9 +29,9 @@ public class DebugPanel : IZeepGUIDrawer
 {
 	private const string WindowTitle = "ATH Debug";
 
-	private const float WidthFraction = 0.16f;
-	private const float MinWidth = 230f;
-	private const float MaxWidth = 330f;
+	private const float WidthFraction = 0.23f;
+	private const float MinWidth = 345f;
+	private const float MaxWidth = 495f;
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
@@ -53,10 +53,7 @@ public class DebugPanel : IZeepGUIDrawer
 
 		try
 		{
-			using (UiScale.Push(gui))
-			{
-				Draw(gui);
-			}
+			Draw(gui);
 		}
 		catch (Exception e)
 		{

@@ -22,9 +22,9 @@ public class HelpWindow : IZeepGUIDrawer
 {
 	private const string WindowTitle = "ATH Help";
 
-	private const float WidthFraction = 0.26f;
-	private const float MinWidth = 320f;
-	private const float MaxWidth = 460f;
+	private const float WidthFraction = 0.38f;
+	private const float MinWidth = 480f;
+	private const float MaxWidth = 690f;
 
 	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
 
@@ -42,10 +42,7 @@ public class HelpWindow : IZeepGUIDrawer
 
 		try
 		{
-			using (UiScale.Push(gui))
-			{
-				Draw(gui);
-			}
+			Draw(gui);
 		}
 		catch (Exception e)
 		{
