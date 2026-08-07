@@ -121,6 +121,21 @@ public class MedalSpriteAsset : IDisposable
 		}
 	}
 
+	/// <summary>
+	///     The material goes on last, and that ordering is the whole feature.
+	///     TMP_SpriteAsset.UpdateLookupTables opens with
+	///     <c>if (material != null &amp;&amp; string.IsNullOrEmpty(m_Version)) UpgradeSpriteAsset()</c>,
+	///     and an asset built at runtime satisfies both halves the moment it is handed a material:
+	///     the version only ever gets written by that upgrade. UpgradeSpriteAsset then clears both
+	///     tables and walks <c>spriteInfoList</c> - a plain public field with no initializer, so
+	///     null on anything CreateInstance made. That is the NullReferenceException the medals used
+	///     to die of, thrown from the spriteCharacterTable getter, which calls UpdateLookupTables
+	///     itself while the lookups are still empty.
+	///     With no material there is nothing to upgrade, so the tables survive and the lookups get
+	///     built. Every later UpdateLookupTables inside TMP sits behind its own
+	///     <c>if (lookup == null)</c> and never runs again, which is what makes handing the material
+	///     over afterwards safe.
+	/// </summary>
 	private static TMP_SpriteAsset Assemble(Sprite author, Sprite gold)
 	{
 		Texture2D strip = Strip(author, gold);
@@ -133,7 +148,6 @@ public class MedalSpriteAsset : IDisposable
 		asset.name = "ATH Medals";
 		asset.hideFlags = HideFlags.HideAndDontSave;
 		asset.spriteSheet = strip;
-		asset.material = Material(strip);
 		asset.spriteGlyphTable.Add(authorGlyph);
 		asset.spriteGlyphTable.Add(goldGlyph);
 
@@ -141,6 +155,8 @@ public class MedalSpriteAsset : IDisposable
 		asset.spriteCharacterTable.Add(Character(goldGlyph, "gold"));
 
 		asset.UpdateLookupTables();
+
+		asset.material = Material(strip);
 
 		return asset;
 	}

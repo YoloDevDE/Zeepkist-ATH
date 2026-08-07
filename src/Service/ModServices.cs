@@ -30,6 +30,7 @@ public class ModServices
 		Toolbar = new AthToolbar(this);
 		DebugToolbar = new AthDebugToolbar(this);
 		Health = new HealthService(GraphQL);
+		RunOverlay = new RunOverlay(Control);
 	}
 
 	public AthToolbar Toolbar { get; }
@@ -55,9 +56,16 @@ public class ModServices
 
 	public StatusWindow Status { get; } = new();
 
+	/// <summary>
+	///     Not a drawer of its own: it is what <see cref="RunOverlay" />'s drawer holds, and the
+	///     bar draws it. It still lives here because the composition root is where the bar is
+	///     handed the thing it draws.
+	/// </summary>
 	public ControlPanel Control { get; } = new();
 
-	public RunOverlay RunOverlay { get; } = new();
+	public RunOverlay RunOverlay { get; }
+
+	public LevelCard LevelCard { get; } = new();
 
 	public DebugPanel Debug { get; } = new();
 
@@ -85,9 +93,9 @@ public class ModServices
 	{
 		RunHudView.Clear();
 
-		Control.ActiveRun = run;
 		RunOverlay.ActiveRun = run;
-		RunOverlay.Visible = run != null;
+		LevelCard.ActiveRun = run;
+		LevelCard.Visible = run != null;
 		Debug.ActiveRun = run;
 		Status.ActiveRun = run;
 		RaceTime.ActiveRun = run;
@@ -104,8 +112,8 @@ public class ModServices
 	{
 		Menu.Visible = false;
 		Status.Visible = false;
-		Control.Visible = false;
 		RunOverlay.Visible = false;
+		LevelCard.Visible = false;
 		Leaderboard.Visible = false;
 		Welcome.Visible = false;
 		Help.Visible = false;

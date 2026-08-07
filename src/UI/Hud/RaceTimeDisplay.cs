@@ -773,9 +773,16 @@ public class RaceTimeDisplay : IDisposable
 		transform.anchoredPosition += new Vector2(0f, label.fontSize * LinesUp);
 	}
 
+	/// <summary>
+	///     Handing the labels back includes handing back their sprite assets, so the next run has
+	///     to be dressed again from scratch. Leaving <see cref="_sprites" /> set was the same bug
+	///     the medals already had once, one run later: the display would go on writing sprite tags
+	///     against whatever sprite asset the game keeps on that label.
+	/// </summary>
 	private void Restore()
 	{
 		_verdict.Restore();
+		_sprites = false;
 
 		foreach (KeyValuePair<TMP_Text, LabelState> entry in _borrowed)
 		{

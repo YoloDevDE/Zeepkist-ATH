@@ -229,7 +229,7 @@ public class AthMenu : IZeepGUIDrawer
 	/// </summary>
 	private void DrawRoot(ImGui gui)
 	{
-		bool idle = Plugin.Instance.Services.Control.ActiveRun == null;
+		bool idle = Plugin.Instance.Services.RunOverlay.ActiveRun == null;
 
 		Spacer(gui, (gui.GetLayoutHeight() - GridHeight(gui) - FooterHeight(gui)) * 0.5f);
 
@@ -291,7 +291,7 @@ public class AthMenu : IZeepGUIDrawer
 		DrawRunSettings(gui);
 
 		if (UiWidgets.IconButton(gui, UiMetrics.ButtonRow(gui), UiIcon.Play, "Start Hunt", Color.Style.Action.Resume,
-			    Plugin.Instance.Services.Control.ActiveRun == null))
+			    Plugin.Instance.Services.RunOverlay.ActiveRun == null))
 		{
 			Start();
 		}
@@ -387,8 +387,8 @@ public class AthMenu : IZeepGUIDrawer
 		ModServices services = Plugin.Instance.Services;
 
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "WINDOWS");
-		services.RunOverlay.Visible = Window(gui, "Run HUD", services.RunOverlay.Visible);
-		services.Control.Visible = Window(gui, "Controls", services.Control.Visible);
+		services.RunOverlay.Visible = Window(gui, "Run bar", services.RunOverlay.Visible);
+		services.LevelCard.Visible = Window(gui, "Level card", services.LevelCard.Visible);
 		services.Leaderboard.Visible = Window(gui, "Leaderboard", services.Leaderboard.Visible);
 		services.Status.Visible = Window(gui, "Status", services.Status.Visible);
 

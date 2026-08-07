@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using AuthorTimeHunting.UI.Views;
 using AuthorTimeHunting.Util;
 using Imui.Controls;
 using Imui.Core;
@@ -8,8 +10,8 @@ using UnityEngine;
 namespace AuthorTimeHunting.UI.Toolkit;
 
 /// <summary>
-///     The pieces every ATH panel is built from: a medal counter, a progress bar, a label/value
-///     row, a button strip.
+///     The pieces every ATH panel is built from: a medal counter, the run timeline, a
+///     label/value row, a button strip.
 ///     They live here rather than in the panels because the panels have to look like one mod
 ///     rather than three - once a counter is drawn in two places by two methods, it stops
 ///     being drawn the same way.
@@ -40,18 +42,82 @@ public static class UiWidgets
 		gui.Image(sprite, Square(icon), true);
 	}
 
-	public static void Bar(ImGui gui, ImRect rect, float fraction, Color32 colour)
+	/// <summary>
+	///     The hour, left to right, one block per stretch already spent, the rest of it empty.
+	///     This was a single fill for a long time and said one thing: how much is left. The
+	///     segments say the same thing - the empty tail is still the fraction remaining - and then
+	///     go on to say what the spent part went on, which level took how long, and how much of it
+	///     was penalties rather than driving.
+	///     The whole chain is drawn inside a rounded mask instead of rounding each block, so the
+	///     bar keeps its two rounded ends and everything between them stays square. A hairline of
+	///     track shows between two blocks, or two author levels in a row read as one long one.
+	/// </summary>
+	public static void Timeline(ImGui gui, ImRect rect, IReadOnlyList<TimelineSegment> segments)
 	{
-		ImRectRadius radius = rect.H * 0.5f;
+		float radius = rect.H * 0.5f;
 
 		gui.Canvas.Rect(rect, Color.Style.Surface.Track, radius);
+		gui.Canvas.PushRectMask(rect, radius);
 
-		float filled = rect.W * Mathf.Clamp01(fraction);
-
-		if (filled > 0f)
+		try
 		{
-			gui.Canvas.Rect(new ImRect(rect.X, rect.Y, filled, rect.H), colour, radius);
+			Segments(gui, rect, segments);
 		}
+		finally
+		{
+			gui.Canvas.PopRectMask();
+		}
+	}
+
+	private static void Segments(ImGui gui, ImRect rect, IReadOnlyList<TimelineSegment> segments)
+	{
+		float hairline = Mathf.Max(1f, rect.H * 0.12f);
+		float x = rect.X;
+
+		foreach (TimelineSegment segment in segments)
+		{
+			float width = rect.W * Mathf.Clamp01(segment.Fraction);
+			x += width;
+
+			if (width <= 0f)
+			{
+				continue;
+			}
+
+			gui.Canvas.Rect(new ImRect(x - width, rect.Y, Mathf.Max(1f, width - hairline), rect.H), segment.Colour);
+		}
+	}
+
+	/// <summary>
+	///     A button that is only its symbol, for a strip where five of them sit side by side and
+	///     the words would not fit any of them. What the strip is about is written once above it
+	///     rather than five times inside it.
+	/// </summary>
+	public static bool IconOnlyButton(ImGui gui, ImRect rect, UiIcon icon, Color32 accent, bool enabled)
+	{
+		if (!enabled)
+		{
+			gui.Canvas.Rect(rect, Color.Style.Surface.Track, rect.H * 0.2f);
+			UiIcons.Draw(gui, Inset(rect), icon, Color.Style.Text.Muted);
+
+			return false;
+		}
+
+		uint id = gui.GetNextControlId();
+		bool clicked = gui.InvisibleButton(id, rect);
+		bool hovered = gui.IsControlHovered(id);
+
+		gui.Canvas.Rect(rect, hovered ? Lighten(accent, 1.35f) : accent, rect.H * 0.2f);
+		UiIcons.Draw(gui, Inset(rect), icon, Color.Style.Surface.White);
+
+		return clicked;
+	}
+
+	private static ImRect Inset(ImRect rect)
+	{
+		float inset = Mathf.Min(rect.W, rect.H) * 0.26f;
+
+		return new ImRect(rect.X + inset, rect.Y + inset, rect.W - inset * 2f, rect.H - inset * 2f);
 	}
 
 	public static void Row(ImGui gui, ImRect rect, string label, string value, Color32 valueColour)

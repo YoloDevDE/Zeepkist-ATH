@@ -10,5 +10,6 @@ public enum UiIcon
 	Skip,
 	Restart,
 	Warning,
-	Info
+	Info,
+	Stopwatch
 }

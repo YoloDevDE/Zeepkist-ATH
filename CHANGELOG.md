@@ -56,9 +56,20 @@ This one stops trying. ATH now draws its own game.
 - **Medals instead of initials.** The rows are labelled with the game's own author and gold medal art.
 - **The finish tells you what happened.** Where the game printed your time again, it now says what the run was worth:
   *author time*, *gold unlocked*, *gold*, or *no medal*.
-- **One panel, not two.** The strip at the top of the screen carries the level under the run now: what it is called,
-  whose it is, the author and gold times, and which attempt you are on. The separate *Current Level* window it used to
-  live in - the one you had to go and open - is gone.
+- **The hunt is a line, not a panel.** Everything about the hour - how much of it is left, whether it is running, and
+  the medals it has bought so far - is one line along the very top of the screen. It cannot grow into the middle of
+  your view again, because there is nothing there to grow into.
+- **A dot that says it is live.** Beside the clock, blinking once a second the way a recording light does, so a
+  running hour looks different from a stopped one at a glance. Pause, and it becomes a stop symbol.
+- **The bar shows where the hour went.** Not a fill any more but a run of blocks, one per level, as wide as the level
+  took and coloured by what you got out of it - author, gold, free skip, penalty. Skips you paid for sit on the end in
+  red. What is left over is what you have left.
+- **The buttons are in a drawer.** Skip, *Level is Broken*, pause, restart and stop hang under the bar and slide out
+  when you move the pointer up to it, then slide away again. They were a panel in the corner all hour for something
+  pressed a handful of times.
+- **The level lives in the corner.** What you are driving, whose it is, and the two times to beat sit bottom right,
+  where the buttons used to be - out of your way but never behind a window you have to open. The separate *Current
+  Level* window is gone.
 
 ### Between levels
 

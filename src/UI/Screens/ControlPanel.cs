@@ -1,4 +1,3 @@
-using System;
 using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
@@ -10,98 +9,76 @@ using Imui.Controls;
 using Imui.Core;
 using UnityEngine;
 using ZeepSDK.Chat;
-using ZeepSDK.UI;
-using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.UI.Screens;
 
 /// <summary>
-///     The buttons: skip, pause, restart, stop, and the Start button when nothing is running.
-///     Two things used to be wrong with it. It carried the title "Author Time Hunting", which
-///     is the ATH menu's title, and Imui keys a window's position, size and stacking order off
-///     that string - so the two windows shared one slot and fought over it whenever both were
-///     up. And it placed itself under the level panel by reading that panel's rect back, which
-///     put a window's position in another window's hands and drifted the moment either changed
-///     height. It has its own title and its own corner now.
-///     Session-scoped, registered once for the whole game session: it is also what a player
-///     sees when nothing is running, and that is where the Start button lives.
+///     The buttons: skip, level is broken, pause, restart, stop, and the Start button when
+///     nothing is running.
+///     It is not a window any more. It used to own a corner of the screen and hold it all hour
+///     for five buttons that get pressed a handful of times, so it moved into the drawer under
+///     <see cref="RunOverlay" /> and is drawn into whatever rect the bar hands it. That is why
+///     there is no Visible here and no placement: the bar decides when and where, this decides
+///     what.
+///     While a hunt is on, the five are symbols in a row. Their labels were the only thing
+///     making the panel as wide as it was, and none of them said anything the shape did not -
+///     except the skip, whose price changes, so that one line is written above the row instead.
+///     With no hunt on it stays words. "Start Hunt" and the gamemode picker are choices rather
+///     than transport controls, and there is no shape for either.
 /// </summary>
-public class ControlPanel : IZeepGUIDrawer
+public class ControlPanel
 {
-	private const string WindowTitle = "ATH Controls";
+	private const int Buttons = 5;
 
-	private const float WidthFraction = 0.21f;
+	/// <summary>
+	///     Measured separately, because the two states are nothing like the same height and the
+	///     drawer is shut across the moment one becomes the other. One shared number would mean
+	///     every hunt started by opening a drawer sized for the idle screen, and ended by opening
+	///     one sized for five buttons.
+	/// </summary>
+	private float _idleHeight;
 
-	private const float MinWidth = 320f;
-	private const float MaxWidth = 440f;
+	private float _runningHeight;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
-
-	private float _contentHeight;
-
-	private bool _mouseOverWindow;
-
-	public AthStateMachine ActiveRun
+	/// <summary>
+	///     How far the drawer has to open to show all of this. Taken off the last frame that drew
+	///     this state, because the bar has to size the drawer before anything is in it - the guess
+	///     in rows only ever stands until the first measurement.
+	/// </summary>
+	public float Height(ImGui gui, bool idle)
 	{
-		get;
-		set
-		{
-			field = value;
+		float measured = idle ? _idleHeight : _runningHeight;
+		float fallback = gui.GetRowHeight() * (idle ? 9f : 3.4f);
 
-			if (value != null)
-			{
-				Visible = true;
-			}
-		}
+		return (measured > 0f ? measured : fallback) + UiMetrics.Margin(gui);
 	}
 
-	public bool Visible { get; set; }
-
-	public void OnZeepGUI(ImGui gui)
+	public void Draw(ImGui gui, ImRect rect, AthStateMachine run, RunHudView view)
 	{
-		if (!Visible)
-		{
-			return;
-		}
-
-		try
-		{
-			Draw(gui);
-		}
-		catch (Exception e)
-		{
-			Logger.LogError($"ControlPanel: Draw failed, hiding the panel: {e.Message}\n{e.StackTrace}");
-			Visible = false;
-		}
-	}
-
-	private void Draw(ImGui gui)
-	{
-		AthStateMachine run = ActiveRun;
-		RunHudView view = RunHudView.ForFrame(run);
-
-		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
-
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
-			ImWindowAnchor.BottomRight);
-
-		bool open = true;
-
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
-		{
-			return;
-		}
+		gui.Layout.Push(ImAxis.Vertical, rect);
 
 		try
 		{
 			DrawBody(gui, run, view);
 
-			_contentHeight = UiMetrics.ContentHeight(gui);
+			Measure(gui, view == null);
 		}
 		finally
 		{
-			gui.EndWindow();
+			gui.Layout.Pop();
 		}
+	}
+
+	private void Measure(ImGui gui, bool idle)
+	{
+		if (idle)
+		{
+			_idleHeight = UiMetrics.ContentHeight(gui);
+
+			return;
+		}
+
+		_runningHeight = UiMetrics.ContentHeight(gui);
 	}
 
 	private static void DrawBody(ImGui gui, AthStateMachine run, RunHudView view)
@@ -175,58 +152,65 @@ public class ControlPanel : IZeepGUIDrawer
 		gui.AddSpacing();
 	}
 
+	/// <summary>
+	///     The price of a skip above, the five symbols below. The price is the one thing here that
+	///     changes hour to hour - free, gold, penalty, fatal - and the one thing no icon can carry.
+	/// </summary>
 	private static void DrawControls(ImGui gui, AthStateMachine run, RunHudView view)
 	{
-		DrawSkipSection(gui, view);
-		DrawRunSection(gui, run, view);
-	}
-
-	private static void DrawSkipSection(ImGui gui, RunHudView view)
-	{
-		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "SKIP");
+		UiText.Centre(gui, view.SkipType, view.SkipColour, UiMetrics.Row(gui, 1f), gui.Style.Layout.TextSize * 0.95f);
 
 		bool racing = GameStateObserver.IsRacing;
+		ImRect row = Strip(gui);
 
-		if (UiWidgets.IconButton(gui, UiMetrics.ButtonRow(gui), UiIcon.Skip, view.SkipType, view.SkipColour, racing))
+		if (UiWidgets.IconOnlyButton(gui, Button(gui, row, 0), UiIcon.Skip, Color.Style.Action.Skip, racing))
 		{
 			ChatApi.SendMessage("/fs");
 		}
 
-		if (UiWidgets.IconButton(gui, UiMetrics.ButtonRow(gui), UiIcon.Warning, "Level is Broken", Color.Style.Action.Broken,
-			    racing))
+		if (UiWidgets.IconOnlyButton(gui, Button(gui, row, 1), UiIcon.Warning, Color.Style.Action.Broken, racing))
 		{
 			AthRequests.SkipBroken();
 		}
 
-		gui.AddSpacing();
-	}
-
-	private static void DrawRunSection(ImGui gui, AthStateMachine run, RunHudView view)
-	{
-		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "RUN");
-
-		ImRect row = UiMetrics.ButtonRow(gui);
-
-		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 0, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
-			    view.Paused ? "Resume" : "Pause", view.Paused ? Color.Style.Action.Resume : Color.Style.Action.Pause))
+		if (UiWidgets.IconOnlyButton(gui, Button(gui, row, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
+			    view.Paused ? Color.Style.Action.Resume : Color.Style.Action.Pause, true))
 		{
 			TogglePause(run, view);
 		}
 
-		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 1, 2), UiIcon.Restart, "Restart",
-			    Color.Style.Action.Restart))
+		if (UiWidgets.IconOnlyButton(gui, Button(gui, row, 3), UiIcon.Restart, Color.Style.Action.Restart, true))
 		{
 			AthRequests.Restart();
 		}
 
-		if (UiWidgets.IconButton(gui, UiMetrics.ButtonRow(gui), UiIcon.Stop, "Stop Hunt", Color.Style.Action.Stop))
+		if (UiWidgets.IconOnlyButton(gui, Button(gui, row, 4), UiIcon.Stop, Color.Style.Action.Stop, true))
 		{
 			AthRequests.Stop();
 		}
 	}
 
-	private float Height(ImGui gui)
+	/// <summary>
+	///     Five squares in the middle of the bar rather than five stretched across it. The bar is
+	///     as wide as the screen, and a stop button an ultrawide wide is not a button anybody aims
+	///     at - it is a region you fall into.
+	/// </summary>
+	private static ImRect Strip(ImGui gui)
 	{
-		return UiMetrics.WindowHeight(gui, _contentHeight, 8f);
+		float side = UiMetrics.ButtonHeight(gui);
+		float gap = gui.Style.Layout.InnerSpacing;
+		float width = side * Buttons + gap * (Buttons - 1);
+
+		ImRect row = UiMetrics.ButtonRow(gui);
+
+		return new ImRect(row.X + (row.W - width) * 0.5f, row.Y, width, side);
+	}
+
+	private static ImRect Button(ImGui gui, ImRect strip, int index)
+	{
+		float side = strip.H;
+		float gap = gui.Style.Layout.InnerSpacing;
+
+		return new ImRect(strip.X + index * (side + gap), strip.Y, side, side);
 	}
 }

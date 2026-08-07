@@ -44,7 +44,32 @@ public static class UiIcons
 			case UiIcon.Info:
 				Info(gui, box, colour);
 				break;
+			case UiIcon.Stopwatch:
+				Stopwatch(gui, box, colour);
+				break;
 		}
+	}
+
+	/// <summary>
+	///     A case, a crown and a hand. It reads as a stopwatch rather than a clock because of the
+	///     crown: a bare ring with a hand in it is the shape of the game's own lap time, and this
+	///     one measures an hour that is being spent rather than one that is passing.
+	///     The hand points up and to the right - the ten past the hour a watch is photographed at,
+	///     for the same reason, which is that it clears the crown and reads as a hand from across
+	///     the room.
+	/// </summary>
+	private static void Stopwatch(ImGui gui, ImRect box, Color32 colour)
+	{
+		float thickness = Mathf.Max(1f, box.W * 0.09f);
+		float radius = box.W * 0.5f - thickness * 0.5f;
+		float crown = box.W * 0.22f;
+
+		Vector2 centre = new(box.Center.x, box.Y + radius);
+
+		gui.Canvas.Rect(new ImRect(centre.x - crown * 0.5f, box.Top - thickness * 1.6f, crown, thickness * 1.6f),
+			colour);
+		gui.Canvas.CircleWithOutline(centre, radius, Color.clear, colour, thickness);
+		gui.Canvas.Line(centre, centre + new Vector2(radius * 0.42f, radius * 0.52f), colour, thickness * 0.9f);
 	}
 
 	private static void Triangle(ImGui gui, ImRect box, Color32 colour, bool right)

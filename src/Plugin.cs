@@ -38,7 +38,7 @@ public class Plugin : BaseUnityPlugin
 		Services = new ModServices();
 		UIApi.AddZeepGUIDrawer(Services.RunOverlay);
 
-		UIApi.AddZeepGUIDrawer(Services.Control);
+		UIApi.AddZeepGUIDrawer(Services.LevelCard);
 		UIApi.AddZeepGUIDrawer(Services.Leaderboard);
 		UIApi.AddZeepGUIDrawer(Services.LevelSummary);
 		UIApi.AddZeepGUIDrawer(Services.Results);
@@ -68,7 +68,7 @@ public class Plugin : BaseUnityPlugin
 			CommandAth.CommandTrigger -= Services.Menu.Toggle;
 			Services.PlayMenu.Dispose();
 			UIApi.RemoveZeepGUIDrawer(Services.RunOverlay);
-			UIApi.RemoveZeepGUIDrawer(Services.Control);
+			UIApi.RemoveZeepGUIDrawer(Services.LevelCard);
 			UIApi.RemoveZeepGUIDrawer(Services.Leaderboard);
 			UIApi.RemoveZeepGUIDrawer(Services.LevelSummary);
 			UIApi.RemoveZeepGUIDrawer(Services.Results);
