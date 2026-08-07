@@ -34,21 +34,6 @@ public class HudSounds : IDisposable
 	private const int Channels = 1;
 
 	/// <summary>
-	///     The partials every clip is built from, as a share of the fundamental. Four of them is
-	///     where a beep stops sounding like a signal generator and starts sounding like something
-	///     that was struck; past that the top ones only add hiss at the sample rate this runs at.
-	/// </summary>
-	private static readonly float[] Partials = [1f, 0.34f, 0.16f, 0.07f];
-
-	/// <summary>
-	///     The reverb, in samples of delay: 25, 38 and 59 milliseconds. Mutually prime, so the three
-	///     of them do not line up and turn a room into a single flutter. They run in parallel, each
-	///     one fed the dry clip - in series they would only reverberate each other's output, which
-	///     is a longer and thinner sound than three rooms heard at once.
-	/// </summary>
-	private static readonly int[] Echoes = [1103, 1697, 2593];
-
-	/// <summary>
 	///     How long the room takes to fall 60 dB. Under half a second is a small hard room, which is
 	///     what a beep wants: enough that it lands somewhere rather than in front of the player's
 	///     face, and over before the next lamp lights.
@@ -78,6 +63,21 @@ public class HudSounds : IDisposable
 	private const float DecayRate = 5f;
 
 	private const float BaseVolume = 0.9f;
+
+	/// <summary>
+	///     The partials every clip is built from, as a share of the fundamental. Four of them is
+	///     where a beep stops sounding like a signal generator and starts sounding like something
+	///     that was struck; past that the top ones only add hiss at the sample rate this runs at.
+	/// </summary>
+	private static readonly float[] Partials = [1f, 0.34f, 0.16f, 0.07f];
+
+	/// <summary>
+	///     The reverb, in samples of delay: 25, 38 and 59 milliseconds. Mutually prime, so the three
+	///     of them do not line up and turn a room into a single flutter. They run in parallel, each
+	///     one fed the dry clip - in series they would only reverberate each other's output, which
+	///     is a longer and thinner sound than three rooms heard at once.
+	/// </summary>
+	private static readonly int[] Echoes = [1103, 1697, 2593];
 
 	/// <summary>One lamp of the countdown.</summary>
 	private static readonly Tone[] LampNotes = [new(660f, 0f, 0.11f)];

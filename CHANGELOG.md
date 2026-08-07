@@ -30,8 +30,8 @@ This one stops trying. ATH now draws its own game.
 - **The mod runs the lobby.** ATH hosts the hunt itself now, so nothing outside the run can move the playlist out from
   under you, and the next level is already downloading while you are still driving this one.
 - **Every hunt gets a fresh one.** Start or restart from anywhere - someone else's lobby, your own, the main menu - and
-  ATH leaves what you were in and opens its own. No run ever inherits a playlist or half a round timer from whatever
-  was there before.
+  ATH leaves what you were in and opens its own. No run ever inherits a playlist or half a round timer from whatever was
+  there before.
 - **You never see it happen.** Starting a hunt puts up ATH's own screen over everything - the game's menus, its loading
   screen, the podium - and keeps the game quiet behind it until your round begins. What you get instead is a checklist
   ticking itself off: creating the lobby, loading the level, fetching levels, starting in 3. It steps aside for the
