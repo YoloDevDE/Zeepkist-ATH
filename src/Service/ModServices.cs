@@ -1,6 +1,8 @@
 ﻿using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
+using AuthorTimeHunting.UI.Hud;
+using AuthorTimeHunting.UI.Screens;
+using AuthorTimeHunting.UI.Views;
 
 namespace AuthorTimeHunting.Service;
 
@@ -74,6 +76,10 @@ public class ModServices
 	public HelpWindow Help { get; } = new();
 
 	public LoadingOverlay Loading { get; } = new();
+
+	public LobbySilence Silence { get; } = new();
+
+	public PlayMenuButton PlayMenu { get; } = new();
 
 	public MatchHistoryService History { get; } = new();
 

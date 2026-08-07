@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Steamworks.Data;
 using Steamworks.Ugc;
@@ -85,8 +86,12 @@ public class WorkshopDownloadService
 
 		Task<bool> download = EnsureDownloadedAsync(level);
 
-		if (await Task.WhenAny(download, Task.Delay(ReadyTimeout)) == download)
+		using CancellationTokenSource timeout = new();
+
+		if (await Task.WhenAny(download, Task.Delay(ReadyTimeout, timeout.Token)) == download)
 		{
+			timeout.Cancel();
+
 			return;
 		}
 

@@ -14,6 +14,8 @@ namespace AuthorTimeHunting.Service;
 ///     GTR gets a plain HTTP request and any answer at all counts as up. Its routes are all
 ///     POST endpoints behind a login, so there is nothing safe to call; what a status window
 ///     can honestly report is that the host is reachable, and it says exactly that.
+///     The two are asked at the same time. They share nothing, and one backend being down should
+///     not add its timeout to the wait for the other.
 /// </summary>
 public class HealthService : IDisposable
 {
@@ -55,8 +57,7 @@ public class HealthService : IDisposable
 
 		try
 		{
-			await CheckGraphQlAsync();
-			await CheckGtrAsync();
+			await Task.WhenAll(CheckGraphQlAsync(), CheckGtrAsync());
 		}
 		finally
 		{

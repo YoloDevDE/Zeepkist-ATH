@@ -2,7 +2,7 @@
 using System.Linq;
 using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.States.Ath.StateMachine;
-using AuthorTimeHunting.UI;
+using AuthorTimeHunting.UI.Views;
 using AuthorTimeHunting.Util;
 using ZeepkistClient;
 

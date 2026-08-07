@@ -19,9 +19,13 @@ public class GamemodeRegistry
 	public GamemodeRegistry()
 	{
 		Selected = _modes[0];
+		DisplayNames = _modes.Select(mode => mode.DisplayName).ToArray();
 	}
 
 	public IReadOnlyList<IGamemode> All => _modes;
+
+	/// <summary>What a dropdown lists, in the order of <see cref="All" />. The list never changes.</summary>
+	public string[] DisplayNames { get; }
 
 	public IGamemode Selected { get; set; }
 

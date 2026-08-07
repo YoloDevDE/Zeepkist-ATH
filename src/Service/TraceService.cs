@@ -24,9 +24,11 @@ public class TraceService
 
 	private TraceBehaviour _behaviour;
 	private int _lastCount = int.MinValue;
+	private bool _lastInGame;
 
 	private int _lastIndex = int.MinValue;
-	private string _lastScreen = "";
+	private ZeepkistLobbyState? _lastLobbyState;
+	private string _lastSceneName = "";
 	private string _lastUid = "";
 
 	public TraceService()
@@ -58,28 +60,48 @@ public class TraceService
 		_behaviour = null;
 	}
 
+	/// <summary>
+	///     Runs every frame, so the three things a screen is made of are compared as they are and
+	///     only written out on the frame one of them actually moved. Building the sentence first and
+	///     comparing that would mean four throwaway strings per frame for a line logged once a minute.
+	/// </summary>
 	private void TraceScreen()
 	{
-		string screen = Screen();
+		string scene = SceneManager.GetActiveScene().name;
+		bool inGame = PlayerManager.Instance != null && PlayerManager.Instance.currentMaster != null;
+		ZeepkistLobbyState? lobby = LobbyState();
 
-		if (screen == _lastScreen)
+		if (scene == _lastSceneName && inGame == _lastInGame && lobby == _lastLobbyState)
 		{
 			return;
 		}
 
-		_lastScreen = screen;
-		Logger.LogInfo($"Trace: Screen is now {screen}.");
+		_lastSceneName = scene;
+		_lastInGame = inGame;
+		_lastLobbyState = lobby;
+
+		Logger.LogInfo($"Trace: Screen is now {ScreenText(scene, inGame, lobby)}.");
+	}
+
+	private static ZeepkistLobbyState? LobbyState()
+	{
+		if (ZeepkistNetwork.CurrentLobby == null)
+		{
+			return null;
+		}
+
+		return (ZeepkistLobbyState)ZeepkistNetwork.CurrentLobby.GameState;
 	}
 
 	private static string Screen()
 	{
-		string scene = SceneManager.GetActiveScene().name;
-		bool inGame = PlayerManager.Instance != null && PlayerManager.Instance.currentMaster != null;
-		string lobby = ZeepkistNetwork.CurrentLobby == null ?
-			"offline" :
-			$"lobby in {(ZeepkistLobbyState)ZeepkistNetwork.CurrentLobby.GameState}";
+		return ScreenText(SceneManager.GetActiveScene().name,
+			PlayerManager.Instance != null && PlayerManager.Instance.currentMaster != null, LobbyState());
+	}
 
-		return $"'{scene}' [{(inGame ? "gameplay" : "menu")}, {lobby}]";
+	private static string ScreenText(string scene, bool inGame, ZeepkistLobbyState? lobby)
+	{
+		return $"'{scene}' [{(inGame ? "gameplay" : "menu")}, {(lobby == null ? "offline" : $"lobby in {lobby}")}]";
 	}
 
 	private static void TraceKeys()

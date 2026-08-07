@@ -54,6 +54,7 @@ public class Plugin : BaseUnityPlugin
 		UIApi.AddToolbarDrawer(Services.Toolbar);
 		UIApi.AddToolbarDrawer(Services.DebugToolbar);
 		CommandAth.CommandTrigger += Services.Menu.Toggle;
+		Services.PlayMenu.Listen();
 		InitializeHarmony();
 		RegisterChatCommands();
 		InitializeStateMachine();
@@ -66,6 +67,7 @@ public class Plugin : BaseUnityPlugin
 		if (Services != null)
 		{
 			CommandAth.CommandTrigger -= Services.Menu.Toggle;
+			Services.PlayMenu.Dispose();
 			UIApi.RemoveZeepGUIDrawer(Services.RunOverlay);
 			UIApi.RemoveZeepGUIDrawer(Services.Control);
 			UIApi.RemoveZeepGUIDrawer(Services.LevelStats);
@@ -83,6 +85,7 @@ public class Plugin : BaseUnityPlugin
 		}
 
 		Services?.RaceTime.Dispose();
+		Services?.Loading.Dispose();
 		Services?.GameState.Dispose();
 		Services?.Trace.Dispose();
 		Services?.Health.Dispose();

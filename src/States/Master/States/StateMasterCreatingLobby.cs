@@ -9,6 +9,7 @@ using AuthorTimeHunting.Util;
 using UnityEngine.SceneManagement;
 using ZeepkistClient;
 using ZeepkistNetworking;
+using ZeepSDK.Racing;
 using Object = UnityEngine.Object;
 
 namespace AuthorTimeHunting.States.Master.States;
@@ -30,7 +31,8 @@ public class StateMasterCreatingLobby : StateBase
 
 	private const int MaxPlayers = 16;
 
-	private const bool Private = false;
+	/// <summary>A hunt is a lobby of one, so it is never public - at creation and again afterwards.</summary>
+	private const bool IsPublic = false;
 
 	private const string GameScene = "GameScene";
 
@@ -40,17 +42,20 @@ public class StateMasterCreatingLobby : StateBase
 	private static readonly TimeSpan LevelTimeout = TimeSpan.FromSeconds(60);
 
 	/// <summary>
-	///     A lobby that just opened is not ready to be taken over. The playlist is still the
-	///     default one, the round is running on the server's clock and the host powers have only
-	///     just landed - a hunt that starts into that races the lobby's own setup. So it waits,
-	///     and the wait is spent telling the player what they are about to play.
+	///     A lobby that just opened is not ready to be taken over: the playlist is still the default
+	///     one, the round is running on the server's clock and the host powers have only just
+	///     landed. What says that setup is finished is the round starting, so that is what is waited
+	///     for - a fixed ten seconds was a guess that was either a stall or a race, and usually
+	///     both.
 	/// </summary>
-	private static readonly TimeSpan Welcome = TimeSpan.FromSeconds(10);
+	private static readonly TimeSpan RoundTimeout = TimeSpan.FromSeconds(60);
 
 	private readonly CancellationTokenSource _cts = new();
 	private readonly IGamemode _gamemode;
 
 	private bool _left;
+
+	private bool _roundStarted;
 
 	public StateMasterCreatingLobby(MasterStateMachine stateMachine, IGamemode gamemode) : base(stateMachine)
 	{
@@ -62,7 +67,12 @@ public class StateMasterCreatingLobby : StateBase
 	public override async void Enter()
 	{
 		AthRequests.StopRequested += Cancel;
+		RacingApi.RoundStarted += OnRoundStarted;
+
+		Master.Services.Silence.Silence();
 		Master.Services.Loading.Show("Opening a private lobby");
+		Master.Services.Loading.ShowWelcome(_gamemode);
+		Master.Services.Loading.Step("Creating lobby");
 
 		try
 		{
@@ -82,8 +92,22 @@ public class StateMasterCreatingLobby : StateBase
 	{
 		_left = true;
 		AthRequests.StopRequested -= Cancel;
+		RacingApi.RoundStarted -= OnRoundStarted;
+		Master.Services.Silence.Restore();
 		_cts.Cancel();
 		_cts.Dispose();
+	}
+
+	/// <summary>
+	///     The round the mod set up is running, which is the moment the pretence stops costing
+	///     anything: from here every sound the game makes belongs to the hunt. Leaving is also
+	///     unmuted, in <see cref="Exit" /> - a cancelled start that left the game silent would be
+	///     the worst bug in the mod.
+	/// </summary>
+	private void OnRoundStarted()
+	{
+		_roundStarted = true;
+		Master.Services.Silence.Restore();
 	}
 
 	private static void HideFromTheRoomList()
@@ -95,9 +119,9 @@ public class StateMasterCreatingLobby : StateBase
 			return;
 		}
 
-		lobby.IsPublic = Private;
+		lobby.IsPublic = IsPublic;
 
-		ZeepkistNetwork.NetworkClient?.SendPacket(new ChangeLobbyVisibilityPacket { Visiblity = Private });
+		ZeepkistNetwork.NetworkClient?.SendPacket(new ChangeLobbyVisibilityPacket { Visiblity = IsPublic });
 	}
 
 	private static void EnterTheGameScene()
@@ -123,7 +147,7 @@ public class StateMasterCreatingLobby : StateBase
 			return false;
 		}
 
-		ZeepkistNetwork.CreateLobby(LobbyName, MaxPlayers, Private);
+		ZeepkistNetwork.CreateLobby(LobbyName, MaxPlayers, IsPublic);
 
 		if (!await Wait.UntilAsync(() => ZeepkistNetwork.IsConnectedToGame, Timeout, _cts.Token))
 		{
@@ -131,7 +155,7 @@ public class StateMasterCreatingLobby : StateBase
 		}
 
 		HideFromTheRoomList();
-		Master.Services.Loading.Show("Loading the lobby");
+		Master.Services.Loading.Step("Loading the lobby level");
 		EnterTheGameScene();
 
 		if (!await Wait.UntilAsync(() => GameStateObserver.IsLevelReady, LevelTimeout, _cts.Token))
@@ -139,8 +163,14 @@ public class StateMasterCreatingLobby : StateBase
 			Logger.LogWarning("StateMasterCreatingLobby: The lobby is up but no level is running yet.");
 		}
 
-		Master.Services.Loading.ShowWelcome(_gamemode, Welcome);
-		await Task.Delay(Welcome, _cts.Token);
+		Master.Services.Loading.Step("Waiting for the round");
+
+		if (!await Wait.UntilAsync(() => _roundStarted, RoundTimeout, _cts.Token))
+		{
+			Logger.LogWarning("StateMasterCreatingLobby: No round start arrived, handing over anyway.");
+		}
+
+		Master.Services.Loading.Step("Fetching levels");
 
 		return true;
 	}

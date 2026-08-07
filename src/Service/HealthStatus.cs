@@ -24,6 +24,9 @@ public class HealthStatus
 
 	public DateTime CheckedAtUtc { get; private set; }
 
+	/// <summary>The one line the status window puts next to the name, written once per check.</summary>
+	public string Verdict { get; private set; } = "not checked yet";
+
 	public void Report(bool isUp, string detail, long latencyMs)
 	{
 		Checked = true;
@@ -31,5 +34,6 @@ public class HealthStatus
 		Detail = detail;
 		LatencyMs = latencyMs;
 		CheckedAtUtc = DateTime.UtcNow;
+		Verdict = isUp ? $"up ({latencyMs} ms)" : "down";
 	}
 }

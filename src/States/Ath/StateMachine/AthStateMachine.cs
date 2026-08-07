@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.States;
@@ -28,13 +27,12 @@ public class AthStateMachine : StateMachineBase
 
 	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
 
-	private readonly Queue<Action> _deferredEvents = new();
-
 	private AthLoopBehaviour _behaviour;
 	private int _consecutiveTickFailures;
 	private bool _eventsSubscribed;
 	private string _lastServerMessage;
 	private DateTime _lastServerMessageTime = DateTime.MinValue;
+	private float? _pendingFinishTime;
 
 	public AthStateMachine(ModServices services, IGamemode gamemode)
 	{
@@ -190,7 +188,7 @@ public class AthStateMachine : StateMachineBase
 
 	public override void Update()
 	{
-		DrainDeferredEvents();
+		ForwardPendingFinish();
 
 		if (TryForward(nameof(Update), state => state.Update()))
 		{
@@ -248,16 +246,20 @@ public class AthStateMachine : StateMachineBase
 	/// </summary>
 	private void OnCrossedFinishLine(float time)
 	{
-		_deferredEvents.Enqueue(() =>
-			TryForward(nameof(OnCrossedFinishLine), state => state.OnCrossedFinishLine(time)));
+		_pendingFinishTime = time;
 	}
 
-	private void DrainDeferredEvents()
+	private void ForwardPendingFinish()
 	{
-		while (_deferredEvents.Count > 0)
+		if (_pendingFinishTime == null)
 		{
-			_deferredEvents.Dequeue()();
+			return;
 		}
+
+		float time = _pendingFinishTime.Value;
+		_pendingFinishTime = null;
+
+		TryForward(nameof(OnCrossedFinishLine), state => state.OnCrossedFinishLine(time));
 	}
 
 	private void OnLevelLoaded()

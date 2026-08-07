@@ -50,11 +50,6 @@ public static class FrogNotification
 
 	private static void Tinted(string message, Color32 textColor, float duration)
 	{
-		Custom(message, textColor, ColorExtensions.SurfaceColors.Panel, duration);
-	}
-
-	private static void Custom(string message, Color backgroundColor, Color textColor, float duration = 2.5f)
-	{
-		_tagged?.LogCustomColors(message, textColor, backgroundColor, duration);
+		_tagged?.LogCustomColors(message, textColor, Color.Style.Surface.Panel, duration);
 	}
 }
