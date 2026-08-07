@@ -40,11 +40,16 @@ This one stops trying. ATH now draws its own game.
   chasing - no more doing subtraction at 90 km/h. It runs green, goes yellow when it gets tight, and **flashes red**
   over the last stretch before the medal is gone.
 - **Lose both medals and the clock says so.** It turns full red and stays there to the line.
-- **Start lights.** Three lamps above the clock, on the same timing as the light on the start block: red while the
-  screen is still wiping open, amber for the last half second, green on release - three lamps, three colours, three
-  beeps, so you can take the start without looking at them at all.
-- **A warning when the medal is nearly gone.** The countdown fades between yellow and red instead of sitting still, and
-  a tone goes off once as it starts.
+- **Start lights you can actually time.** Three lamps above the clock: red, amber, green on release - three lamps, three
+  colours, three beeps, so you can take the start without looking at them at all. They are spaced evenly, which the
+  light on the start block is not: that one sits on red for a second and a quarter and then flashes amber for half of
+  one, so there is nothing to count along with. These are the same distance apart every time.
+- **Three warnings, not one.** A single beep the moment the countdown turns yellow. A double beep when it starts
+  flashing red. And when the author time slips past, a falling two-tone that tells you the run just changed, while you
+  are still looking at the track. Lose the author medal and start chasing gold, and gold gets its own warnings from the
+  top.
+- **Fuller sounds.** Every tone is built from a stack of harmonics with a short room reverb behind it, instead of the
+  bare sine it used to be - it sits in the game rather than on top of it.
 - **Medals instead of initials.** The rows are labelled with the game's own author and gold medal art.
 - **The finish tells you what happened.** Where the game printed your time again, it now says what the run was worth:
   *author time*, *gold unlocked*, *gold*, or *no medal*.

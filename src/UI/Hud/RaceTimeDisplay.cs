@@ -43,16 +43,18 @@ namespace AuthorTimeHunting.UI.Hud;
 ///     them it turns the colour of one lost. Leaving either as the warning it was while driving
 ///     reads as a verdict that never came. The game's own finish panel gets the verdict in words,
 ///     in place of a time nobody needs twice (see <see cref="FinishVerdict" />).
-///     The lamps sit above the clock, where a start light belongs, and they copy the one on the
-///     start block down to when it changes: three red while it holds, then amber filling in one
-///     lamp at a time across the half second the real light is amber, then three green on the
-///     release. All three are always on screen and
-///     only their colour changes,
-///     because lamps appearing one at a time move the row under the eye that is trying to read
-///     it. Each change gets a beep and the release gets one an octave up (see
-///     <see cref="StartLightSounds" />), so the start can be taken without looking at all. On a
-///     level whose author time is under two seconds the green light would still be on when the
-///     run is already decided, so it is skipped there.
+///     The lamps sit above the clock, where a start light belongs: three red, then three amber,
+///     then three green on the release. All three are always on screen and only their colour
+///     changes, because lamps appearing one at a time move the row under the eye that is trying to
+///     read it. Each change gets a beep and the release gets one an octave up (see
+///     <see cref="HudSounds" />), so the start can be taken without looking at all. On a level
+///     whose author time is under two seconds the green light would still be on when the run is
+///     already decided, so it is skipped there.
+///     What it deliberately does not do is copy the light on the start block. That one holds red
+///     for one and a quarter seconds and amber for half of one, which is not a rhythm - it is a
+///     wait and then a surprise, and a start cannot be timed against it. These lamps split the
+///     countdown evenly instead, so red, amber and green are the same distance apart and the
+///     third one is where the second one told you it would be.
 ///     No Harmony patch. The game writes this label from ReadyToReset.Update, and Unity runs
 ///     every LateUpdate after every Update, so writing from a LateUpdate of our own wins the
 ///     frame deterministically. It also means there is nothing to undo: stop writing and the
@@ -86,14 +88,12 @@ public class RaceTimeDisplay : IDisposable
 	private const float CountdownSeconds = 1.749f;
 
 	/// <summary>
-	///     When the real light on the start block turns amber, in seconds from the restart.
-	///     TrafficLightCountdown holds red for the first 1.25s, shows amber for the last half
-	///     second and goes green on the release, and it counts from the same restart event that
-	///     sets the physics clock to -1.749 - the two clocks are one clock. Most of that red is
-	///     behind the circle wipe closing over the screen, which is why the light the player
-	///     actually sees is amber almost as soon as they can see anything.
+	///     Halfway, which is the whole point: red at the start of the countdown, amber here, green
+	///     on the release puts the same gap between each pair. The game's own TrafficLightCountdown
+	///     goes amber at 1.25s of its 1.75, so its red lasts two and a half times as long as its
+	///     amber, and the two clocks are one clock - so this could have been inherited and is not.
 	/// </summary>
-	private const float AmberAt = 1.25f;
+	private const float AmberAt = CountdownSeconds / 2f;
 
 	private const float GreenHoldSeconds = 1f;
 
@@ -126,6 +126,17 @@ public class RaceTimeDisplay : IDisposable
 
 	private const double CloseFraction = 0.75;
 	private const double CriticalFraction = 0.92;
+
+	/// <summary>
+	///     How the chase is going, in the three steps the colour already had. Kept as stages rather
+	///     than a flag per sound so each one is announced on its edge, the way the lamps are, and so
+	///     a medal falling away and the next one being picked up walks back down through them.
+	/// </summary>
+	private const int PaceSafe = 0;
+
+	private const int PaceClose = 1;
+
+	private const int PaceCritical = 2;
 
 	/// <summary>
 	///     How often the warning swings from yellow to red and back. Slow enough to read as a
@@ -184,7 +195,7 @@ public class RaceTimeDisplay : IDisposable
 
 	private readonly MedalSpriteAsset _medals = new();
 
-	private readonly StartLightSounds _sounds = new();
+	private readonly HudSounds _sounds = new();
 
 	private readonly FinishVerdict _verdict = new();
 
@@ -194,13 +205,16 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private string[] _lampRows;
 
+	/// <summary>How the chase last sounded, so each step is played once as it is entered.</summary>
+	private int _lastPace = PaceSafe;
+
 	private int _lastStage = NoLights;
+
+	/// <summary>Whether this attempt has already been told the author time is behind it.</summary>
+	private bool _missedAuthor;
 
 	/// <summary>Whether the label took the medal sprites. If it did not, the two letters stand in.</summary>
 	private bool _sprites;
-
-	/// <summary>Whether this attempt has already been told its medal is nearly gone.</summary>
-	private bool _warned;
 
 	public RaceTimeDisplay()
 	{
@@ -318,11 +332,13 @@ public class RaceTimeDisplay : IDisposable
 		Borrow(label);
 
 		int stage = Stage(master.currentLevelPhysicsTime, level.TimeAuthor);
+		double elapsed = Elapsed(player);
 
 		Announce(stage);
 		Rearm(master.currentLevelPhysicsTime);
+		Mourn(elapsed, level.TimeAuthor);
 
-		label.text = Compose(stage, master.currentLevelPhysicsTime, Elapsed(player), level.TimeGold, level.TimeAuthor);
+		label.text = Compose(stage, master.currentLevelPhysicsTime, elapsed, level.TimeGold, level.TimeAuthor);
 
 		Judge(player.screenPointer.resultTime);
 	}
@@ -335,7 +351,32 @@ public class RaceTimeDisplay : IDisposable
 			return;
 		}
 
-		_warned = false;
+		_lastPace = PaceSafe;
+		_missedAuthor = false;
+	}
+
+	/// <summary>
+	///     The author time going past, said once. That is the moment the run stops being the run it
+	///     set out to be, and all the display does about it is start counting a different row - a
+	///     sound is what makes it land on a player who is looking at the track.
+	/// </summary>
+	private void Mourn(double elapsed, double authorTime)
+	{
+		if (_missedAuthor || authorTime <= 0d || elapsed < authorTime || Finished)
+		{
+			return;
+		}
+
+		_missedAuthor = true;
+
+		try
+		{
+			_sounds.Missed();
+		}
+		catch (Exception e)
+		{
+			Logger.LogWarning($"RaceTimeDisplay: Could not play the missed author time: {e.Message}");
+		}
 	}
 
 	private void Judge(TMP_Text label)
@@ -418,7 +459,7 @@ public class RaceTimeDisplay : IDisposable
 
 		try
 		{
-			Play(stage);
+			PlayStage(stage);
 		}
 		catch (Exception e)
 		{
@@ -426,7 +467,7 @@ public class RaceTimeDisplay : IDisposable
 		}
 	}
 
-	private void Play(int stage)
+	private void PlayStage(int stage)
 	{
 		if (stage == GreenStage)
 		{
@@ -594,21 +635,31 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private string PaceHex(double elapsed, double target)
 	{
-		double fraction = elapsed / target;
+		int pace = Pace(elapsed / target);
 
-		if (fraction < CloseFraction)
+		Sound(pace);
+
+		if (pace == PaceSafe)
 		{
 			return SafeHex;
 		}
 
-		if (fraction < CriticalFraction)
+		if (pace == PaceClose)
 		{
 			return CloseHex;
 		}
 
-		Warn();
-
 		return Hex(Color32.Lerp(Color.Style.Status.Close, Color.Style.Status.Alert, Pulse()));
+	}
+
+	private static int Pace(double fraction)
+	{
+		if (fraction < CloseFraction)
+		{
+			return PaceSafe;
+		}
+
+		return fraction < CriticalFraction ? PaceClose : PaceCritical;
 	}
 
 	/// <summary>
@@ -621,25 +672,48 @@ public class RaceTimeDisplay : IDisposable
 	}
 
 	/// <summary>
-	///     One tone as the warning comes on, and none after it. The colour says how long is left
-	///     from then on; a sound repeating that every second would be the mod shouting.
+	///     One tone as each step is entered, and none while it lasts. The colour says how long is
+	///     left from then on; a sound repeating that every second would be the mod shouting.
+	///     Stepping back down is silent, which is what lets a medal falling away work: the chase
+	///     moves to the next one, the fraction drops, and that medal gets its own warning later
+	///     instead of inheriting one already spent.
 	/// </summary>
-	private void Warn()
+	private void Sound(int pace)
 	{
-		if (_warned)
+		if (pace == _lastPace)
 		{
 			return;
 		}
 
-		_warned = true;
+		_lastPace = pace;
 
 		try
 		{
-			_sounds.Warning();
+			PlayPace(pace);
 		}
 		catch (Exception e)
 		{
 			Logger.LogWarning($"RaceTimeDisplay: Could not play the warning: {e.Message}");
+		}
+	}
+
+	/// <summary>
+	///     A single beep as the medal gets tight, two as it is about to be gone. One tone for both
+	///     would make the second warning the same news as the first, and the second one is the one
+	///     that decides whether the run is still worth finishing.
+	/// </summary>
+	private void PlayPace(int pace)
+	{
+		if (pace == PaceClose)
+		{
+			_sounds.Warning();
+
+			return;
+		}
+
+		if (pace == PaceCritical)
+		{
+			_sounds.Alert();
 		}
 	}
 
@@ -648,7 +722,35 @@ public class RaceTimeDisplay : IDisposable
 		return $"#{colour.r:X2}{colour.g:X2}{colour.b:X2}";
 	}
 
+	/// <summary>
+	///     Asks for the medals on every frame that has not got them yet, rather than once when the
+	///     label is first taken. The sprites are cut out of the game's own art, and the game loads
+	///     that when it feels like it - a label borrowed one frame too early answered "no medals"
+	///     and then kept that answer for the rest of the session, which is how a feature that works
+	///     ends up showing "AT" and "G" forever.
+	/// </summary>
+	private void Dress(TMP_Text label)
+	{
+		if (_sprites)
+		{
+			return;
+		}
+
+		_sprites = _medals.Install(label);
+	}
+
+	/// <summary>
+	///     Taking the label and then dressing it, in that order: what the label had is written down
+	///     first, or the sprite asset put on it a moment later is what <see cref="Restore" /> would
+	///     hand back to the game.
+	/// </summary>
 	private void Borrow(TMP_Text label)
+	{
+		Adopt(label);
+		Dress(label);
+	}
+
+	private void Adopt(TMP_Text label)
 	{
 		if (_borrowed.ContainsKey(label))
 		{
@@ -661,8 +763,6 @@ public class RaceTimeDisplay : IDisposable
 
 		_borrowed[label] = new LabelState(label.overflowMode, label.enableAutoSizing, label.fontSize,
 			label.enableWordWrapping, transform.anchoredPosition, label.spriteAsset);
-
-		_sprites = _medals.Install(label);
 
 		label.overflowMode = TextOverflowModes.Overflow;
 
