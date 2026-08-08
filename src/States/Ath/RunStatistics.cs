@@ -14,9 +14,9 @@ namespace AuthorTimeHunting.States.Ath;
 /// </summary>
 public class RunStatistics
 {
-	private const double TimeSinkThresholdInMinutes = 5;
+	private const double _timeSinkThresholdInMinutes = 5;
 
-	private const int HauntingAuthorMinimumLevels = 2;
+	private const int _hauntingAuthorMinimumLevels = 2;
 
 	private readonly IReadOnlyList<Level> _levels;
 
@@ -80,7 +80,7 @@ public class RunStatistics
 	}
 
 	public Level BiggestTimeSink =>
-		_levels.Where(level => !level.LevelBroken && level.GetPlayDuration().TotalMinutes >= TimeSinkThresholdInMinutes)
+		_levels.Where(level => !level.LevelBroken && level.GetPlayDuration().TotalMinutes >= _timeSinkThresholdInMinutes)
 			.OrderByDescending(level => level.GetPlayDuration()).FirstOrDefault();
 
 	public Level EasiestBeatenLevel => _levels.Where(level => level.AuthorTimeAcquired).OrderBy(level => level.Attempt)
@@ -88,7 +88,7 @@ public class RunStatistics
 
 	public (string Author, List<Level> Levels) MostBeatenAuthor =>
 		_levels.Where(level => level.AuthorTimeAcquired).GroupBy(level => level.Author)
-			.Where(group => group.Count() >= HauntingAuthorMinimumLevels)
+			.Where(group => group.Count() >= _hauntingAuthorMinimumLevels)
 			.Select(group => (Author: group.Key, Levels: group.ToList())).FirstOrDefault();
 
 	private List<Level> BeatenLevels()

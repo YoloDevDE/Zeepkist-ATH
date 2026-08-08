@@ -147,13 +147,13 @@ public class RunHudView
 
 		switch (level.Status)
 		{
-			case LevelStatus.AUTHOR:
+			case LevelStatus.Author:
 				return Color.Zeepkist.Medal.Author;
-			case LevelStatus.GOLD:
+			case LevelStatus.Gold:
 				return Color.Zeepkist.Medal.Gold;
-			case LevelStatus.FREE:
+			case LevelStatus.Free:
 				return Color.Style.Status.FreeSkip;
-			case LevelStatus.FAILED:
+			case LevelStatus.Failed:
 				return Color.Style.Status.Penalty;
 			default:
 				return Color.Style.Text.Muted;

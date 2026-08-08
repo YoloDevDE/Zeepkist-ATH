@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using AuthorTimeHunting.Gamemodes;
-using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI.Hud;
 using AuthorTimeHunting.UI.Toolkit;
@@ -36,28 +35,28 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 {
-	private const string Title = "AUTHOR TIME HUNTING";
+	private const string _title = "AUTHOR TIME HUNTING";
 
-	private const float TitleSize = 1.8f;
-	private const float MessageSize = 1.05f;
+	private const float _titleSize = 1.8f;
+	private const float _messageSize = 1.05f;
 
-	private const float LineHeight = 1.9f;
-	private const float TitleLines = 1.4f;
+	private const float _lineHeight = 1.9f;
+	private const float _titleLines = 1.4f;
 
 	/// <summary>The air between the rules of the run and the list of what the mod is doing about it.</summary>
-	private const float StepsGap = 1.2f;
+	private const float _stepsGap = 1.2f;
 
 	/// <summary>How much of a line the box in front of a step takes.</summary>
-	private const float MarkSize = 0.7f;
+	private const float _markSize = 0.7f;
 
-	private const float ThumbnailWidthFraction = 0.34f;
-	private const float ThumbnailMaxWidth = 640f;
-	private const float ThumbnailAspect = 9f / 16f;
+	private const float _thumbnailWidthFraction = 0.34f;
+	private const float _thumbnailMaxWidth = 640f;
+	private const float _thumbnailAspect = 9f / 16f;
 
-	private const float SettingsWidthFraction = 0.3f;
-	private const float SettingsMaxWidth = 520f;
+	private const float _settingsWidthFraction = 0.3f;
+	private const float _settingsMaxWidth = 520f;
 
-	private const float DotsPerSecond = 2f;
+	private const float _dotsPerSecond = 2f;
 
 	/// <summary>
 	///     Nothing the mod waits for takes half a minute, and the clock is put back to the top by
@@ -65,7 +64,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	///     seconds of setup. Past that something has gone wrong that nobody wrote a handler for,
 	///     and a screen covering the whole game is the worst possible thing to leave behind.
 	/// </summary>
-	private const float MaxSeconds = 30f;
+	private const float _maxSeconds = 30f;
 
 	/// <summary>
 	///     How long the podium runs for. It is the one wait in the whole setup with a fixed length,
@@ -73,18 +72,18 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	///     is the podium's and nothing depends on it being exact - the screen goes away when the
 	///     game starts loading, whatever this says at the time.
 	/// </summary>
-	private const float PodiumSeconds = 8f;
+	private const float _podiumSeconds = 8f;
 
 	/// <summary>
 	///     Fully opaque, unlike <see cref="ColorExtensions.SurfaceColors.Backdrop" />: the menus
 	///     behind this one are clickable, and a player who can see them will click them.
 	/// </summary>
-	private static readonly Color32 Backdrop = new(8, 9, 12, 255);
+	private static readonly Color32 _backdrop = new(8, 9, 12, 255);
 
-	private static readonly string SpacedTitle = UiScreen.Spaced(Title);
+	private static readonly string _spacedTitle = UiScreen.Spaced(_title);
 
 	/// <summary>The four dot counts the animation cycles through, so no draw builds a string.</summary>
-	private static readonly string[] DotSteps = ["", ".", "..", "..."];
+	private static readonly string[] _dotSteps = ["", ".", "..", "..."];
 
 	private readonly OverlayLayer _layer = new();
 
@@ -95,28 +94,26 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 
 	private float _countdownEnd;
 
-	/// <summary>
-	///     Set when the game reloads its game scene under a running hunt, which is the last line of
-	///     GameMaster.DoTheOnlineReset and the exact moment the game's own loading screen takes the
-	///     screen. That is the cue to get out of the way: from here the player is meant to see the
-	///     game load, and the mod's UI comes back on its own when they spawn.
-	///     The scene load is the signal rather than "the level is not ready", which is also true for
-	///     the whole of the setup this screen exists to cover, and had it disappearing before the
-	///     podium had even finished.
-	/// </summary>
-	private bool _handedOver;
-
 	private float _hideAt;
 
 	private SetupLine[] _lines = [];
 
 	/// <summary>
-	///     Whether the game has been seen without a level loaded since this screen went up. The
-	///     screen can be raised while the player is still standing on the track of the lobby they
-	///     are about to be taken out of, and "there is a level under the wheels" is only a reason
-	///     to stand down once there has been a moment where there was not one.
+	///     Set once the game has started loading the level the hunt will be played on. Only used to
+	///     say so on the checklist - the screen stays up over the game's own loading screen until
+	///     the hunt has the level, which is the whole point of it.
 	/// </summary>
-	private bool _offTrack;
+	private bool _loading;
+
+	/// <summary>The level the lobby is about to load, once there is one to name.</summary>
+	private NextLevelView _next;
+
+	/// <summary>
+	///     Set when the round the lobby was opened with ends, which is the podium starting. From
+	///     here the mod knows which level is coming and the screen stops describing the run about to
+	///     start and starts describing the level about to load.
+	/// </summary>
+	private bool _podium;
 
 	private string _tagline = "";
 
@@ -171,28 +168,22 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	}
 
 	/// <summary>
-	///     Five ways this screen ends, and it needs all five, because it is painted over the whole
-	///     game and nothing behind it can be reached while it is up: the hunt got its level, the
-	///     game took the screen for its own loading, the player is standing on a track and so is
-	///     plainly not waiting for anything, the player asked for it to go, or nothing has happened
-	///     for long enough that nothing is going to.
-	///     The last three are the ones added after a setup got stuck behind it. Up to then the
-	///     screen only came down when the thing it was waiting for arrived, which is fine until it
-	///     does not arrive - and then the mod has taken the game away and nobody can take it back.
+	///     Three ways this screen ends: the hunt got its level, the player asked for it to go, or
+	///     nothing has happened for long enough that nothing is going to.
+	///     It used to stand down the moment the game loaded a scene, on the reasoning that the
+	///     game's own loading screen had taken over and the mod should get out of the way. What the
+	///     player got out of that was the lobby, the round, the podium and the level load with
+	///     nothing over them - the mod let go at the first of four scene loads and left the player
+	///     looking at a lobby they had no business in for the length of a podium. So the screen now
+	///     holds until the hunt has a level under the wheels, which is the one moment there is
+	///     something else worth looking at.
+	///     Holding it needs the last two exits to be real, because nothing behind this screen can be
+	///     reached while it is up: a setup that gets stuck must still hand the game back.
 	/// </summary>
 	private bool Done()
 	{
-		_offTrack |= !GameStateObserver.IsLevelReady;
-
-		if (ActiveRun?.Ctx.CurrentLevel != null || _handedOver)
+		if (ActiveRun?.Ctx.CurrentLevel != null)
 		{
-			return true;
-		}
-
-		if (_offTrack && GameStateObserver.IsLevelReady)
-		{
-			Logger.LogInfo("LoadingOverlay: A level is loaded and the hunt is not waiting on one. Standing down.");
-
 			return true;
 		}
 
@@ -213,25 +204,32 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 			return false;
 		}
 
-		Logger.LogWarning($"LoadingOverlay: '{Message}' has been up for {MaxSeconds:0} seconds. Standing down.");
+		Logger.LogWarning($"LoadingOverlay: '{Message}' has been up for {_maxSeconds:0} seconds. Standing down.");
 
 		return true;
 	}
 
+	/// <summary>
+	///     The scene load after the podium is the level itself starting to load. It is the last
+	///     entry on the checklist and, just as importantly, the last thing that puts the watchdog
+	///     back to the top: a level coming off the workshop can take longer than the wait before it.
+	/// </summary>
 	private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 	{
-		if (!Visible || ActiveRun == null)
+		if (!Visible || !_podium || _loading)
 		{
 			return;
 		}
 
-		_handedOver = true;
+		_loading = true;
+		Step("Loading the level");
 	}
 
 	/// <summary>
 	///     The round ending is the podium starting, and the podium is the last thing between the
 	///     player and their first level. That is the moment the screen stops saying "wait" and
-	///     starts saying how long for.
+	///     starts saying how long for - and the moment the lobby's playlist has settled on which
+	///     level that is, so it is also where the screen starts showing it.
 	/// </summary>
 	private void OnRoundEnded()
 	{
@@ -240,20 +238,22 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 			return;
 		}
 
+		_podium = true;
 		Step("Starting in");
-		CountdownTo(PodiumSeconds);
+		CountdownTo(_podiumSeconds);
 	}
 
 	public void Show(string message)
 	{
 		Message = message;
-		_handedOver = false;
-		_offTrack = false;
+		_podium = false;
+		_loading = false;
+		_next = null;
 		_lines = [];
 		_steps.Clear();
 		_tagline = "";
 		_countdownEnd = 0f;
-		_hideAt = Time.unscaledTime + MaxSeconds;
+		_hideAt = Time.unscaledTime + _maxSeconds;
 		Visible = true;
 		_layer.Raise();
 		Logger.LogInfo($"LoadingOverlay: {message}");
@@ -263,15 +263,22 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	///     Ticks off whatever the mod was doing and says what it is doing now. The player is looking
 	///     at a screen that is hiding a lobby being built for them; a list that grows is the
 	///     difference between that and a screen that has hung.
+	///     A step never puts the screen back up. It used to, which meant that dismissing it with
+	///     Escape only lasted until the setup reached its next step and threw it over the game
+	///     again.
 	/// </summary>
 	public void Step(string label)
 	{
+		if (!Visible)
+		{
+			return;
+		}
+
 		Finish();
 
 		_steps.Add(new SetupStep(label));
 		_countdownEnd = 0f;
-		_hideAt = Time.unscaledTime + MaxSeconds;
-		Visible = true;
+		_hideAt = Time.unscaledTime + _maxSeconds;
 
 		Logger.LogInfo($"LoadingOverlay: {label}");
 	}
@@ -313,6 +320,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 		_lines = [];
 		_steps.Clear();
 		_tagline = "";
+		_next = null;
 	}
 
 	private static SetupLine[] Describe(IGamemode gamemode)
@@ -329,37 +337,72 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 		];
 	}
 
+	/// <summary>
+	///     Once the podium is running, the screen has something better to say than the rules of the
+	///     run: which level is coming. It takes over the same three slots the rules were in - the
+	///     picture, the line under the title and the block of rows - because a player who has read
+	///     the rules through a whole lobby setup has read them, and the level is the thing they are
+	///     actually waiting for.
+	///     Resolved once and kept. The lobby only settles on its next level around the time the
+	///     podium starts, so this is asked every frame until it answers and never again.
+	/// </summary>
+	private void Preview()
+	{
+		if (!_podium || _next != null)
+		{
+			return;
+		}
+
+		NextLevelView next = NextLevelView.From(ActiveRun);
+
+		if (next == null)
+		{
+			return;
+		}
+
+		_next = next;
+		_tagline = next.Name;
+		_lines =
+		[
+			new SetupLine("Author", next.Author),
+			new SetupLine("Author Time", next.AuthorTime),
+			new SetupLine("Gold Time", next.GoldTime)
+		];
+	}
+
 	private void Draw(ImGui gui)
 	{
+		Preview();
+
 		ImRect screen = gui.Canvas.ScreenRect;
 
-		gui.Canvas.Rect(screen, Backdrop);
+		gui.Canvas.Rect(screen, _backdrop);
 
 		float size = gui.Style.Layout.TextSize;
-		float line = size * LineHeight;
+		float line = size * _lineHeight;
 
-		float picture = Mathf.Min(screen.W * ThumbnailWidthFraction, ThumbnailMaxWidth) * ThumbnailAspect;
+		float picture = Mathf.Min(screen.W * _thumbnailWidthFraction, _thumbnailMaxWidth) * _thumbnailAspect;
 		float tagline = _lines.Length == 0 ? 0f : line;
 		float rows = _lines.Length * line;
 		float steps = Mathf.Max(1, _steps.Count) * line;
-		float height = picture + line * (TitleLines + StepsGap) + tagline + rows + steps;
+		float height = picture + line * (_titleLines + _stepsGap) + tagline + rows + steps;
 
 		float top = screen.Y + (screen.H + height) * 0.5f;
 		float underPicture = top - picture;
-		float underTitle = underPicture - line * TitleLines;
+		float underTitle = underPicture - line * _titleLines;
 		float underTagline = underTitle - tagline;
 		float underRows = underTagline - rows;
 
 		DrawThumbnail(gui, new ImRect(screen.X, underPicture, screen.W, picture));
 
-		gui.Canvas.Text(SpacedTitle.AsSpan(), Color.Zeepkist.Medal.Author,
-			new ImRect(screen.X, underTitle, screen.W, line * TitleLines), size * TitleSize);
+		gui.Canvas.Text(_spacedTitle.AsSpan(), Color.Zeepkist.Medal.Author,
+			new ImRect(screen.X, underTitle, screen.W, line * _titleLines), size * _titleSize);
 
 		gui.Canvas.Text(_tagline.AsSpan(), Color.Style.Surface.White,
-			new ImRect(screen.X, underTagline, screen.W, tagline), size * MessageSize);
+			new ImRect(screen.X, underTagline, screen.W, tagline), size * _messageSize);
 
 		DrawSettings(gui, screen, underTagline, line, size);
-		DrawSteps(gui, screen, underRows - line * StepsGap, line, size);
+		DrawSteps(gui, screen, underRows - line * _stepsGap, line, size);
 	}
 
 	private void DrawSteps(ImGui gui, ImRect screen, float top, float line, float size)
@@ -367,12 +410,12 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 		if (_steps.Count == 0)
 		{
 			gui.Canvas.Text((Message + Dots()).AsSpan(), Color.Style.Text.Muted,
-				new ImRect(screen.X, top - line, screen.W, line), size * MessageSize);
+				new ImRect(screen.X, top - line, screen.W, line), size * _messageSize);
 
 			return;
 		}
 
-		float width = Mathf.Min(screen.W * SettingsWidthFraction, SettingsMaxWidth);
+		float width = Mathf.Min(screen.W * _settingsWidthFraction, _settingsMaxWidth);
 		float left = screen.X + (screen.W - width) * 0.5f;
 
 		for (int i = 0; i < _steps.Count; i++)
@@ -388,7 +431,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	/// </summary>
 	private void DrawStep(ImGui gui, ImRect row, SetupStep step, float size, bool last)
 	{
-		float box = size * MarkSize;
+		float box = size * _markSize;
 		ImRect mark = new(row.X, row.Y + (row.H - box) * 0.5f, box, box);
 
 		gui.Canvas.Rect(mark, step.Done ? Color.Style.Status.Positive : Color.Style.Surface.Track, box * 0.25f);
@@ -396,7 +439,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 		ImRect text = new(row.X + box * 2f, row.Y, row.W - box * 2f, row.H);
 
 		gui.Canvas.Text(StepLabel(step, last).AsSpan(),
-			step.Done ? Color.Style.Text.Muted : Color.Style.Surface.White, text, size * MessageSize, 0f);
+			step.Done ? Color.Style.Text.Muted : Color.Style.Surface.White, text, size * _messageSize, 0f);
 	}
 
 	/// <summary>
@@ -422,7 +465,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 
 	private void DrawSettings(ImGui gui, ImRect screen, float top, float line, float size)
 	{
-		float width = Mathf.Min(screen.W * SettingsWidthFraction, SettingsMaxWidth);
+		float width = Mathf.Min(screen.W * _settingsWidthFraction, _settingsMaxWidth);
 		float left = screen.X + (screen.W - width) * 0.5f;
 
 		for (int i = 0; i < _lines.Length; i++)
@@ -436,18 +479,30 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 
 	private void DrawThumbnail(ImGui gui, ImRect rect)
 	{
-		Texture2D thumbnail = _thumbnail.Texture;
+		Texture2D picture = Picture();
 
-		if (thumbnail == null)
+		if (picture == null)
 		{
 			return;
 		}
 
-		gui.Image(thumbnail, rect, true);
+		gui.Image(picture, rect, true);
+	}
+
+	/// <summary>
+	///     The level's own picture once the game has loaded one, the mod's logo until then. The
+	///     thumbnail arrives a frame or two after it is first asked for, and the logo in its place
+	///     keeps the screen from being a hole for those frames.
+	/// </summary>
+	private Texture2D Picture()
+	{
+		Texture2D level = _next == null ? null : LevelThumbnails.Get(_next.LevelUid);
+
+		return level == null ? _thumbnail.Texture : level;
 	}
 
 	private static string Dots()
 	{
-		return DotSteps[(int)(Time.unscaledTime * DotsPerSecond) % DotSteps.Length];
+		return _dotSteps[(int)(Time.unscaledTime * _dotsPerSecond) % _dotSteps.Length];
 	}
 }

@@ -6,8 +6,8 @@ namespace AuthorTimeHunting.Util;
 
 public class MessageBuilder
 {
-	private const int TotalWidth = 32;
-	private const char SeparatorChar = '=';
+	private const int _totalWidth = 32;
+	private const char _separatorChar = '=';
 
 	private readonly Message _message = new();
 
@@ -25,7 +25,7 @@ public class MessageBuilder
 
 	public MessageBuilder AddSeperator()
 	{
-		_message.Lines.Add(new string('-', TotalWidth / 2));
+		_message.Lines.Add(new string('-', _totalWidth / 2));
 		return this;
 	}
 
@@ -33,12 +33,12 @@ public class MessageBuilder
 	{
 		string plainHeadline = Regex.Replace(headline, "<.*?>", "");
 
-		if (plainHeadline.Length >= TotalWidth)
+		if (plainHeadline.Length >= _totalWidth)
 		{
-			_message.Lines.Add(new string(SeparatorChar, TotalWidth));
+			_message.Lines.Add(new string(_separatorChar, _totalWidth));
 			_message.Lines.Add(
 				$"<br><align=\"center\"><b><font-weight=\"900\"><#ff8800>{headline}</color></font-weight></b></align><br><align=\"left\">");
-			_message.Lines.Add(new string(SeparatorChar, TotalWidth));
+			_message.Lines.Add(new string(_separatorChar, _totalWidth));
 
 			return this;
 		}
@@ -67,13 +67,13 @@ public class MessageBuilder
 
 	private static string Center(string plainHeadline, string headline)
 	{
-		int padding = Math.Max((TotalWidth - plainHeadline.Length) / 2 - 4, 0);
+		int padding = Math.Max((_totalWidth - plainHeadline.Length) / 2 - 4, 0);
 		string centeredHeadline =
-			$"{new string(SeparatorChar, padding)}<b><font-weight=\"900\"><#ff8800>{{ {headline} }}</color></font-weight></b>{new string(SeparatorChar, padding)}";
+			$"{new string(_separatorChar, padding)}<b><font-weight=\"900\"><#ff8800>{{ {headline} }}</color></font-weight></b>{new string(_separatorChar, padding)}";
 
-		if (centeredHeadline.Length < TotalWidth)
+		if (centeredHeadline.Length < _totalWidth)
 		{
-			centeredHeadline += SeparatorChar;
+			centeredHeadline += _separatorChar;
 		}
 
 		return centeredHeadline;

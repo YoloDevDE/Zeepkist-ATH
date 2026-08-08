@@ -29,19 +29,19 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class LevelSummaryOverlay : IZeepGUIDrawer
 {
-	private const float TitleSize = 2.1f;
-	private const float StatusSize = 2.9f;
-	private const float LineHeight = 1.8f;
+	private const float _titleSize = 2.1f;
+	private const float _statusSize = 2.9f;
+	private const float _lineHeight = 1.8f;
 
-	private const float ColumnGap = 0.06f;
-	private const float RecentRow = 1.1f;
+	private const float _columnGap = 0.06f;
+	private const float _recentRow = 1.1f;
 
 	/// <summary>How much of its column the thumbnail takes, and the shape the game stores it in.</summary>
-	private const float ThumbnailWidth = 0.85f;
+	private const float _thumbnailWidth = 0.85f;
 
-	private const float ThumbnailAspect = 9f / 16f;
+	private const float _thumbnailAspect = 9f / 16f;
 
-	private static readonly float[] Weights = [0.08f, 0.44f, 0.24f, 0.1f, 0.14f];
+	private static readonly float[] _weights = [0.08f, 0.44f, 0.24f, 0.1f, 0.14f];
 
 	private LevelSummaryView _view;
 
@@ -98,7 +98,7 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 
 		gui.Canvas.Rect(screen, Color.Style.Surface.Shade);
 
-		UiColumn body = new(UiScreen.Column(screen), text * LineHeight);
+		UiColumn body = new(UiScreen.Column(screen), text * _lineHeight);
 
 		DrawHeadline(gui, body, view, text);
 		DrawColumns(gui, body, view, text);
@@ -108,12 +108,12 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	{
 		body.Space(0.6f);
 
-		Centre(gui, view.Name, Color.Style.Text.LevelName, body.Row(TitleSize * 1.3f), text * TitleSize);
+		Centre(gui, view.Name, Color.Style.Text.LevelName, body.Row(_titleSize * 1.3f), text * _titleSize);
 		Centre(gui, view.ByAuthor, Color.Style.Text.AuthorName, body.Row(1.1f), text * 0.95f);
 
 		body.Space(0.4f);
 
-		Centre(gui, view.StatusUpper, view.StatusColour, body.Row(StatusSize * 1.2f), text * StatusSize);
+		Centre(gui, view.StatusUpper, view.StatusColour, body.Row(_statusSize * 1.2f), text * _statusSize);
 
 		UiScreen.Rule(gui, body.Row(1f), view.StatusColour);
 
@@ -123,12 +123,12 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	private static void DrawColumns(ImGui gui, UiColumn body, LevelSummaryView view, float text)
 	{
 		ImRect rest = body.Rest();
-		float gap = rest.W * ColumnGap;
+		float gap = rest.W * _columnGap;
 		float width = (rest.W - gap) * 0.5f;
 
-		DrawLevel(gui, new UiColumn(new ImRect(rest.X, rest.Y, width, rest.H), text * LineHeight), view, text);
+		DrawLevel(gui, new UiColumn(new ImRect(rest.X, rest.Y, width, rest.H), text * _lineHeight), view, text);
 
-		DrawRun(gui, new UiColumn(new ImRect(rest.Right - width, rest.Y, width, rest.H), text * LineHeight), view,
+		DrawRun(gui, new UiColumn(new ImRect(rest.Right - width, rest.Y, width, rest.H), text * _lineHeight), view,
 			text);
 	}
 
@@ -155,10 +155,10 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	/// </summary>
 	private static void DrawThumbnail(ImGui gui, UiColumn column, LevelSummaryView view, float text)
 	{
-		float width = column.Rest().W * ThumbnailWidth;
-		float height = width * ThumbnailAspect;
+		float width = column.Rest().W * _thumbnailWidth;
+		float height = width * _thumbnailAspect;
 
-		ImRect row = column.Row(height / (text * LineHeight));
+		ImRect row = column.Row(height / (text * _lineHeight));
 		ImRect box = new(row.X + (row.W - width) * 0.5f, row.Y, width, height);
 
 		column.Space(0.4f);
@@ -198,7 +198,7 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 	/// </summary>
 	private static void DrawRecent(ImGui gui, UiColumn column, LevelSummaryView view, float text)
 	{
-		float line = text * LineHeight * RecentRow;
+		float line = text * _lineHeight * _recentRow;
 
 		foreach (LevelRow level in view.Recent)
 		{
@@ -207,7 +207,7 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 				continue;
 			}
 
-			DrawRecentRow(gui, column.Row(RecentRow), level, text);
+			DrawRecentRow(gui, column.Row(_recentRow), level, text);
 		}
 	}
 
@@ -235,7 +235,7 @@ public class LevelSummaryOverlay : IZeepGUIDrawer
 
 	private static void Cell(ImGui gui, ImRect row, int column, string value, Color32 colour, float size, float alignX)
 	{
-		ImRect rect = UiWidgets.Cell(row, Weights, column);
+		ImRect rect = UiWidgets.Cell(row, _weights, column);
 
 		gui.Canvas.PushClipRect(rect);
 

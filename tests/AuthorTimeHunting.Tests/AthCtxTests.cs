@@ -18,20 +18,20 @@ namespace AuthorTimeHunting.Tests;
 /// </summary>
 public class AthCtxTests
 {
-	private const int Hour = 60 * 60 * 1000;
+	private const int _hour = 60 * 60 * 1000;
 
-	private const int Penalty = 2 * 60 * 1000;
+	private const int _penalty = 2 * 60 * 1000;
 
-	private const double AuthorTime = 10.0;
+	private const double _authorTime = 10.0;
 
-	private const double GoldTime = 15.0;
+	private const double _goldTime = 15.0;
 
 	[Fact]
 	public void AFreshRunHasItsWholeBudgetLeft()
 	{
 		AthCtx ctx = Run();
 
-		Assert.Equal(TimeSpan.FromMilliseconds(Hour), ctx.GetRemainingTime());
+		Assert.Equal(TimeSpan.FromMilliseconds(_hour), ctx.GetRemainingTime());
 		Assert.False(ctx.IsTimeOver());
 	}
 
@@ -42,8 +42,8 @@ public class AthCtxTests
 		AthCtx ctx = Run(Failed("a"), Failed("b"));
 
 		Assert.Equal(2, ctx.Penalties);
-		Assert.Equal(2 * Penalty, ctx.GetAccumulatedPenaltyTime());
-		Assert.Equal(TimeSpan.FromMilliseconds(Hour - 2 * Penalty), ctx.GetRemainingTime());
+		Assert.Equal(2 * _penalty, ctx.GetAccumulatedPenaltyTime());
+		Assert.Equal(TimeSpan.FromMilliseconds(_hour - 2 * _penalty), ctx.GetRemainingTime());
 	}
 
 	/// <summary>Gold and free skips cost nothing, which is the whole reason for having them.</summary>
@@ -53,7 +53,7 @@ public class AthCtxTests
 		AthCtx ctx = Run(GoldSkipped("a"), FreeSkipped("b"));
 
 		Assert.Equal(0, ctx.Penalties);
-		Assert.Equal(TimeSpan.FromMilliseconds(Hour), ctx.GetRemainingTime());
+		Assert.Equal(TimeSpan.FromMilliseconds(_hour), ctx.GetRemainingTime());
 	}
 
 	/// <summary>
@@ -71,7 +71,7 @@ public class AthCtxTests
 
 		Assert.True(broken.GetPlayDuration() >= TimeSpan.Zero);
 		Assert.Equal(TimeSpan.Zero, ctx.GetTotalLevelPlayDuration());
-		Assert.Equal(TimeSpan.FromMilliseconds(Hour), ctx.GetRemainingTime());
+		Assert.Equal(TimeSpan.FromMilliseconds(_hour), ctx.GetRemainingTime());
 	}
 
 	/// <summary>
@@ -95,15 +95,15 @@ public class AthCtxTests
 	[Fact]
 	public void TimeRunningLowStartsAtExactlyOnePenaltyLeft()
 	{
-		Assert.False(Budget(Penalty + 1).IsTimeRunningLow);
-		Assert.True(Budget(Penalty).IsTimeRunningLow);
+		Assert.False(Budget(_penalty + 1).IsTimeRunningLow);
+		Assert.True(Budget(_penalty).IsTimeRunningLow);
 	}
 
 	[Fact]
 	public void TimeRunningLowAfterASkipStartsOnePenaltyEarlier()
 	{
-		Assert.False(Budget(2 * Penalty + 1).IsTimeAfterSkipRunningLow);
-		Assert.True(Budget(2 * Penalty).IsTimeAfterSkipRunningLow);
+		Assert.False(Budget(2 * _penalty + 1).IsTimeAfterSkipRunningLow);
+		Assert.True(Budget(2 * _penalty).IsTimeAfterSkipRunningLow);
 	}
 
 	[Fact]
@@ -120,7 +120,7 @@ public class AthCtxTests
 	[Fact]
 	public void TheTimeRunningLowWarningSpeaksOncePerCrossing()
 	{
-		AthCtx ctx = Budget(Penalty);
+		AthCtx ctx = Budget(_penalty);
 
 		Assert.True(ctx.CheckAndNotifyTimeRunningLow());
 		Assert.False(ctx.CheckAndNotifyTimeRunningLow());
@@ -129,7 +129,7 @@ public class AthCtxTests
 	[Fact]
 	public void TheTimeRunningLowWarningSaysNothingWhileThereIsTime()
 	{
-		Assert.False(Budget(Hour).CheckAndNotifyTimeRunningLow());
+		Assert.False(Budget(_hour).CheckAndNotifyTimeRunningLow());
 	}
 
 	/// <summary>
@@ -141,15 +141,15 @@ public class AthCtxTests
 	{
 		AthCtx ctx = Run(Failed("a"));
 
-		Assert.Equal(TimeSpan.FromMilliseconds(Hour), ctx.GetRemainingTimeWithoutPunishments());
-		Assert.Equal(TimeSpan.FromMilliseconds(Hour - Penalty), ctx.GetRemainingTime());
+		Assert.Equal(TimeSpan.FromMilliseconds(_hour), ctx.GetRemainingTimeWithoutPunishments());
+		Assert.Equal(TimeSpan.FromMilliseconds(_hour - _penalty), ctx.GetRemainingTime());
 	}
 
 	#region Builders
 
 	private static AthCtx Run(params Level[] levels)
 	{
-		AthCtx ctx = Budget(Hour);
+		AthCtx ctx = Budget(_hour);
 
 		ctx.Levels.AddRange(levels);
 
@@ -159,19 +159,19 @@ public class AthCtxTests
 	/// <summary>A run of exactly this many milliseconds and nothing played, so that is what is left.</summary>
 	private static AthCtx Budget(int remainingMilliseconds)
 	{
-		return new AthCtx(new RunSettings { DurationMs = remainingMilliseconds, PenaltyTimeMs = Penalty });
+		return new AthCtx(new RunSettings { DurationMs = remainingMilliseconds, PenaltyTimeMs = _penalty });
 	}
 
 	private static Level Level(string uid)
 	{
-		return new Level(uid, $"Level {uid}", "Alice", AuthorTime, GoldTime);
+		return new Level(uid, $"Level {uid}", "Alice", _authorTime, _goldTime);
 	}
 
 	/// <summary>Author time claimed: a personal best at or below the author time.</summary>
 	private static Level Beaten(string uid)
 	{
 		Level level = Level(uid);
-		level.PersonalBestTime = (float)AuthorTime;
+		level.PersonalBestTime = (float)_authorTime;
 		return level;
 	}
 
@@ -179,7 +179,7 @@ public class AthCtxTests
 	private static Level GoldSkipped(string uid)
 	{
 		Level level = Level(uid);
-		level.PersonalBestTime = (float)(AuthorTime + 1);
+		level.PersonalBestTime = (float)(_authorTime + 1);
 		level.Skipped = true;
 		return level;
 	}

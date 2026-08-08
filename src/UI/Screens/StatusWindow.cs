@@ -21,16 +21,16 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class StatusWindow : IZeepGUIDrawer
 {
-	private const string WindowTitle = "ATH Status";
+	private const string _windowTitle = "ATH Status";
 
-	private const float WidthFraction = 0.29f;
+	private const float _widthFraction = 0.29f;
 
-	private const float MinWidth = 420f;
-	private const float MaxWidth = 600f;
+	private const float _minWidth = 420f;
+	private const float _maxWidth = 600f;
 
-	private const string LobbySource = "Lobby playlist";
+	private const string _lobbySource = "Lobby playlist";
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoResizing;
 
 	private float _contentHeight;
 
@@ -73,14 +73,14 @@ public class StatusWindow : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
-		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float width = UiMetrics.Width(gui, _widthFraction, _minWidth, _maxWidth);
 
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, _windowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.BottomLeft);
 
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}
@@ -158,7 +158,7 @@ public class StatusWindow : IZeepGUIDrawer
 			return;
 		}
 
-		string source = run.RandomLevels.SourceOf(level.LevelUid) ?? LobbySource;
+		string source = run.RandomLevels.SourceOf(level.LevelUid) ?? _lobbySource;
 
 		UiWidgets.Row(gui, UiMetrics.Row(gui, 1f), "Source", source, SourceColour(source));
 		UiWidgets.Row(gui, UiMetrics.Row(gui, 1f), "Level", level.Name, Color.Style.Text.LevelName);
@@ -167,7 +167,7 @@ public class StatusWindow : IZeepGUIDrawer
 
 	private static Color32 SourceColour(string source)
 	{
-		return source == LobbySource ? Color.Style.Text.Muted : Color.Zeepkist.Medal.Author;
+		return source == _lobbySource ? Color.Style.Text.Muted : Color.Zeepkist.Medal.Author;
 	}
 
 	private float Height(ImGui gui)

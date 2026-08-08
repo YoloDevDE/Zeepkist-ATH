@@ -1,9 +1,11 @@
 ﻿using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Gamemodes;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.States.Master.StateMachine;
 using AuthorTimeHunting.Util;
 using ZeepSDK.Chat;
+using ZeepSDK.ChatCommands;
 using ZeepSDK.Multiplayer;
 using ZeepSDK.Racing;
 
@@ -11,6 +13,9 @@ namespace AuthorTimeHunting.States.Master.States;
 
 public class StateMasterOn : StateBase
 {
+	private readonly CommandAthStop _stopCommand = new();
+
+	private CommandAthBroken _brokenCommand;
 	private bool _shuttingDown;
 
 	public StateMasterOn(MasterStateMachine stateMachine, IGamemode gamemode) : base(stateMachine)
@@ -39,6 +44,15 @@ public class StateMasterOn : StateBase
 		RacingApi.RoundStarted += OnRoundStarted;
 		AthRequests.SkipBrokenRequested += SkipBrokenLevel;
 		SubStateMachine.StateMachineFinished += Stop;
+		ChatCommandApi.RegisterLocalChatCommand(_stopCommand);
+		Master.Services.GameState.BecameRacing += RegisterBrokenCommand;
+		Master.Services.GameState.StoppedRacing += UnregisterBrokenCommand;
+
+		if (GameStateObserver.IsRacing)
+		{
+			RegisterBrokenCommand();
+		}
+
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
 		Master.Services.PublishRun(AthStateMachine);
 		AthStateMachine.StartTimer();
@@ -59,6 +73,37 @@ public class StateMasterOn : StateBase
 		RacingApi.RoundStarted -= OnRoundStarted;
 		AthRequests.SkipBrokenRequested -= SkipBrokenLevel;
 		SubStateMachine.StateMachineFinished -= Stop;
+		Master.Services.GameState.BecameRacing -= RegisterBrokenCommand;
+		Master.Services.GameState.StoppedRacing -= UnregisterBrokenCommand;
+		UnregisterBrokenCommand();
+		ChatCommandApi.UnregisterLocalChatCommand(_stopCommand);
+	}
+
+	/// <summary>
+	///     /ath broken exists only while a level is being raced, which is the same condition the
+	///     Broken button is drawn enabled under. Between levels there is nothing to write off, so
+	///     the command is gone rather than inert.
+	/// </summary>
+	private void RegisterBrokenCommand()
+	{
+		if (_brokenCommand != null)
+		{
+			return;
+		}
+
+		_brokenCommand = new CommandAthBroken();
+		ChatCommandApi.RegisterLocalChatCommand(_brokenCommand);
+	}
+
+	private void UnregisterBrokenCommand()
+	{
+		if (_brokenCommand == null)
+		{
+			return;
+		}
+
+		ChatCommandApi.UnregisterLocalChatCommand(_brokenCommand);
+		_brokenCommand = null;
 	}
 
 	private void OnRoundStarted()

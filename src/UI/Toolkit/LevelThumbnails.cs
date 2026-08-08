@@ -14,9 +14,9 @@ namespace AuthorTimeHunting.UI.Toolkit;
 /// </summary>
 public static class LevelThumbnails
 {
-	private static readonly Dictionary<string, Texture2D> Loaded = new();
+	private static readonly Dictionary<string, Texture2D> _loaded = new();
 
-	private static readonly HashSet<string> Pending = new();
+	private static readonly HashSet<string> _pending = new();
 
 	public static Texture2D Get(string levelUid)
 	{
@@ -25,19 +25,19 @@ public static class LevelThumbnails
 			return null;
 		}
 
-		if (Loaded.TryGetValue(levelUid, out Texture2D cached))
+		if (_loaded.TryGetValue(levelUid, out Texture2D cached))
 		{
 			return cached;
 		}
 
 		if (ThumbnailManager.Instance.TryGetLevelThumbnail(levelUid, out Texture2D ready) && ready != null)
 		{
-			Loaded[levelUid] = ready;
+			_loaded[levelUid] = ready;
 
 			return ready;
 		}
 
-		if (Pending.Add(levelUid))
+		if (_pending.Add(levelUid))
 		{
 			_ = LoadAsync(levelUid);
 		}
@@ -51,16 +51,16 @@ public static class LevelThumbnails
 		{
 			Texture2D thumbnail = await ThumbnailManager.Instance.GetLevelThumbnailAsync(levelUid);
 
-			Loaded[levelUid] = thumbnail;
+			_loaded[levelUid] = thumbnail;
 		}
 		catch (Exception e)
 		{
-			Loaded[levelUid] = null;
+			_loaded[levelUid] = null;
 			Logger.LogWarning($"LevelThumbnails: Could not load the thumbnail for '{levelUid}': {e.Message}");
 		}
 		finally
 		{
-			Pending.Remove(levelUid);
+			_pending.Remove(levelUid);
 		}
 	}
 }

@@ -2,6 +2,7 @@
 using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States;
 using AuthorTimeHunting.States.Master.StateMachine;
+using AuthorTimeHunting.UI.Toolkit;
 using AuthorTimeHunting.Util;
 using BepInEx;
 using HarmonyLib;
@@ -14,7 +15,7 @@ namespace AuthorTimeHunting;
 [BepInDependency("ZeepSDK")]
 public class Plugin : BaseUnityPlugin
 {
-	private const string ToastTag = "ATH";
+	private const string _toastTag = "ATH";
 
 	private Harmony _harmony;
 	private StateMachineBase _masterStateMachine;
@@ -22,7 +23,7 @@ public class Plugin : BaseUnityPlugin
 	private Plugin()
 	{
 		Util.Logger.Initialize(Logger);
-		FrogNotification.Initialize(ToastTag);
+		FrogNotification.Initialize(_toastTag);
 		Instance = this;
 	}
 
@@ -83,6 +84,8 @@ public class Plugin : BaseUnityPlugin
 		Services?.RaceTime.Dispose();
 		Services?.Loading.Dispose();
 		Services?.Thumbnail.Dispose();
+		Services?.Medals.Dispose();
+		UiIconAtlas.Release();
 		Services?.GameState.Dispose();
 		Services?.Trace.Dispose();
 		Services?.Health.Dispose();
@@ -105,6 +108,7 @@ public class Plugin : BaseUnityPlugin
 	private void RegisterChatCommands()
 	{
 		ChatCommandApi.RegisterLocalChatCommand<CommandAth>();
+		ChatCommandApi.RegisterLocalChatCommand<CommandAthStart>();
 	}
 
 	private void InitializeStateMachine()

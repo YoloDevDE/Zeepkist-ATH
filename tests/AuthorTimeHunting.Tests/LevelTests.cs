@@ -12,14 +12,14 @@ namespace AuthorTimeHunting.Tests;
 /// </summary>
 public class LevelTests
 {
-	private const double AuthorTime = 20.0;
+	private const double _authorTime = 20.0;
 
-	private const double GoldTime = 25.0;
+	private const double _goldTime = 25.0;
 
 	[Fact]
 	public void ALevelNobodyHasFinishedYetHasNoStatus()
 	{
-		Assert.Equal(LevelStatus.UNKNOWN, Fresh().Status);
+		Assert.Equal(LevelStatus.Unknown, Fresh().Status);
 	}
 
 	/// <summary>Matching the author time to the millisecond claims it - the comparison is not strict.</summary>
@@ -28,9 +28,9 @@ public class LevelTests
 	{
 		Level level = Fresh();
 
-		level.PersonalBestTime = (float)AuthorTime;
+		level.PersonalBestTime = (float)_authorTime;
 
-		Assert.Equal(LevelStatus.AUTHOR, level.Status);
+		Assert.Equal(LevelStatus.Author, level.Status);
 		Assert.True(level.AuthorTimeAcquired);
 	}
 
@@ -40,10 +40,10 @@ public class LevelTests
 	{
 		Level level = Fresh();
 
-		level.PersonalBestTime = (float)AuthorTime;
+		level.PersonalBestTime = (float)_authorTime;
 
 		Assert.True(level.GoldMedalAcquired);
-		Assert.NotEqual(LevelStatus.GOLD, level.Status);
+		Assert.NotEqual(LevelStatus.Gold, level.Status);
 	}
 
 	[Fact]
@@ -51,9 +51,9 @@ public class LevelTests
 	{
 		Level level = Fresh();
 
-		level.PersonalBestTime = (float)(AuthorTime + 1);
+		level.PersonalBestTime = (float)(_authorTime + 1);
 
-		Assert.Equal(LevelStatus.GOLD, level.Status);
+		Assert.Equal(LevelStatus.Gold, level.Status);
 		Assert.False(level.AuthorTimeAcquired);
 	}
 
@@ -64,7 +64,7 @@ public class LevelTests
 
 		level.Skipped = true;
 
-		Assert.Equal(LevelStatus.FAILED, level.Status);
+		Assert.Equal(LevelStatus.Failed, level.Status);
 		Assert.True(level.PenaltySkipped);
 	}
 
@@ -76,7 +76,7 @@ public class LevelTests
 		level.Skipped = true;
 		level.FreeSkipped = true;
 
-		Assert.Equal(LevelStatus.FREE, level.Status);
+		Assert.Equal(LevelStatus.Free, level.Status);
 		Assert.False(level.PenaltySkipped);
 	}
 
@@ -89,10 +89,10 @@ public class LevelTests
 	{
 		Level level = Fresh();
 
-		level.PersonalBestTime = (float)AuthorTime;
+		level.PersonalBestTime = (float)_authorTime;
 		level.LevelBroken = true;
 
-		Assert.Equal(LevelStatus.BROKEN, level.Status);
+		Assert.Equal(LevelStatus.Broken, level.Status);
 		Assert.False(level.AuthorTimeAcquired);
 	}
 
@@ -197,7 +197,7 @@ public class LevelTests
 	[Fact]
 	public void LevelsAreComparedByTheirWorkshopIdentity()
 	{
-		Level level = new("uid", "Skyline", "Maki", AuthorTime, GoldTime);
+		Level level = new("uid", "Skyline", "Maki", _authorTime, _goldTime);
 		Level again = new("uid", "A different name", "Somebody else", 1.0, 2.0);
 
 		Assert.Equal(level, again);
@@ -206,6 +206,6 @@ public class LevelTests
 
 	private static Level Fresh()
 	{
-		return new Level("uid", "Skyline", "Maki", AuthorTime, GoldTime);
+		return new Level("uid", "Skyline", "Maki", _authorTime, _goldTime);
 	}
 }

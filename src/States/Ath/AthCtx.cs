@@ -15,7 +15,7 @@ namespace AuthorTimeHunting.States.Ath;
 /// </summary>
 public class AthCtx
 {
-	private const int RETRIES = 3;
+	private const int _retries = 3;
 	private bool _previousTimeRunningLowState;
 
 	public AthCtx(RunSettings settings)
@@ -42,7 +42,7 @@ public class AthCtx
 
 	public List<Level> Levels { get; } = [];
 
-	public int Retries { get; set; } = RETRIES;
+	public int Retries { get; set; } = _retries;
 
 	public int ConsecutiveDuplicateCount { get; set; }
 
@@ -56,7 +56,7 @@ public class AthCtx
 
 	#region Last Run Scratch State
 
-	public LevelStatus LastRunMedalStatus { get; set; } = LevelStatus.UNKNOWN;
+	public LevelStatus LastRunMedalStatus { get; set; } = LevelStatus.Unknown;
 	public bool LastRunMedalWasNew { get; set; }
 	public double LastRunTime { get; set; } = -1;
 
@@ -64,11 +64,11 @@ public class AthCtx
 
 	#region Live Counters
 
-	public int AuthorMedals => Levels.Count(level => level.Status == LevelStatus.AUTHOR);
+	public int AuthorMedals => Levels.Count(level => level.Status == LevelStatus.Author);
 
-	public int GoldMedals => Levels.Count(level => level.Status == LevelStatus.GOLD);
+	public int GoldMedals => Levels.Count(level => level.Status == LevelStatus.Gold);
 
-	public int Penalties => Levels.Count(level => level.Status == LevelStatus.FAILED);
+	public int Penalties => Levels.Count(level => level.Status == LevelStatus.Failed);
 
 	#endregion
 
@@ -124,7 +124,7 @@ public class AthCtx
 		Levels.Add(level);
 
 		LastRunTime = -1;
-		LastRunMedalStatus = LevelStatus.UNKNOWN;
+		LastRunMedalStatus = LevelStatus.Unknown;
 		LastRunMedalWasNew = false;
 
 		CurrentLevel.Start();
@@ -132,7 +132,7 @@ public class AthCtx
 
 	public void ResetRetries()
 	{
-		Retries = RETRIES;
+		Retries = _retries;
 	}
 
 	#endregion

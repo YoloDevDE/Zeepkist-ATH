@@ -24,11 +24,11 @@ public static class UiScreen
 	/// </summary>
 	public const int Order = 1 << 16;
 
-	private const float ColumnFraction = 0.62f;
-	private const float MinColumn = 520f;
-	private const float MaxColumn = 1100f;
+	private const float _columnFraction = 0.62f;
+	private const float _minColumn = 520f;
+	private const float _maxColumn = 1100f;
 
-	private const float VerticalMargin = 0.06f;
+	private const float _verticalMargin = 0.06f;
 
 	public static ImRect Full(ImGui gui)
 	{
@@ -37,16 +37,16 @@ public static class UiScreen
 
 	public static float Width(ImRect screen)
 	{
-		float low = Mathf.Min(MinColumn, screen.W);
-		float high = Mathf.Min(MaxColumn, screen.W);
+		float low = Mathf.Min(_minColumn, screen.W);
+		float high = Mathf.Min(_maxColumn, screen.W);
 
-		return Mathf.Clamp(screen.W * ColumnFraction, low, Mathf.Max(low, high));
+		return Mathf.Clamp(screen.W * _columnFraction, low, Mathf.Max(low, high));
 	}
 
 	public static ImRect Column(ImRect screen)
 	{
 		float width = Width(screen);
-		float margin = screen.H * VerticalMargin;
+		float margin = screen.H * _verticalMargin;
 
 		return new ImRect(screen.X + (screen.W - width) * 0.5f, screen.Y + margin, width, screen.H - margin * 2f);
 	}

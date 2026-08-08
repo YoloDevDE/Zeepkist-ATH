@@ -30,7 +30,8 @@ public class ModServices
 		Toolbar = new AthToolbar(this);
 		DebugToolbar = new AthDebugToolbar(this);
 		Health = new HealthService(GraphQL);
-		RunOverlay = new RunOverlay(Control, Thumbnail);
+		RunOverlay = new RunOverlay(Control, Thumbnail, Medals);
+		Results = new ResultsScreen(Medals);
 		Loading = new LoadingOverlay(Thumbnail);
 	}
 
@@ -74,7 +75,7 @@ public class ModServices
 
 	public LeaderboardOverlay Leaderboard { get; } = new();
 
-	public ResultsScreen Results { get; } = new();
+	public ResultsScreen Results { get; }
 
 	public WelcomeWindow Welcome { get; } = new();
 
@@ -84,6 +85,9 @@ public class ModServices
 
 	/// <summary>The mod's logo, shared by the loading screen and the run bar.</summary>
 	public AthThumbnail Thumbnail { get; } = new();
+
+	/// <summary>The game's medals, copied once and shared by everything that draws one.</summary>
+	public MedalArt Medals { get; } = new();
 
 	public LobbySilence Silence { get; } = new();
 

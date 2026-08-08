@@ -20,6 +20,11 @@
         <EmbeddedResource Include="assets\thumbnail\ATH_16-9.png" LogicalName="AuthorTimeHunting.Thumbnail.png"/>
     </ItemGroup>
 
+    <!-- The button icons, baked from Bootstrap Icons by tools/iconatlas.py. -->
+    <ItemGroup>
+        <EmbeddedResource Include="assets\icons\icons.png" LogicalName="AuthorTimeHunting.Icons.png"/>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="GraphQL.Client" Version="6.1.0"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0"/>

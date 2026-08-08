@@ -28,21 +28,23 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class ResultsScreen : IZeepGUIDrawer
 {
-	private const string WindowTitle = "Run Report";
+	private const string _windowTitle = "Run Report";
 
-	private const float WidthFraction = 0.62f;
-	private const float HeightFraction = 0.7f;
-	private const float MinWidth = 560f;
-	private const float MinHeight = 420f;
+	private const float _widthFraction = 0.62f;
+	private const float _heightFraction = 0.7f;
+	private const float _minWidth = 560f;
+	private const float _minHeight = 420f;
 
-	private const float HeadlineSize = 1.9f;
-	private const float MedalRowSize = 2.2f;
+	private const float _headlineSize = 1.9f;
+	private const float _medalRowSize = 2.2f;
 
-	private const float ThumbnailMaxWidth = 360f;
+	private const float _thumbnailMaxWidth = 360f;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoResizing;
 
-	private static readonly float[] LevelWeights = [0.06f, 0.44f, 0.2f, 0.12f, 0.18f];
+	private static readonly float[] _levelWeights = [0.06f, 0.44f, 0.2f, 0.12f, 0.18f];
+
+	private readonly MedalArt _medals;
 
 	private LevelRow _level;
 
@@ -50,6 +52,11 @@ public class ResultsScreen : IZeepGUIDrawer
 	private RunReportView _report;
 
 	private RunReportView _run;
+
+	public ResultsScreen(MedalArt medals)
+	{
+		_medals = medals;
+	}
 
 	public bool Visible => _report != null;
 
@@ -88,8 +95,8 @@ public class ResultsScreen : IZeepGUIDrawer
 	private void Draw(ImGui gui, RunReportView report)
 	{
 		ImRect screen = gui.Canvas.SafeScreenRect;
-		float width = Mathf.Min(Mathf.Max(screen.W * WidthFraction, MinWidth), screen.W);
-		float height = Mathf.Min(Mathf.Max(screen.H * HeightFraction, MinHeight), screen.H);
+		float width = Mathf.Min(Mathf.Max(screen.W * _widthFraction, _minWidth), screen.W);
+		float height = Mathf.Min(Mathf.Max(screen.H * _heightFraction, _minHeight), screen.H);
 
 		ImRect rect = new(screen.Left + (screen.W - width) * 0.5f,
 			screen.Bottom + (screen.H - height) * 0.5f,
@@ -98,7 +105,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}
@@ -119,22 +126,22 @@ public class ResultsScreen : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawHeadline(ImGui gui, RunReportView report)
+	private void DrawHeadline(ImGui gui, RunReportView report)
 	{
 		float text = gui.Style.Layout.TextSize;
 
 		UiText.Centre(gui, report.Kicker, Color.Style.Text.Muted, UiMetrics.Row(gui, 1f), text * 0.9f);
-		UiText.Centre(gui, report.PlayerName, Color.Style.Surface.White, UiMetrics.Row(gui, HeadlineSize * 1.2f),
-			text * HeadlineSize);
+		UiText.Centre(gui, report.PlayerName, Color.Style.Surface.White, UiMetrics.Row(gui, _headlineSize * 1.2f),
+			text * _headlineSize);
 		UiText.Centre(gui, report.Headline, Color.Zeepkist.Medal.Author, UiMetrics.Row(gui, 1.4f), text * 1.2f);
 
-		ImRect medals = UiMetrics.Row(gui, MedalRowSize);
+		ImRect medals = UiMetrics.Row(gui, _medalRowSize);
 
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, medals, 0, 3), GameSprites.AuthorMedal, report.AuthorMedals,
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, medals, 0, 3), _medals.Author, report.AuthorMedals,
 			Color.Zeepkist.Medal.Author);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, medals, 1, 3), GameSprites.GoldMedal, report.GoldMedals,
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, medals, 1, 3), _medals.Gold, report.GoldMedals,
 			Color.Zeepkist.Medal.Gold);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, medals, 2, 3), GameSprites.YouTriedMedal, report.Penalties,
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, medals, 2, 3), _medals.YouTried, report.Penalties,
 			Color.Style.Status.Penalty);
 
 		gui.AddSpacing();
@@ -229,8 +236,8 @@ public class ResultsScreen : IZeepGUIDrawer
 		UiText.Centre(gui, level.StatusUpper, level.StatusColour, UiMetrics.Row(gui, 1.8f), text * 1.5f);
 		gui.AddSpacing();
 
-		DrawMedalTime(gui, GameSprites.AuthorMedal, "Author Time", level.AuthorTime, Color.Zeepkist.Medal.Author);
-		DrawMedalTime(gui, GameSprites.GoldMedal, "Gold Time", level.GoldTime, Color.Zeepkist.Medal.Gold);
+		DrawMedalTime(gui, _medals.Author, "Author Time", level.AuthorTime, Color.Zeepkist.Medal.Author);
+		DrawMedalTime(gui, _medals.Gold, "Gold Time", level.GoldTime, Color.Zeepkist.Medal.Gold);
 
 		UiWidgets.Row(gui, UiMetrics.Row(gui, 1f), "Your Best", level.BestWithDelta ?? "never finished",
 			level.BestWithDelta == null ? Color.Style.Text.Muted : level.StatusColour);
@@ -245,7 +252,7 @@ public class ResultsScreen : IZeepGUIDrawer
 
 	private static void DrawThumbnail(ImGui gui, LevelRow level)
 	{
-		float width = Mathf.Min(gui.GetLayoutWidth(), ThumbnailMaxWidth);
+		float width = Mathf.Min(gui.GetLayoutWidth(), _thumbnailMaxWidth);
 		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), width * 9f / 16f);
 		ImRect box = new(row.X + (row.W - width) * 0.5f, row.Y, width, row.H);
 
@@ -261,27 +268,14 @@ public class ResultsScreen : IZeepGUIDrawer
 		gui.Image(thumbnail, box);
 	}
 
-	private static void DrawMedalTime(ImGui gui, Sprite sprite, string label, string time, Color32 colour)
+	private static void DrawMedalTime(ImGui gui, Texture2D medal, string label, string time, Color32 colour)
 	{
 		ImRect row = UiMetrics.Row(gui, 1.4f);
-		float iconSize = row.H;
 
-		ImRect icon = row.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect rest);
+		ImRect icon = row.TakeLeft(row.H, gui.Style.Layout.InnerSpacing, out ImRect rest);
 
-		DrawMedalIcon(gui, icon, sprite, iconSize, colour);
+		UiWidgets.Medal(gui, icon, medal, colour);
 		UiWidgets.Row(gui, rest, label, time, colour);
-	}
-
-	private static void DrawMedalIcon(ImGui gui, ImRect icon, Sprite sprite, float iconSize, Color32 colour)
-	{
-		if (sprite == null)
-		{
-			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, colour);
-
-			return;
-		}
-
-		gui.Image(sprite, icon, true);
 	}
 
 	private void DrawHistory(ImGui gui, RunReportView report)
@@ -379,6 +373,6 @@ public class ResultsScreen : IZeepGUIDrawer
 
 	private static ImRect Cell(ImRect row, int column)
 	{
-		return UiWidgets.Cell(row, LevelWeights, column);
+		return UiWidgets.Cell(row, _levelWeights, column);
 	}
 }

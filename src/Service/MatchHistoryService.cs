@@ -20,13 +20,13 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public class MatchHistoryService
 {
-	private const string FileName = "AuthorTimeHunting.history.json";
+	private const string _fileName = "AuthorTimeHunting.history.json";
 
-	private const int MaxRecords = 200;
+	private const int _maxRecords = 200;
 
 	private List<RunRecord> _records;
 
-	private static string Path => System.IO.Path.Combine(Paths.ConfigPath, FileName);
+	private static string Path => System.IO.Path.Combine(Paths.ConfigPath, _fileName);
 
 	public IReadOnlyList<RunRecord> Records => _records ??= Load();
 
@@ -41,9 +41,9 @@ public class MatchHistoryService
 
 		records.Insert(0, record);
 
-		if (records.Count > MaxRecords)
+		if (records.Count > _maxRecords)
 		{
-			records.RemoveRange(MaxRecords, records.Count - MaxRecords);
+			records.RemoveRange(_maxRecords, records.Count - _maxRecords);
 		}
 
 		Save(records);

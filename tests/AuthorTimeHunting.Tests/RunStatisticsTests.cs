@@ -16,8 +16,8 @@ namespace AuthorTimeHunting.Tests;
 /// </summary>
 public class RunStatisticsTests
 {
-	private const double AuthorTime = 10.0;
-	private const double GoldTime = 15.0;
+	private const double _authorTime = 10.0;
+	private const double _goldTime = 15.0;
 
 	/// <summary>
 	///     The regression guard for the crash that used to take the whole end-of-run summary
@@ -53,12 +53,8 @@ public class RunStatisticsTests
 	[Fact]
 	public void TotalAttempts_SumsAcrossEveryLevelIncludingBrokenOnes()
 	{
-		RunStatistics stats = new(new List<Level>
-		{
-			Beaten("a", attempts: 3),
-			Failed("b", attempts: 7),
-			Broken("c", attempts: 2)
-		});
+		RunStatistics stats =
+			new(new List<Level> { Beaten("a", attempts: 3), Failed("b", attempts: 7), Broken("c", attempts: 2) });
 
 		Assert.Equal(12, stats.TotalAttempts);
 	}
@@ -72,9 +68,7 @@ public class RunStatisticsTests
 	{
 		RunStatistics stats = new(new List<Level>
 		{
-			Beaten("a", authorTime: 10),
-			Failed("b", authorTime: 20),
-			Broken("c", authorTime: 300)
+			Beaten("a", authorTime: 10), Failed("b", authorTime: 20), Broken("c", authorTime: 300)
 		});
 
 		Assert.Equal(15.0, stats.AverageAuthorTime);
@@ -83,12 +77,8 @@ public class RunStatisticsTests
 	[Fact]
 	public void OneShotAuthorTimes_CountsOnlyAuthorTimesTakenOnTheFirstAttempt()
 	{
-		RunStatistics stats = new(new List<Level>
-		{
-			Beaten("a", attempts: 1),
-			Beaten("b", attempts: 2),
-			Failed("c", attempts: 1)
-		});
+		RunStatistics stats =
+			new(new List<Level> { Beaten("a", attempts: 1), Beaten("b", attempts: 2), Failed("c", attempts: 1) });
 
 		Assert.Equal(1, stats.OneShotAuthorTimes);
 	}
@@ -117,9 +107,7 @@ public class RunStatisticsTests
 	{
 		RunStatistics stats = new(new List<Level>
 		{
-			Beaten("a", attempts: 2),
-			Beaten("b", attempts: 4),
-			Failed("c", attempts: 99)
+			Beaten("a", attempts: 2), Beaten("b", attempts: 4), Failed("c", attempts: 99)
 		});
 
 		Assert.Equal(3.0, stats.AverageAttemptsPerAuthorTime);
@@ -138,12 +126,7 @@ public class RunStatisticsTests
 	{
 		Level easiest = Beaten("easy", attempts: 1);
 
-		RunStatistics stats = new(new List<Level>
-		{
-			Beaten("hard", attempts: 9),
-			easiest,
-			Beaten("medium", attempts: 4)
-		});
+		RunStatistics stats = new(new List<Level> { Beaten("hard", attempts: 9), easiest, Beaten("medium", attempts: 4) });
 
 		Assert.Same(easiest, stats.EasiestBeatenLevel);
 	}
@@ -172,11 +155,7 @@ public class RunStatisticsTests
 	[Fact]
 	public void MostBeatenAuthor_NeedsTwoBeatenLevelsFromTheSameAuthor()
 	{
-		RunStatistics stats = new(new List<Level>
-		{
-			Beaten("a", author: "Alice"),
-			Beaten("b", author: "Bob")
-		});
+		RunStatistics stats = new(new List<Level> { Beaten("a"), Beaten("b", "Bob") });
 
 		Assert.Null(stats.MostBeatenAuthor.Levels);
 	}
@@ -184,10 +163,10 @@ public class RunStatisticsTests
 	[Fact]
 	public void MostBeatenAuthor_FindsTheAuthorWhoShowedUpTwice()
 	{
-		Level first = Beaten("a", author: "Alice");
-		Level second = Beaten("b", author: "Alice");
+		Level first = Beaten("a");
+		Level second = Beaten("b");
 
-		RunStatistics stats = new(new List<Level> { first, Beaten("c", author: "Bob"), second });
+		RunStatistics stats = new(new List<Level> { first, Beaten("c", "Bob"), second });
 
 		(string Author, List<Level> Levels) haunting = stats.MostBeatenAuthor;
 
@@ -204,11 +183,7 @@ public class RunStatisticsTests
 	[Fact]
 	public void MostBeatenAuthor_IgnoresLevelsThatWereNotBeaten()
 	{
-		RunStatistics stats = new(new List<Level>
-		{
-			Failed("a", author: "Alice"),
-			Failed("b", author: "Alice")
-		});
+		RunStatistics stats = new(new List<Level> { Failed("a"), Failed("b") });
 
 		Assert.Null(stats.MostBeatenAuthor.Levels);
 	}
@@ -217,11 +192,11 @@ public class RunStatisticsTests
 
 	private static Level Level(string uid, string author, double authorTime)
 	{
-		return new Level(uid, $"Level {uid}", author, authorTime, authorTime + (GoldTime - AuthorTime));
+		return new Level(uid, $"Level {uid}", author, authorTime, authorTime + (_goldTime - _authorTime));
 	}
 
 	/// <summary>Author time claimed: a personal best at or below the author time.</summary>
-	private static Level Beaten(string uid, string author = "Alice", int attempts = 1, double authorTime = AuthorTime)
+	private static Level Beaten(string uid, string author = "Alice", int attempts = 1, double authorTime = _authorTime)
 	{
 		Level level = Level(uid, author, authorTime);
 		level.Attempt = attempts;
@@ -232,15 +207,15 @@ public class RunStatisticsTests
 	/// <summary>Gold claimed but not author: a personal best between the two.</summary>
 	private static Level GoldSkipped(string uid, string author = "Alice")
 	{
-		Level level = Level(uid, author, AuthorTime);
+		Level level = Level(uid, author, _authorTime);
 		level.Attempt = 1;
-		level.PersonalBestTime = (float)(AuthorTime + 1);
+		level.PersonalBestTime = (float)(_authorTime + 1);
 		level.Skipped = true;
 		return level;
 	}
 
 	/// <summary>Skipped without a medal, which is what costs time.</summary>
-	private static Level Failed(string uid, string author = "Alice", int attempts = 1, double authorTime = AuthorTime)
+	private static Level Failed(string uid, string author = "Alice", int attempts = 1, double authorTime = _authorTime)
 	{
 		Level level = Level(uid, author, authorTime);
 		level.Attempt = attempts;
@@ -250,14 +225,14 @@ public class RunStatisticsTests
 
 	private static Level FreeSkipped(string uid, string author = "Alice")
 	{
-		Level level = Level(uid, author, AuthorTime);
+		Level level = Level(uid, author, _authorTime);
 		level.Attempt = 1;
 		level.Skipped = true;
 		level.FreeSkipped = true;
 		return level;
 	}
 
-	private static Level Broken(string uid, string author = "Alice", int attempts = 1, double authorTime = AuthorTime)
+	private static Level Broken(string uid, string author = "Alice", int attempts = 1, double authorTime = _authorTime)
 	{
 		Level level = Level(uid, author, authorTime);
 		level.Attempt = attempts;

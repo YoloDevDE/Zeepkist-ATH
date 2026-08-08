@@ -11,20 +11,20 @@ namespace AuthorTimeHunting.UI.Toolkit;
 /// </summary>
 public static class UiNumbers
 {
-	private const int Max = 256;
+	private const int _max = 256;
 
-	private static readonly string[] Labels = Build();
+	private static readonly string[] _labels = Build();
 
 	public static string Text(int value)
 	{
-		return value >= 0 && value < Labels.Length ? Labels[value] : value.ToString();
+		return value >= 0 && value < _labels.Length ? _labels[value] : value.ToString();
 	}
 
 	private static string[] Build()
 	{
-		string[] labels = new string[Max];
+		string[] labels = new string[_max];
 
-		for (int i = 0; i < Max; i++)
+		for (int i = 0; i < _max; i++)
 		{
 			labels[i] = i.ToString();
 		}

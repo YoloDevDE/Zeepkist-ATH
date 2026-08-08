@@ -16,7 +16,11 @@ namespace AuthorTimeHunting.UI.Hud;
 /// </summary>
 public class AthThumbnail : IDisposable
 {
-	private const string Resource = "AuthorTimeHunting.Thumbnail.png";
+	private const string _resource = "AuthorTimeHunting.Thumbnail.png";
+
+	private bool _sliced;
+
+	private Sprite _sprite;
 
 	private Texture2D _texture;
 
@@ -38,8 +42,35 @@ public class AthThumbnail : IDisposable
 		}
 	}
 
+	/// <summary>
+	///     The same image as a Sprite, for the parts of the mod that hang it on one of the game's own
+	///     UI controls rather than drawing it themselves. Imui takes a texture; UnityEngine.UI takes a
+	///     sprite, and one texture can carry both.
+	/// </summary>
+	public Sprite Sprite
+	{
+		get
+		{
+			if (_sliced)
+			{
+				return _sprite;
+			}
+
+			_sliced = true;
+			_sprite = Slice(Texture);
+
+			return _sprite;
+		}
+	}
+
 	public void Dispose()
 	{
+		if (_sprite != null)
+		{
+			Object.Destroy(_sprite);
+			_sprite = null;
+		}
+
 		if (_texture == null)
 		{
 			return;
@@ -49,15 +80,31 @@ public class AthThumbnail : IDisposable
 		_texture = null;
 	}
 
+	private static Sprite Slice(Texture2D texture)
+	{
+		if (texture == null)
+		{
+			return null;
+		}
+
+		Sprite sprite = Sprite.Create(texture,
+			new Rect(0f, 0f, texture.width, texture.height),
+			new Vector2(0.5f, 0.5f));
+
+		sprite.hideFlags = HideFlags.HideAndDontSave;
+
+		return sprite;
+	}
+
 	private static Texture2D Load()
 	{
 		try
 		{
-			using Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(Resource);
+			using Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(_resource);
 
 			if (stream == null)
 			{
-				Logger.LogWarning($"AthThumbnail: '{Resource}' is not in the plugin.");
+				Logger.LogWarning($"AthThumbnail: '{_resource}' is not in the plugin.");
 
 				return null;
 			}

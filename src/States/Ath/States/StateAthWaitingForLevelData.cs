@@ -12,7 +12,7 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthWaitingForLevelData(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-	private const int MaxConsecutiveBrokenLevels = 5;
+	private const int _maxConsecutiveBrokenLevels = 5;
 
 	public override async void Enter()
 	{
@@ -33,10 +33,10 @@ public class StateAthWaitingForLevelData(AthStateMachine stateMachine) : AthStat
 			{
 				AthStateMachine.Ctx.ConsecutiveBrokenCount++;
 
-				if (AthStateMachine.Ctx.ConsecutiveBrokenCount >= MaxConsecutiveBrokenLevels)
+				if (AthStateMachine.Ctx.ConsecutiveBrokenCount >= _maxConsecutiveBrokenLevels)
 				{
 					Logger.LogError(
-						$"StateAthWaitingForLevelData: {MaxConsecutiveBrokenLevels} levels in a row failed to load, stopping the run.");
+						$"StateAthWaitingForLevelData: {_maxConsecutiveBrokenLevels} levels in a row failed to load, stopping the run.");
 					FrogNotification.Error("Levels keep failing to load - the hunt was stopped");
 					StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
 					return;

@@ -34,24 +34,24 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class LeaderboardOverlay : IZeepGUIDrawer
 {
-	private const string WindowTitle = "Leaderboard";
+	private const string _windowTitle = "Leaderboard";
 
-	private const string AuthorLabel = "AT";
-	private const string GoldLabel = "GOLD";
+	private const string _authorLabel = "AT";
+	private const string _goldLabel = "GOLD";
 
-	private const float WidthFraction = 0.25f;
-	private const float MinWidth = 330f;
-	private const float MaxWidth = 480f;
+	private const float _widthFraction = 0.25f;
+	private const float _minWidth = 330f;
+	private const float _maxWidth = 480f;
 
-	private const int MaxRows = 8;
+	private const int _maxRows = 8;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
-	private const float RefreshInterval = 0.1f;
+	private const float _refreshInterval = 0.1f;
 
-	private static readonly float[] Weights = [0.1f, 0.45f, 0.45f];
+	private static readonly float[] _weights = [0.1f, 0.45f, 0.45f];
 
-	private static readonly Comparison<LeaderboardEntry> ByTime = (left, right) => left.Time.CompareTo(right.Time);
+	private static readonly Comparison<LeaderboardEntry> _byTime = (left, right) => left.Time.CompareTo(right.Time);
 
 	private readonly List<LeaderboardEntry> _entries = [];
 
@@ -92,14 +92,14 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 	{
 		Refresh(ctx);
 
-		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float width = UiMetrics.Width(gui, _widthFraction, _minWidth, _maxWidth);
 
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, _windowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.MiddleRight);
 
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}
@@ -107,7 +107,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 		try
 		{
 			int first = FirstVisible();
-			int last = Mathf.Min(first + MaxRows, _entries.Count);
+			int last = Mathf.Min(first + _maxRows, _entries.Count);
 
 			for (int i = first; i < last; i++)
 			{
@@ -136,7 +136,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 	private static ImRect Cell(ImRect row, int column)
 	{
-		return UiWidgets.Cell(row, Weights, column);
+		return UiWidgets.Cell(row, _weights, column);
 	}
 
 	private static float YourTime(AthCtx ctx)
@@ -165,7 +165,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 		_builtLevel = level;
 		_builtYourTime = yourTime;
-		_nextRefresh = Time.unscaledTime + RefreshInterval;
+		_nextRefresh = Time.unscaledTime + _refreshInterval;
 
 		Build(ctx, yourTime);
 	}
@@ -175,8 +175,8 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 		Level level = ctx.CurrentLevel;
 
 		_entries.Clear();
-		_entries.Add(Medal(AuthorLabel, (float)level.AuthorTime, Color.Zeepkist.Medal.Author, yourTime));
-		_entries.Add(Medal(GoldLabel, (float)level.GoldTime, Color.Zeepkist.Medal.Gold, yourTime));
+		_entries.Add(Medal(_authorLabel, (float)level.AuthorTime, Color.Zeepkist.Medal.Author, yourTime));
+		_entries.Add(Medal(_goldLabel, (float)level.GoldTime, Color.Zeepkist.Medal.Gold, yourTime));
 
 		List<ZeepkistNetworkPlayer> players = ZeepkistNetwork.PlayerList;
 
@@ -203,7 +203,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 			}
 		}
 
-		_entries.Sort(ByTime);
+		_entries.Sort(_byTime);
 	}
 
 	private static LeaderboardEntry Medal(string name, float time, Color32 colour, float yourTime)
@@ -215,7 +215,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 	private int FirstVisible()
 	{
-		if (_entries.Count <= MaxRows)
+		if (_entries.Count <= _maxRows)
 		{
 			return 0;
 		}
@@ -227,7 +227,7 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 			return 0;
 		}
 
-		return Mathf.Clamp(local - MaxRows / 2, 0, _entries.Count - MaxRows);
+		return Mathf.Clamp(local - _maxRows / 2, 0, _entries.Count - _maxRows);
 	}
 
 	private float Height(ImGui gui)

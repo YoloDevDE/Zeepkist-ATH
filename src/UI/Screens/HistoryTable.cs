@@ -14,7 +14,7 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public static class HistoryTable
 {
-	private static readonly float[] Weights = [0.26f, 0.24f, 0.24f, 0.11f, 0.15f];
+	private static readonly float[] _weights = [0.26f, 0.24f, 0.24f, 0.11f, 0.15f];
 
 	public static void Header(ImGui gui)
 	{
@@ -46,6 +46,6 @@ public static class HistoryTable
 
 	private static ImRect Cell(ImRect row, int column)
 	{
-		return UiWidgets.Cell(row, Weights, column);
+		return UiWidgets.Cell(row, _weights, column);
 	}
 }

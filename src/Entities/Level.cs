@@ -42,38 +42,38 @@ public class Level
 		{
 			if (LevelBroken)
 			{
-				return LevelStatus.BROKEN;
+				return LevelStatus.Broken;
 			}
 
 			if (PersonalBestTime <= AuthorTime && PersonalBestTime >= 0)
 			{
-				return LevelStatus.AUTHOR;
+				return LevelStatus.Author;
 			}
 
 			if (PersonalBestTime <= GoldTime && PersonalBestTime >= 0)
 			{
-				return LevelStatus.GOLD;
+				return LevelStatus.Gold;
 			}
 
 			if (FreeSkipped)
 			{
-				return LevelStatus.FREE;
+				return LevelStatus.Free;
 			}
 
 			if (Skipped)
 			{
-				return LevelStatus.FAILED;
+				return LevelStatus.Failed;
 			}
 
 			{
-				return LevelStatus.UNKNOWN;
+				return LevelStatus.Unknown;
 			}
 		}
 	}
 
-	public bool AuthorTimeAcquired => Status == LevelStatus.AUTHOR;
-	public bool GoldMedalAcquired => Status is LevelStatus.GOLD or LevelStatus.AUTHOR;
-	public bool PenaltySkipped => Status == LevelStatus.FAILED && Skipped;
+	public bool AuthorTimeAcquired => Status == LevelStatus.Author;
+	public bool GoldMedalAcquired => Status is LevelStatus.Gold or LevelStatus.Author;
+	public bool PenaltySkipped => Status == LevelStatus.Failed && Skipped;
 
 	public float PersonalBestTime
 	{
@@ -98,9 +98,9 @@ public class Level
 		{
 			return Status switch
 			{
-				LevelStatus.AUTHOR => "Completed", LevelStatus.GOLD => "Gold-Skipped",
-				LevelStatus.FREE => "Free-Skipped", LevelStatus.BROKEN => "Broken",
-				LevelStatus.FAILED => "Failed",
+				LevelStatus.Author => "Completed", LevelStatus.Gold => "Gold-Skipped",
+				LevelStatus.Free => "Free-Skipped", LevelStatus.Broken => "Broken",
+				LevelStatus.Failed => "Failed",
 				_ => "Unknown"
 			};
 		}

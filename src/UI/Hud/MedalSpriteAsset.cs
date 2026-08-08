@@ -33,7 +33,7 @@ public class MedalSpriteAsset : IDisposable
 	///     this is the next power of two up from that, which is all the resolution the strip can
 	///     usefully carry.
 	/// </summary>
-	private const int Cell = 128;
+	private const int _cell = 128;
 
 	private TMP_SpriteAsset _asset;
 
@@ -164,7 +164,7 @@ public class MedalSpriteAsset : IDisposable
 	/// <summary>One row of cells, the medals left to right in the order their indices name them.</summary>
 	private static Texture2D Strip(Sprite author, Sprite gold)
 	{
-		Texture2D strip = new(Cell * 2, Cell, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
+		Texture2D strip = new(_cell * 2, _cell, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
 
 		Paint(strip, author, Author);
 		Paint(strip, gold, Gold);
@@ -186,14 +186,14 @@ public class MedalSpriteAsset : IDisposable
 		Vector2 scale = new(area.width / source.width, area.height / source.height);
 		Vector2 offset = new(area.x / source.width, area.y / source.height);
 
-		RenderTexture buffer = RenderTexture.GetTemporary(Cell, Cell, 0, RenderTextureFormat.ARGB32);
+		RenderTexture buffer = RenderTexture.GetTemporary(_cell, _cell, 0, RenderTextureFormat.ARGB32);
 		RenderTexture previous = RenderTexture.active;
 
 		try
 		{
 			Graphics.Blit(source, buffer, scale, offset);
 			RenderTexture.active = buffer;
-			strip.ReadPixels(new Rect(0f, 0f, Cell, Cell), cell * Cell, 0);
+			strip.ReadPixels(new Rect(0f, 0f, _cell, _cell), cell * _cell, 0);
 		}
 		finally
 		{
@@ -233,8 +233,8 @@ public class MedalSpriteAsset : IDisposable
 	/// </summary>
 	private static TMP_SpriteGlyph Glyph(int medal)
 	{
-		GlyphMetrics metrics = new(Cell, Cell, 0f, Cell, Cell);
-		GlyphRect rect = new(medal * Cell, 0, Cell, Cell);
+		GlyphMetrics metrics = new(_cell, _cell, 0f, _cell, _cell);
+		GlyphRect rect = new(medal * _cell, 0, _cell, _cell);
 
 		return new TMP_SpriteGlyph((uint)medal, metrics, rect, 1f, 0);
 	}

@@ -17,7 +17,7 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public class LobbySilence
 {
-	private const string MasterBus = "bus:/";
+	private const string _masterBus = "bus:/";
 
 	private bool _muted;
 
@@ -43,7 +43,7 @@ public class LobbySilence
 			return;
 		}
 
-		RESULT found = RuntimeManager.StudioSystem.getBus(MasterBus, out Bus bus);
+		RESULT found = RuntimeManager.StudioSystem.getBus(_masterBus, out Bus bus);
 
 		if (found != RESULT.OK)
 		{

@@ -1,14 +1,16 @@
-using System;
 using Imui.Core;
 using UnityEngine;
 
 namespace AuthorTimeHunting.UI.Toolkit;
 
 /// <summary>
-///     The transport symbols, drawn as triangles and bars rather than typed as characters.
-///     A glyph would be one line of code, but only if the font has it: Imui ships its own
-///     font atlas, and a missing U+23ED is a tofu box on the player's screen with nothing in
-///     the log to explain it. Three points and a rect always render.
+///     One icon, drawn out of <see cref="UiIconAtlas" /> and tinted.
+///     Imui has no icon font and no SVG, and a glyph the font does not have is a tofu box on the
+///     player's screen with nothing in the log to explain it. So an icon is a cell of a texture,
+///     and the way to get a texture on the canvas in a colour is the way Imui draws every other
+///     textured thing: put the texture up, say which part of it this quad wants, and fill a rect.
+///     The colour rides in on the vertices, which is why one white strip serves every accent the
+///     buttons come in.
 /// </summary>
 public static class UiIcons
 {
@@ -19,119 +21,27 @@ public static class UiIcons
 			return;
 		}
 
-		ImRect box = Square(rect);
+		Texture2D atlas = UiIconAtlas.Texture;
 
-		switch (icon)
+		if (atlas == null)
 		{
-			case UiIcon.Play:
-				Triangle(gui, box, colour, true);
-				break;
-			case UiIcon.Pause:
-				Bars(gui, box, colour);
-				break;
-			case UiIcon.Stop:
-				Stop(gui, box, colour);
-				break;
-			case UiIcon.Skip:
-				Transport(gui, box, colour, true);
-				break;
-			case UiIcon.Restart:
-				Transport(gui, box, colour, false);
-				break;
-			case UiIcon.Warning:
-				Warning(gui, box, colour);
-				break;
-			case UiIcon.Info:
-				Info(gui, box, colour);
-				break;
-			case UiIcon.Stopwatch:
-				Stopwatch(gui, box, colour);
-				break;
+			return;
 		}
-	}
 
-	/// <summary>
-	///     A case, a crown and a hand. It reads as a stopwatch rather than a clock because of the
-	///     crown: a bare ring with a hand in it is the shape of the game's own lap time, and this
-	///     one measures an hour that is being spent rather than one that is passing.
-	///     The hand points up and to the right - the ten past the hour a watch is photographed at,
-	///     for the same reason, which is that it clears the crown and reads as a hand from across
-	///     the room.
-	/// </summary>
-	private static void Stopwatch(ImGui gui, ImRect box, Color32 colour)
-	{
-		float thickness = Mathf.Max(1f, box.W * 0.09f);
-		float radius = box.W * 0.5f - thickness * 0.5f;
-		float crown = box.W * 0.22f;
+		Vector4 previous = gui.Canvas.GetTexScaleOffset();
 
-		Vector2 centre = new(box.Center.x, box.Y + radius);
+		gui.Canvas.PushTexture(atlas);
+		gui.Canvas.SetTexScaleOffset(UiIconAtlas.Cell(icon));
 
-		gui.Canvas.Rect(new ImRect(centre.x - crown * 0.5f, box.Top - thickness * 1.6f, crown, thickness * 1.6f),
-			colour);
-		gui.Canvas.CircleWithOutline(centre, radius, Color.clear, colour, thickness);
-		gui.Canvas.Line(centre, centre + new Vector2(radius * 0.42f, radius * 0.52f), colour, thickness * 0.9f);
-	}
-
-	private static void Triangle(ImGui gui, ImRect box, Color32 colour, bool right)
-	{
-		float tip = right ? box.Right : box.Left;
-		float back = right ? box.Left : box.Right;
-
-		Span<Vector2> points =
-		[
-			new(back, box.Bottom), new(back, box.Top), new(tip, box.Y + box.H * 0.5f)
-		];
-
-		gui.Canvas.ConvexFill(points, colour);
-	}
-
-	private static void Bars(ImGui gui, ImRect box, Color32 colour)
-	{
-		float bar = box.W * 0.3f;
-
-		gui.Canvas.Rect(new ImRect(box.X, box.Y, bar, box.H), colour);
-		gui.Canvas.Rect(new ImRect(box.Right - bar, box.Y, bar, box.H), colour);
-	}
-
-	private static void Stop(ImGui gui, ImRect box, Color32 colour)
-	{
-		float inset = box.W * 0.1f;
-
-		gui.Canvas.Rect(new ImRect(box.X + inset, box.Y + inset, box.W - inset * 2f, box.H - inset * 2f), colour);
-	}
-
-	private static void Transport(ImGui gui, ImRect box, Color32 colour, bool forward)
-	{
-		float bar = box.W * 0.16f;
-		float wedge = (box.W - bar) * 0.5f;
-
-		float first = forward ? box.X : box.X + bar;
-		float second = first + wedge;
-
-		Triangle(gui, new ImRect(first, box.Y, wedge, box.H), colour, forward);
-		Triangle(gui, new ImRect(second, box.Y, wedge, box.H), colour, forward);
-		gui.Canvas.Rect(new ImRect(forward ? box.Right - bar : box.X, box.Y, bar, box.H), colour);
-	}
-
-	private static void Warning(ImGui gui, ImRect box, Color32 colour)
-	{
-		Span<Vector2> points =
-		[
-			new(box.X, box.Bottom), new(box.X + box.W * 0.5f, box.Top), new(box.Right, box.Bottom)
-		];
-
-		gui.Canvas.ConvexFill(points, colour);
-	}
-
-	private static void Info(ImGui gui, ImRect box, Color32 colour)
-	{
-		float stem = box.W * 0.24f;
-		float dot = box.H * 0.2f;
-		float gap = box.H * 0.12f;
-		float x = box.X + (box.W - stem) * 0.5f;
-
-		gui.Canvas.Rect(new ImRect(x, box.Top - dot, stem, dot), colour);
-		gui.Canvas.Rect(new ImRect(x, box.Y, stem, box.H - dot - gap), colour);
+		try
+		{
+			gui.Canvas.Rect(Square(rect), colour);
+		}
+		finally
+		{
+			gui.Canvas.SetTexScaleOffset(previous);
+			gui.Canvas.PopTexture();
+		}
 	}
 
 	private static ImRect Square(ImRect rect)

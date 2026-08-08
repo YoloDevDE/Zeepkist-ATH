@@ -34,7 +34,6 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 				await Task.Delay(2500, stopped);
 				MultiplayerApi.UpdateServerPlaylist();
 				await Task.Delay(500, stopped);
-				PlaylistService.SkipLevel();
 				StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
 				return;
 			}
@@ -63,6 +62,11 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 					await Task.Delay(500, stopped);
 				}
 			}
+
+			// The setup screen is still up and its watchdog only counts silence. Downloading a
+			// level off the workshop is the longest wait in the whole setup and the only one that
+			// arrives without a step of its own, so it says so before it starts.
+			AthStateMachine.Services.Loading.Step("Downloading the level");
 
 			await AthStateMachine.Services.WorkshopDownloads.WaitUntilReadyAsync(firstLevel);
 

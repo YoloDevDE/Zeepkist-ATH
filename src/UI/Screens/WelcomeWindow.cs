@@ -26,16 +26,16 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class WelcomeWindow : IZeepGUIDrawer
 {
-	private const string WindowTitle = "Welcome to ATH";
+	private const string _windowTitle = "Welcome to ATH";
 
-	private const float WidthFraction = 0.6f;
-	private const float HeightFraction = 0.8f;
-	private const float MinWidth = 700f;
-	private const float MinHeight = 560f;
+	private const float _widthFraction = 0.6f;
+	private const float _heightFraction = 0.8f;
+	private const float _minWidth = 700f;
+	private const float _minHeight = 560f;
 
-	private const float TitleSize = 2.1f;
+	private const float _titleSize = 2.1f;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoResizing;
 
 	private WelcomeMode[] _modes = [];
 
@@ -77,8 +77,8 @@ public class WelcomeWindow : IZeepGUIDrawer
 	private void Draw(ImGui gui)
 	{
 		ImRect screen = gui.Canvas.SafeScreenRect;
-		float width = Mathf.Min(Mathf.Max(screen.W * WidthFraction, MinWidth), screen.W);
-		float height = Mathf.Min(Mathf.Max(screen.H * HeightFraction, MinHeight), screen.H);
+		float width = Mathf.Min(Mathf.Max(screen.W * _widthFraction, _minWidth), screen.W);
+		float height = Mathf.Min(Mathf.Max(screen.H * _heightFraction, _minHeight), screen.H);
 
 		ImRect rect = new(screen.Left + (screen.W - width) * 0.5f,
 			screen.Bottom + (screen.H - height) * 0.5f,
@@ -87,7 +87,7 @@ public class WelcomeWindow : IZeepGUIDrawer
 
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}
@@ -114,8 +114,8 @@ public class WelcomeWindow : IZeepGUIDrawer
 		float text = gui.Style.Layout.TextSize;
 
 		UiText.Centre(gui, "WELCOME TO", Color.Style.Text.Muted, UiMetrics.Row(gui, 1f), text * 0.9f);
-		UiText.Centre(gui, "Author Time Hunting", Color.Style.Surface.White, UiMetrics.Row(gui, TitleSize * 1.2f),
-			text * TitleSize);
+		UiText.Centre(gui, "Author Time Hunting", Color.Style.Surface.White, UiMetrics.Row(gui, _titleSize * 1.2f),
+			text * _titleSize);
 		UiText.Centre(gui, "Beat the author's time. Then do it again, until the hour is gone.",
 			Color.Zeepkist.Medal.Author,
 			UiMetrics.Row(gui, 1.3f), text * 1.05f);

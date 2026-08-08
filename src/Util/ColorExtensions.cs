@@ -12,15 +12,15 @@ namespace AuthorTimeHunting.Util;
 /// </summary>
 public static class ColorExtensions
 {
-	private static readonly StyleColors SharedStyle = new();
+	private static readonly StyleColors _sharedStyle = new();
 
-	private static readonly ZeepkistColors SharedZeepkist = new();
+	private static readonly ZeepkistColors _sharedZeepkist = new();
 
 	extension(Color)
 	{
-		public static StyleColors Style => SharedStyle;
+		public static StyleColors Style => _sharedStyle;
 
-		public static ZeepkistColors Zeepkist => SharedZeepkist;
+		public static ZeepkistColors Zeepkist => _sharedZeepkist;
 
 		/// <summary>
 		///     Reads <c>RRGGBB</c> or <c>RRGGBBAA</c>, with or without a leading <c>#</c>.

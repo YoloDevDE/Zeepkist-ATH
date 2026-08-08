@@ -27,15 +27,15 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class DebugPanel : IZeepGUIDrawer
 {
-	private const string WindowTitle = "ATH Debug";
+	private const string _windowTitle = "ATH Debug";
 
-	private const float WidthFraction = 0.23f;
-	private const float MinWidth = 345f;
-	private const float MaxWidth = 495f;
+	private const float _widthFraction = 0.23f;
+	private const float _minWidth = 345f;
+	private const float _maxWidth = 495f;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoCloseButton | ImWindowFlag.NoResizing;
 
-	private const float Spread = 1.5f;
+	private const float _spread = 1.5f;
 
 	private float _contentHeight;
 	private bool _mouseOverWindow;
@@ -69,14 +69,14 @@ public class DebugPanel : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
-		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float width = UiMetrics.Width(gui, _widthFraction, _minWidth, _maxWidth);
 
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, _windowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.MiddleLeft);
 
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}
@@ -206,17 +206,17 @@ public class DebugPanel : IZeepGUIDrawer
 		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 0, 2), UiIcon.None, "Author",
 			    Color.Zeepkist.Medal.Author))
 		{
-			Grant(run, (float)level.AuthorTime - Random.Range(0.05f, Spread));
+			Grant(run, (float)level.AuthorTime - Random.Range(0.05f, _spread));
 		}
 
 		if (UiWidgets.IconButton(gui, UiWidgets.Column(gui, row, 1, 2), UiIcon.None, "Gold", Color.Zeepkist.Medal.Gold))
 		{
-			Grant(run, (float)level.GoldTime - Random.Range(0.05f, Spread));
+			Grant(run, (float)level.GoldTime - Random.Range(0.05f, _spread));
 		}
 
 		if (UiWidgets.IconButton(gui, UiMetrics.ButtonRow(gui), UiIcon.None, "Missed", Color.Style.Action.Broken))
 		{
-			Grant(run, (float)level.GoldTime + Random.Range(0.05f, Spread));
+			Grant(run, (float)level.GoldTime + Random.Range(0.05f, _spread));
 		}
 
 		UiText.Left(gui, "Only improvements stick.", Color.Style.Text.Muted, UiMetrics.Row(gui, 0.9f));
@@ -229,8 +229,8 @@ public class DebugPanel : IZeepGUIDrawer
 
 		level.PersonalBestTime = clamped;
 		run.Ctx.LastRunTime = clamped;
-		run.Ctx.LastRunMedalStatus = clamped <= level.AuthorTime ? LevelStatus.AUTHOR :
-			clamped <= level.GoldTime ? LevelStatus.GOLD : LevelStatus.UNKNOWN;
+		run.Ctx.LastRunMedalStatus = clamped <= level.AuthorTime ? LevelStatus.Author :
+			clamped <= level.GoldTime ? LevelStatus.Gold : LevelStatus.Unknown;
 
 		FrogNotification.Info($"Granted {TimeFormatter.FormatTime(clamped)} -> {level.StatusString}");
 	}

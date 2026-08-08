@@ -20,7 +20,7 @@ namespace AuthorTimeHunting.UI.Toolkit;
 public class OverlayLayer
 {
 	/// <summary>As high as a canvas sorts. Nothing in the game asks for this, which is the point.</summary>
-	private const int Front = short.MaxValue;
+	private const int _front = short.MaxValue;
 
 	private Canvas _canvas;
 
@@ -46,7 +46,7 @@ public class OverlayLayer
 
 		_raised = true;
 		_wasOrder = canvas.sortingOrder;
-		canvas.sortingOrder = Front;
+		canvas.sortingOrder = _front;
 	}
 
 	public void Drop()

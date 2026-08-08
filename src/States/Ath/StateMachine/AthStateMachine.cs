@@ -23,9 +23,9 @@ namespace AuthorTimeHunting.States.Ath.StateMachine;
 /// </summary>
 public class AthStateMachine : StateMachineBase
 {
-	private const int MaxConsecutiveTickFailures = 10;
+	private const int _maxConsecutiveTickFailures = 10;
 
-	private static readonly TimeSpan ServerMessageThrottle = TimeSpan.FromMilliseconds(1000);
+	private static readonly TimeSpan _serverMessageThrottle = TimeSpan.FromMilliseconds(1000);
 
 	private AthLoopBehaviour _behaviour;
 	private int _consecutiveTickFailures;
@@ -125,7 +125,7 @@ public class AthStateMachine : StateMachineBase
 
 		DateTime now = DateTime.UtcNow;
 
-		if (message == _lastServerMessage && now - _lastServerMessageTime < ServerMessageThrottle)
+		if (message == _lastServerMessage && now - _lastServerMessageTime < _serverMessageThrottle)
 		{
 			return;
 		}
@@ -199,13 +199,13 @@ public class AthStateMachine : StateMachineBase
 
 		_consecutiveTickFailures++;
 
-		if (_consecutiveTickFailures < MaxConsecutiveTickFailures)
+		if (_consecutiveTickFailures < _maxConsecutiveTickFailures)
 		{
 			return;
 		}
 
 		Logger.LogError(
-			$"AthStateMachine: Tick failed {MaxConsecutiveTickFailures} frames in a row, stopping the run.");
+			$"AthStateMachine: Tick failed {_maxConsecutiveTickFailures} frames in a row, stopping the run.");
 		_consecutiveTickFailures = 0;
 		StopTimer();
 

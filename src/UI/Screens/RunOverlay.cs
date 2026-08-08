@@ -37,30 +37,30 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class RunOverlay : IZeepGUIDrawer
 {
-	private const string WindowTitle = "ATH Bar";
+	private const string _windowTitle = "ATH Bar";
 
-	private const ImWindowFlag WindowFlags =
+	private const ImWindowFlag _windowFlags =
 		ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton | ImWindowFlag.NoMovingAndResizing;
 
-	private const float WidthFraction = 0.58f;
-	private const float MinWidth = 640f;
-	private const float MaxWidth = 1180f;
+	private const float _widthFraction = 0.58f;
+	private const float _minWidth = 640f;
+	private const float _maxWidth = 1180f;
 
 	/// <summary>How many rows of content the band holds, the rule along its bottom edge aside.</summary>
-	private const float ContentRows = 2.7f;
+	private const float _contentRows = 2.7f;
 
-	private const float RuleFraction = 0.16f;
+	private const float _ruleFraction = 0.16f;
 
 	/// <summary>How much of the band's height its cut corners take. The bar's whole silhouette.</summary>
-	private const float ChamferFraction = 0.45f;
+	private const float _chamferFraction = 0.45f;
 
-	private const float BadgeAspect = 16f / 9f;
+	private const float _badgeAspect = 16f / 9f;
 
-	private const float PennantWidthFraction = 0.34f;
-	private const float PennantRows = 0.55f;
+	private const float _pennantWidthFraction = 0.34f;
+	private const float _pennantRows = 0.55f;
 
-	private const float ClockShare = 0.55f;
-	private const float ClockSize = 1.3f;
+	private const float _clockShare = 0.55f;
+	private const float _clockSize = 1.3f;
 
 	/// <summary>
 	///     How wide each block of a wing actually is, in rows.
@@ -69,26 +69,26 @@ public class RunOverlay : IZeepGUIDrawer
 	///     three medal counts, and the live dot ends up nearer the crest than the clock it belongs
 	///     to. So every block takes what it needs off its own edge and leaves the rest empty.
 	/// </summary>
-	private const float ClockColumns = 6.4f;
+	private const float _clockColumns = 6.4f;
 
-	private const float MedalColumns = 7.4f;
+	private const float _medalColumns = 7.4f;
 
-	private const float LevelTimeColumns = 11.4f;
+	private const float _levelTimeColumns = 11.4f;
 
-	private const float NameShare = 0.37f;
-	private const float AuthorShare = 0.4f;
+	private const float _nameShare = 0.37f;
+	private const float _authorShare = 0.4f;
 
 	/// <summary>Open or shut in a fifth of a second: too fast to wait for, too slow to be a jump cut.</summary>
-	private const float SlideSeconds = 0.2f;
+	private const float _slideSeconds = 0.2f;
 
 	/// <summary>One blink a second, lit for most of it. A recording light, not a turn signal.</summary>
-	private const float BlinkOnFraction = 0.6f;
+	private const float _blinkOnFraction = 0.6f;
 
 	/// <summary>Pixels the pointer has to travel in a frame before it counts as having been moved.</summary>
-	private const float MotionThreshold = 1.5f;
+	private const float _motionThreshold = 1.5f;
 
 	/// <summary>How long a still pointer stays "just used" before the drawer takes it back.</summary>
-	private const float RestSeconds = 2.5f;
+	private const float _restSeconds = 2.5f;
 
 	/// <summary>
 	///     The corner points of the two hand-drawn shapes, written afresh every frame rather than
@@ -98,11 +98,13 @@ public class RunOverlay : IZeepGUIDrawer
 	///     <c>Span</c> is visible, the IDE resolves references without applying it, and every
 	///     <c>stackalloc</c> here then reads as an error. Do not put them back.
 	/// </summary>
-	private static readonly Vector2[] BandPoints = new Vector2[6];
+	private static readonly Vector2[] _bandPoints = new Vector2[6];
 
-	private static readonly Vector2[] PennantPoints = new Vector2[5];
+	private static readonly Vector2[] _pennantPoints = new Vector2[5];
 
 	private readonly ControlPanel _controls;
+
+	private readonly MedalArt _medals;
 
 	private readonly AthThumbnail _thumbnail;
 
@@ -115,10 +117,11 @@ public class RunOverlay : IZeepGUIDrawer
 
 	private float _stirred;
 
-	public RunOverlay(ControlPanel controls, AthThumbnail thumbnail)
+	public RunOverlay(ControlPanel controls, AthThumbnail thumbnail, MedalArt medals)
 	{
 		_controls = controls;
 		_thumbnail = thumbnail;
+		_medals = medals;
 	}
 
 	/// <summary>
@@ -179,15 +182,15 @@ public class RunOverlay : IZeepGUIDrawer
 
 		float row = gui.GetRowHeight();
 		float pad = UiMetrics.Margin(gui) * 0.5f;
-		float rule = Mathf.Max(3f, row * RuleFraction);
-		float band = row * ContentRows + pad * 2f + rule;
+		float rule = Mathf.Max(3f, row * _ruleFraction);
+		float band = row * _contentRows + pad * 2f + rule;
 
 		float full = _controls.Height(gui);
 		float drawer = full * Advance();
-		float below = Mathf.Max(row * PennantRows, drawer);
+		float below = Mathf.Max(row * _pennantRows, drawer);
 
 		ImRect screen = gui.Canvas.SafeScreenRect;
-		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float width = UiMetrics.Width(gui, _widthFraction, _minWidth, _maxWidth);
 		ImRect rect = new(screen.X + (screen.W - width) * 0.5f, screen.Top - band - below, width, band + below);
 
 		ImStyleWindow previous = gui.Style.Window;
@@ -226,7 +229,7 @@ public class RunOverlay : IZeepGUIDrawer
 	{
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}
@@ -256,32 +259,32 @@ public class RunOverlay : IZeepGUIDrawer
 	/// </summary>
 	private static void Chamfered(ImGui gui, ImRect rect, float cut, Color32 colour)
 	{
-		BandPoints[0] = new Vector2(rect.X + cut, rect.Y);
-		BandPoints[1] = new Vector2(rect.Right - cut, rect.Y);
-		BandPoints[2] = new Vector2(rect.Right, rect.Y + cut);
-		BandPoints[3] = new Vector2(rect.Right, rect.Top);
-		BandPoints[4] = new Vector2(rect.X, rect.Top);
-		BandPoints[5] = new Vector2(rect.X, rect.Y + cut);
+		_bandPoints[0] = new Vector2(rect.X + cut, rect.Y);
+		_bandPoints[1] = new Vector2(rect.Right - cut, rect.Y);
+		_bandPoints[2] = new Vector2(rect.Right, rect.Y + cut);
+		_bandPoints[3] = new Vector2(rect.Right, rect.Top);
+		_bandPoints[4] = new Vector2(rect.X, rect.Top);
+		_bandPoints[5] = new Vector2(rect.X, rect.Y + cut);
 
-		gui.Canvas.ConvexFill(BandPoints, colour);
+		gui.Canvas.ConvexFill(_bandPoints, colour);
 	}
 
 	private static float Chamfer(ImRect rect)
 	{
-		return Mathf.Min(rect.H * ChamferFraction, rect.W * 0.03f);
+		return Mathf.Min(rect.H * _chamferFraction, rect.W * 0.03f);
 	}
 
 	private void DrawContent(ImGui gui, ImRect strip, float cut, RunHudView view)
 	{
 		float pad = UiMetrics.Margin(gui) * 0.5f;
-		float rule = Mathf.Max(3f, gui.GetRowHeight() * RuleFraction);
+		float rule = Mathf.Max(3f, gui.GetRowHeight() * _ruleFraction);
 
 		ImRect inner = strip.WithPadding(pad + cut, pad + cut, pad, rule + pad);
-		float badgeWidth = inner.H * BadgeAspect;
+		float badgeWidth = inner.H * _badgeAspect;
 		ImRect badge = new(inner.Center.x - badgeWidth * 0.5f, inner.Y, badgeWidth, inner.H);
 		float wing = (inner.W - badgeWidth) * 0.5f - pad;
 
-		DrawPennant(gui, strip, badgeWidth * PennantWidthFraction, gui.GetRowHeight() * PennantRows);
+		DrawPennant(gui, strip, badgeWidth * _pennantWidthFraction, gui.GetRowHeight() * _pennantRows);
 		DrawBadge(gui, badge);
 		DrawHunt(gui, new ImRect(inner.X, inner.Y, wing, inner.H), view);
 		DrawLevel(gui, new ImRect(inner.Right - wing, inner.Y, wing, inner.H), view);
@@ -300,13 +303,13 @@ public class RunOverlay : IZeepGUIDrawer
 		float half = width * 0.5f;
 		float x = strip.Center.x;
 
-		PennantPoints[0] = new Vector2(x - half, strip.Y);
-		PennantPoints[1] = new Vector2(x - half, strip.Y - height * 0.45f);
-		PennantPoints[2] = new Vector2(x, strip.Y - height);
-		PennantPoints[3] = new Vector2(x + half, strip.Y - height * 0.45f);
-		PennantPoints[4] = new Vector2(x + half, strip.Y);
+		_pennantPoints[0] = new Vector2(x - half, strip.Y);
+		_pennantPoints[1] = new Vector2(x - half, strip.Y - height * 0.45f);
+		_pennantPoints[2] = new Vector2(x, strip.Y - height);
+		_pennantPoints[3] = new Vector2(x + half, strip.Y - height * 0.45f);
+		_pennantPoints[4] = new Vector2(x + half, strip.Y);
 
-		gui.Canvas.ConvexFill(PennantPoints, Color.Zeepkist.Medal.Gold);
+		gui.Canvas.ConvexFill(_pennantPoints, Color.Zeepkist.Medal.Gold);
 	}
 
 	/// <summary>The mod's own crest, or its initials where the plugin was built without the picture.</summary>
@@ -329,13 +332,13 @@ public class RunOverlay : IZeepGUIDrawer
 	}
 
 	/// <summary>The left wing: the hour, whether it is being spent, and what has been bought with it.</summary>
-	private static void DrawHunt(ImGui gui, ImRect rect, RunHudView view)
+	private void DrawHunt(ImGui gui, ImRect rect, RunHudView view)
 	{
 		float row = gui.GetRowHeight();
-		ImRect clock = rect.TakeTop(rect.H * ClockShare, out ImRect medals);
+		ImRect clock = rect.TakeTop(rect.H * _clockShare, out ImRect medals);
 
-		DrawClock(gui, clock.TakeLeft(Mathf.Min(clock.W, row * ClockColumns)), view);
-		DrawMedals(gui, medals.TakeLeft(Mathf.Min(medals.W, row * MedalColumns)), view);
+		DrawClock(gui, clock.TakeLeft(Mathf.Min(clock.W, row * _clockColumns)), view);
+		DrawMedals(gui, medals.TakeLeft(Mathf.Min(medals.W, row * _medalColumns)), view);
 	}
 
 	private static void DrawClock(ImGui gui, ImRect rect, RunHudView view)
@@ -347,7 +350,7 @@ public class RunOverlay : IZeepGUIDrawer
 		ImRect light = rest.TakeRight(icon, gap, out ImRect clock);
 
 		UiIcons.Draw(gui, watch, UiIcon.Stopwatch, view.TimeColour);
-		UiText.Draw(gui, view.TimeLeft, view.TimeColour, clock, gui.Style.Layout.TextSize * ClockSize, 0f);
+		UiText.Draw(gui, view.TimeLeft, view.TimeColour, clock, gui.Style.Layout.TextSize * _clockSize, 0f);
 		DrawLive(gui, light, view.Running);
 	}
 
@@ -367,7 +370,7 @@ public class RunOverlay : IZeepGUIDrawer
 			return;
 		}
 
-		if (Time.unscaledTime % 1f > BlinkOnFraction)
+		if (Time.unscaledTime % 1f > _blinkOnFraction)
 		{
 			return;
 		}
@@ -375,13 +378,13 @@ public class RunOverlay : IZeepGUIDrawer
 		gui.Canvas.Circle(rect.Center, rect.H * 0.25f, Color.Style.Status.Alert);
 	}
 
-	private static void DrawMedals(ImGui gui, ImRect rect, RunHudView view)
+	private void DrawMedals(ImGui gui, ImRect rect, RunHudView view)
 	{
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, rect, 0, 3), GameSprites.AuthorMedal, view.AuthorMedals,
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, rect, 0, 3), _medals.Author, view.AuthorMedals,
 			Color.Zeepkist.Medal.Author);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, rect, 1, 3), GameSprites.GoldMedal, view.GoldMedals,
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, rect, 1, 3), _medals.Gold, view.GoldMedals,
 			Color.Zeepkist.Medal.Gold);
-		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, rect, 2, 3), GameSprites.YouTriedMedal, view.Penalties,
+		UiWidgets.MedalCount(gui, UiWidgets.Column(gui, rect, 2, 3), _medals.YouTried, view.Penalties,
 			Color.Style.Status.Penalty);
 	}
 
@@ -391,32 +394,32 @@ public class RunOverlay : IZeepGUIDrawer
 	///     card in the corner. Beside the crest is where they stop moving - they are the other half
 	///     of what the bar is about, and a hunt with no level in front of it is not on screen.
 	/// </summary>
-	private static void DrawLevel(ImGui gui, ImRect rect, RunHudView view)
+	private void DrawLevel(ImGui gui, ImRect rect, RunHudView view)
 	{
 		float text = gui.Style.Layout.TextSize;
 
-		ImRect name = rect.TakeTop(rect.H * NameShare, out ImRect rest);
-		ImRect author = rest.TakeTop(rest.H * AuthorShare, out ImRect times);
+		ImRect name = rect.TakeTop(rect.H * _nameShare, out ImRect rest);
+		ImRect author = rest.TakeTop(rest.H * _authorShare, out ImRect times);
 
 		UiText.Right(gui, view.LevelName, Color.Style.Text.LevelName, name, text * 1.05f);
 		UiText.Right(gui, view.ByAuthor, Color.Style.Text.AuthorName, author, text * 0.8f);
 
-		DrawTimes(gui, times.TakeRight(Mathf.Min(times.W, gui.GetRowHeight() * LevelTimeColumns)), view);
+		DrawTimes(gui, times.TakeRight(Mathf.Min(times.W, gui.GetRowHeight() * _levelTimeColumns)), view);
 	}
 
-	private static void DrawTimes(ImGui gui, ImRect rect, RunHudView view)
+	private void DrawTimes(ImGui gui, ImRect rect, RunHudView view)
 	{
-		DrawMedalTime(gui, UiWidgets.Column(gui, rect, 0, 2), GameSprites.AuthorMedal, view.AuthorTime,
+		DrawMedalTime(gui, UiWidgets.Column(gui, rect, 0, 2), _medals.Author, view.AuthorTime,
 			Color.Zeepkist.Medal.Author);
-		DrawMedalTime(gui, UiWidgets.Column(gui, rect, 1, 2), GameSprites.GoldMedal, view.GoldTime,
+		DrawMedalTime(gui, UiWidgets.Column(gui, rect, 1, 2), _medals.Gold, view.GoldTime,
 			Color.Zeepkist.Medal.Gold);
 	}
 
-	private static void DrawMedalTime(ImGui gui, ImRect cell, Sprite sprite, string time, Color32 colour)
+	private static void DrawMedalTime(ImGui gui, ImRect cell, Texture2D medal, string time, Color32 colour)
 	{
 		ImRect icon = cell.TakeLeft(cell.H, gui.Style.Layout.InnerSpacing, out ImRect text);
 
-		UiWidgets.Medal(gui, icon, sprite, colour);
+		UiWidgets.Medal(gui, icon, medal, colour);
 		UiText.Draw(gui, time, colour, text, gui.Style.Layout.TextSize * 0.9f, 0f);
 	}
 
@@ -453,7 +456,7 @@ public class RunOverlay : IZeepGUIDrawer
 
 	private float Advance()
 	{
-		float step = Time.unscaledDeltaTime / SlideSeconds;
+		float step = Time.unscaledDeltaTime / _slideSeconds;
 
 		_open = Mathf.Clamp01(_open + (PointerActive() ? step : -step));
 
@@ -472,7 +475,7 @@ public class RunOverlay : IZeepGUIDrawer
 	private bool PointerActive()
 	{
 		Vector3 now = Input.mousePosition;
-		bool moved = (now - _pointer).sqrMagnitude > MotionThreshold * MotionThreshold;
+		bool moved = (now - _pointer).sqrMagnitude > _motionThreshold * _motionThreshold;
 
 		_pointer = now;
 
@@ -481,6 +484,6 @@ public class RunOverlay : IZeepGUIDrawer
 			_stirred = Time.unscaledTime;
 		}
 
-		return Time.unscaledTime - _stirred < RestSeconds;
+		return Time.unscaledTime - _stirred < _restSeconds;
 	}
 }

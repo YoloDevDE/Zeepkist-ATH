@@ -20,13 +20,13 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class HelpWindow : IZeepGUIDrawer
 {
-	private const string WindowTitle = "ATH Help";
+	private const string _windowTitle = "ATH Help";
 
-	private const float WidthFraction = 0.38f;
-	private const float MinWidth = 480f;
-	private const float MaxWidth = 690f;
+	private const float _widthFraction = 0.38f;
+	private const float _minWidth = 480f;
+	private const float _maxWidth = 690f;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoResizing;
 
 	private float _contentHeight;
 	private bool _mouseOverWindow;
@@ -53,14 +53,14 @@ public class HelpWindow : IZeepGUIDrawer
 
 	private void Draw(ImGui gui)
 	{
-		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		float width = UiMetrics.Width(gui, _widthFraction, _minWidth, _maxWidth);
 
-		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, WindowTitle.AsSpan(), width, Height(gui),
+		ImRect rect = ImWindowPlacement.PlaceAutoSized(gui, _windowTitle.AsSpan(), width, Height(gui),
 			ImWindowAnchor.TopLeft);
 
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, rect, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, rect, _windowFlags))
 		{
 			return;
 		}

@@ -29,12 +29,17 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class ControlPanel
 {
-	private const int Buttons = 5;
+	private const int _buttons = 5;
 
-	/// <summary>Wider than tall, because the word underneath the symbol is what sets the width.</summary>
-	private const float TileAspect = 1.15f;
+	/// <summary>
+	///     Barely wider than tall. The word underneath the symbol is what sets the width, and the
+	///     tile was wider than that when the symbol was a triangle drawn to fill its box: an icon
+	///     from a set is squared inside the room left over the caption, so a wide tile spends its
+	///     width on air beside a small icon rather than on the icon.
+	/// </summary>
+	private const float _tileAspect = 1.05f;
 
-	private const float TileRows = 2.1f;
+	private const float _tileRows = 2.5f;
 
 	private float _height;
 
@@ -45,7 +50,7 @@ public class ControlPanel
 	/// </summary>
 	public float Height(ImGui gui)
 	{
-		float fallback = gui.GetRowHeight() * (TileRows + 1.4f);
+		float fallback = gui.GetRowHeight() * (_tileRows + 1.4f);
 
 		return (_height > 0f ? _height : fallback) + UiMetrics.Margin(gui);
 	}
@@ -120,10 +125,10 @@ public class ControlPanel
 	/// </summary>
 	private static ImRect Strip(ImGui gui)
 	{
-		float height = gui.GetRowHeight() * TileRows;
-		float side = height * TileAspect;
+		float height = gui.GetRowHeight() * _tileRows;
+		float side = height * _tileAspect;
 		float gap = gui.Style.Layout.InnerSpacing;
-		float width = side * Buttons + gap * (Buttons - 1);
+		float width = side * _buttons + gap * (_buttons - 1);
 
 		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), height);
 
@@ -132,7 +137,7 @@ public class ControlPanel
 
 	private static ImRect Tile(ImGui gui, ImRect strip, int index)
 	{
-		float side = strip.H * TileAspect;
+		float side = strip.H * _tileAspect;
 		float gap = gui.Style.Layout.InnerSpacing;
 
 		return new ImRect(strip.X + index * (side + gap), strip.Y, side, strip.H);

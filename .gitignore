@@ -248,3 +248,8 @@ costura_files.txt
 
 # Renders of the UI mockup (tools/barmock.py). Regenerated on demand, never reviewed.
 /tools/out/
+
+# The button icons. "Icon?" above is meant for macOS's Icon\r files and catches this folder by
+# accident - and the build embeds assets/icons/icons.png, so a clone without it does not compile.
+!/assets/icons/
+!/assets/icons/**

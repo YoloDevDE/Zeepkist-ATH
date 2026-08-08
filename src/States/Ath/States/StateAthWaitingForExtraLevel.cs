@@ -8,13 +8,13 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthWaitingForExtraLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-	private const int MaxConsecutiveDuplicates = 3;
+	private const int _maxConsecutiveDuplicates = 3;
 
 	public override async void Enter()
 	{
 		AthStateMachine.Ctx.ConsecutiveDuplicateCount++;
 
-		if (AthStateMachine.Ctx.ConsecutiveDuplicateCount >= MaxConsecutiveDuplicates)
+		if (AthStateMachine.Ctx.ConsecutiveDuplicateCount >= _maxConsecutiveDuplicates)
 		{
 			int retries = AthStateMachine.Ctx.ConsecutiveDuplicateCount;
 			Logger.LogWarning(

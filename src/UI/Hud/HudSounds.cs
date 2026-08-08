@@ -29,47 +29,47 @@ namespace AuthorTimeHunting.UI.Hud;
 /// </summary>
 public class HudSounds : IDisposable
 {
-	private const int SampleRate = 44100;
+	private const int _sampleRate = 44100;
 
-	private const int Channels = 1;
+	private const int _channels = 1;
 
 	/// <summary>
 	///     How long the room takes to fall 60 dB. Under half a second is a small hard room, which is
 	///     what a beep wants: enough that it lands somewhere rather than in front of the player's
 	///     face, and over before the next lamp lights.
 	/// </summary>
-	private const float ReverbSeconds = 0.45f;
+	private const float _reverbSeconds = 0.45f;
 
 	/// <summary>How much of the room is heard against the clip itself.</summary>
-	private const float WetMix = 0.45f;
+	private const float _wetMix = 0.45f;
 
-	private const float Minus60Db = 0.001f;
+	private const float _minus60Db = 0.001f;
 
 	/// <summary>
 	///     Room at the end of every clip for the reverb to die away in. The tail is inaudible about
 	///     a tenth of a second before this runs out, which is the margin rather than waste - a clip
 	///     cut off while it still rings is a click.
 	/// </summary>
-	private const float TailSeconds = 0.25f;
+	private const float _tailSeconds = 0.25f;
 
 	/// <summary>
 	///     What every clip is scaled to once it is mixed. Normalising rather than trusting the
 	///     arithmetic is what keeps the double beep exactly as loud as the single one, and what
 	///     keeps three cascaded echoes from clipping.
 	/// </summary>
-	private const float Headroom = 0.95f;
+	private const float _headroom = 0.95f;
 
-	private const float AttackSeconds = 0.006f;
-	private const float DecayRate = 5f;
+	private const float _attackSeconds = 0.006f;
+	private const float _decayRate = 5f;
 
-	private const float BaseVolume = 0.9f;
+	private const float _baseVolume = 0.9f;
 
 	/// <summary>
 	///     The partials every clip is built from, as a share of the fundamental. Four of them is
 	///     where a beep stops sounding like a signal generator and starts sounding like something
 	///     that was struck; past that the top ones only add hiss at the sample rate this runs at.
 	/// </summary>
-	private static readonly float[] Partials = [1f, 0.34f, 0.16f, 0.07f];
+	private static readonly float[] _partials = [1f, 0.34f, 0.16f, 0.07f];
 
 	/// <summary>
 	///     The reverb, in samples of delay: 25, 38 and 59 milliseconds. Mutually prime, so the three
@@ -77,31 +77,31 @@ public class HudSounds : IDisposable
 	///     one fed the dry clip - in series they would only reverberate each other's output, which
 	///     is a longer and thinner sound than three rooms heard at once.
 	/// </summary>
-	private static readonly int[] Echoes = [1103, 1697, 2593];
+	private static readonly int[] _echoes = [1103, 1697, 2593];
 
 	/// <summary>One lamp of the countdown.</summary>
-	private static readonly Tone[] LampNotes = [new(660f, 0f, 0.11f)];
+	private static readonly Tone[] _lampNotes = [new(660f, 0f, 0.11f)];
 
 	/// <summary>The release, an octave above the lamps and longer. Trackmania's countdown, near enough.</summary>
-	private static readonly Tone[] GoNotes = [new(1320f, 0f, 0.32f)];
+	private static readonly Tone[] _goNotes = [new(1320f, 0f, 0.32f)];
 
 	/// <summary>
 	///     The medal getting tight. One beep, below the lamps so it is not mistaken for a start
 	///     light, and short enough to be over before it is in the way.
 	/// </summary>
-	private static readonly Tone[] WarningNotes = [new(587f, 0f, 0.18f)];
+	private static readonly Tone[] _warningNotes = [new(587f, 0f, 0.18f)];
 
 	/// <summary>
 	///     The medal about to be gone. Two of them, quick and high: a repeat is heard as urgency
 	///     where a single tone of any pitch is only heard as information.
 	/// </summary>
-	private static readonly Tone[] AlertNotes = [new(880f, 0f, 0.1f), new(880f, 0.15f, 0.1f)];
+	private static readonly Tone[] _alertNotes = [new(880f, 0f, 0.1f), new(880f, 0.15f, 0.1f)];
 
 	/// <summary>
 	///     The author time going past. A falling fourth, the second note held - falling is the one
 	///     shape nobody has ever read as good news, and it needs no learning.
 	/// </summary>
-	private static readonly Tone[] MissedNotes = [new(415f, 0f, 0.16f), new(311f, 0.18f, 0.32f)];
+	private static readonly Tone[] _missedNotes = [new(415f, 0f, 0.16f), new(311f, 0.18f, 0.32f)];
 
 	private Sound _alert;
 
@@ -172,11 +172,11 @@ public class HudSounds : IDisposable
 		}
 
 		_made = true;
-		_lamp = Clip(LampNotes);
-		_go = Clip(GoNotes);
-		_warning = Clip(WarningNotes);
-		_alert = Clip(AlertNotes);
-		_missed = Clip(MissedNotes);
+		_lamp = Clip(_lampNotes);
+		_go = Clip(_goNotes);
+		_warning = Clip(_warningNotes);
+		_alert = Clip(_alertNotes);
+		_missed = Clip(_missedNotes);
 	}
 
 	/// <summary>
@@ -216,13 +216,13 @@ public class HudSounds : IDisposable
 	{
 		if (PlayerManager.Instance == null || PlayerManager.Instance.instellingen == null)
 		{
-			return BaseVolume;
+			return _baseVolume;
 		}
 
 		GameSettingsScriptableObject settings = GetSettings.Get();
 
-		return BaseVolume * Mathf.Clamp01(settings.audio_master / 100f)
-		                  * Mathf.Clamp01(settings.audio_gameplay / 100f);
+		return _baseVolume * Mathf.Clamp01(settings.audio_master / 100f)
+		                   * Mathf.Clamp01(settings.audio_gameplay / 100f);
 	}
 
 	/// <summary>
@@ -237,8 +237,8 @@ public class HudSounds : IDisposable
 		{
 			cbsize = Marshal.SizeOf(typeof(CREATESOUNDEXINFO)),
 			length = (uint)pcm.Length,
-			numchannels = Channels,
-			defaultfrequency = SampleRate,
+			numchannels = _channels,
+			defaultfrequency = _sampleRate,
 			format = SOUND_FORMAT.PCMFLOAT
 		};
 
@@ -281,7 +281,7 @@ public class HudSounds : IDisposable
 			end = Mathf.Max(end, note.Start + note.Seconds);
 		}
 
-		return Mathf.CeilToInt(SampleRate * (end + TailSeconds));
+		return Mathf.CeilToInt(_sampleRate * (end + _tailSeconds));
 	}
 
 	private static void Mix(float[] wave, Tone[] notes)
@@ -294,12 +294,12 @@ public class HudSounds : IDisposable
 
 	private static void Add(float[] wave, Tone note)
 	{
-		int start = Mathf.RoundToInt(note.Start * SampleRate);
-		int samples = Mathf.CeilToInt(note.Seconds * SampleRate);
+		int start = Mathf.RoundToInt(note.Start * _sampleRate);
+		int samples = Mathf.CeilToInt(note.Seconds * _sampleRate);
 
 		for (int i = 0; i < samples; i++)
 		{
-			float t = (float)i / SampleRate;
+			float t = (float)i / _sampleRate;
 
 			wave[start + i] += Wave(note.Frequency, t) * Envelope(t, note.Seconds);
 		}
@@ -314,9 +314,9 @@ public class HudSounds : IDisposable
 		float phase = 2f * Mathf.PI * frequency * t;
 		float sum = 0f;
 
-		for (int partial = 0; partial < Partials.Length; partial++)
+		for (int partial = 0; partial < _partials.Length; partial++)
 		{
-			sum += Partials[partial] * Mathf.Sin(phase * (partial + 1));
+			sum += _partials[partial] * Mathf.Sin(phase * (partial + 1));
 		}
 
 		return sum;
@@ -324,19 +324,19 @@ public class HudSounds : IDisposable
 
 	private static float Envelope(float t, float seconds)
 	{
-		if (t < AttackSeconds)
+		if (t < _attackSeconds)
 		{
-			return t / AttackSeconds;
+			return t / _attackSeconds;
 		}
 
-		return Mathf.Exp(-DecayRate * (t - AttackSeconds) / seconds);
+		return Mathf.Exp(-_decayRate * (t - _attackSeconds) / seconds);
 	}
 
 	private static void Reverb(float[] wave)
 	{
 		float[] wet = new float[wave.Length];
 
-		foreach (int delay in Echoes)
+		foreach (int delay in _echoes)
 		{
 			Comb(wave, wet, delay);
 		}
@@ -364,12 +364,12 @@ public class HudSounds : IDisposable
 	}
 
 	/// <summary>
-	///     What one echo has to be worth for the comb to lose 60 dB in <see cref="ReverbSeconds" />.
+	///     What one echo has to be worth for the comb to lose 60 dB in <see cref="_reverbSeconds" />.
 	///     A long delay gets fewer repeats in that time, so each of them has to fade faster.
 	/// </summary>
 	private static float Feedback(int delay)
 	{
-		return Mathf.Pow(Minus60Db, delay / (float)SampleRate / ReverbSeconds);
+		return Mathf.Pow(_minus60Db, delay / (float)_sampleRate / _reverbSeconds);
 	}
 
 	private static void Accumulate(float[] wet, float[] line)
@@ -384,7 +384,7 @@ public class HudSounds : IDisposable
 	{
 		for (int i = 0; i < wave.Length; i++)
 		{
-			wave[i] += wet[i] * WetMix;
+			wave[i] += wet[i] * _wetMix;
 		}
 	}
 
@@ -397,7 +397,7 @@ public class HudSounds : IDisposable
 			return;
 		}
 
-		Scale(wave, Headroom / peak);
+		Scale(wave, _headroom / peak);
 	}
 
 	private static float Peak(float[] wave)

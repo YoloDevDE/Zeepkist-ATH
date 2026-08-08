@@ -99,7 +99,7 @@ public class PlaylistService
 
 	#region ServerPlaylistUpdateQueue
 
-	private static readonly TimeSpan MinUpdateInterval = TimeSpan.FromSeconds(5);
+	private static readonly TimeSpan _minUpdateInterval = TimeSpan.FromSeconds(5);
 
 	private readonly Queue<Action> _updateQueue = new();
 	private readonly object _queueLock = new();
@@ -159,9 +159,9 @@ public class PlaylistService
 
 			TimeSpan sinceLastUpdate = DateTime.UtcNow - _lastUpdate;
 
-			if (sinceLastUpdate < MinUpdateInterval)
+			if (sinceLastUpdate < _minUpdateInterval)
 			{
-				TimeSpan waitTime = MinUpdateInterval - sinceLastUpdate;
+				TimeSpan waitTime = _minUpdateInterval - sinceLastUpdate;
 				Logger.LogInfo(
 					$"PlaylistService: Rate limit active, waiting {waitTime.TotalSeconds:F1}s before applying update.");
 				await Task.Delay(waitTime);

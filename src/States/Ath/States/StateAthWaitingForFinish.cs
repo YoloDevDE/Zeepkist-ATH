@@ -68,15 +68,15 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 		AthStateMachine.Ctx.LastRunMedalStatus = runMedalStatus;
 		AthStateMachine.Ctx.LastRunMedalWasNew = GetMedalRank(runMedalStatus) > GetMedalRank(previousStatus);
 
-		bool wasGoldMedalAcquiredBeforeRun = GetMedalRank(previousStatus) >= GetMedalRank(LevelStatus.GOLD);
+		bool wasGoldMedalAcquiredBeforeRun = GetMedalRank(previousStatus) >= GetMedalRank(LevelStatus.Gold);
 
-		if (currentLevel.Status == LevelStatus.AUTHOR)
+		if (currentLevel.Status == LevelStatus.Author)
 		{
 			StateMachine.TransitionTo(new StateAthWaitingForRespawn(AthStateMachine));
 			return;
 		}
 
-		if (runMedalStatus == LevelStatus.GOLD && !wasGoldMedalAcquiredBeforeRun)
+		if (runMedalStatus == LevelStatus.Gold && !wasGoldMedalAcquiredBeforeRun)
 		{
 			FrogNotification.Gold("Gold medal claimed!<br>You can now skip without penalty");
 		}
@@ -110,7 +110,7 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 	{
 		return status switch
 		{
-			LevelStatus.AUTHOR => 2, LevelStatus.GOLD => 1, _ => 0
+			LevelStatus.Author => 2, LevelStatus.Gold => 1, _ => 0
 		};
 	}
 
@@ -118,14 +118,14 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 	{
 		if (runTime <= level.AuthorTime)
 		{
-			return LevelStatus.AUTHOR;
+			return LevelStatus.Author;
 		}
 
 		if (runTime <= level.GoldTime)
 		{
-			return LevelStatus.GOLD;
+			return LevelStatus.Gold;
 		}
 
-		return LevelStatus.UNKNOWN;
+		return LevelStatus.Unknown;
 	}
 }

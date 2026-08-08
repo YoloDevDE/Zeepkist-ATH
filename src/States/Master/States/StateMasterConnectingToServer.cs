@@ -25,11 +25,11 @@ namespace AuthorTimeHunting.States.Master.States;
 /// </summary>
 public class StateMasterConnectingToServer : StateBase
 {
-	private const string OnlineLobbyScene = "Online Lobby";
+	private const string _onlineLobbyScene = "Online Lobby";
 
-	private const string Reason = "Author Time Hunting is opening its own lobby";
+	private const string _reason = "Author Time Hunting is opening its own lobby";
 
-	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
+	private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 
 	private readonly CancellationTokenSource _cts = new();
 	private readonly IGamemode _gamemode;
@@ -89,14 +89,14 @@ public class StateMasterConnectingToServer : StateBase
 		}
 
 		Logger.LogWarning("StateMasterConnectingToServer: No network manager, going through the online menu.");
-		SceneManager.LoadScene(OnlineLobbyScene);
+		SceneManager.LoadScene(_onlineLobbyScene);
 	}
 
 	private async Task<bool> Connect()
 	{
-		ZeepkistNetwork.Disconnect(Reason);
+		ZeepkistNetwork.Disconnect(_reason);
 
-		if (!await Wait.UntilAsync(() => !ZeepkistNetwork.IsConnected, Timeout, _cts.Token))
+		if (!await Wait.UntilAsync(() => !ZeepkistNetwork.IsConnected, _timeout, _cts.Token))
 		{
 			return false;
 		}
@@ -104,7 +104,7 @@ public class StateMasterConnectingToServer : StateBase
 		Master.Services.Loading.Show("Connecting to the lobby server");
 		StartConnecting();
 
-		return await Wait.UntilAsync(() => _connected, Timeout, _cts.Token);
+		return await Wait.UntilAsync(() => _connected, _timeout, _cts.Token);
 	}
 
 	private void OnConnected()

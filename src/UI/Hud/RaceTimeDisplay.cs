@@ -62,30 +62,30 @@ namespace AuthorTimeHunting.UI.Hud;
 /// </summary>
 public class RaceTimeDisplay : IDisposable
 {
-	private const string MonoSpace = "0.62em";
+	private const string _monoSpace = "0.62em";
 
-	private const string AuthorLabel = "AT";
-	private const string GoldLabel = "G";
+	private const string _authorLabel = "AT";
+	private const string _goldLabel = "G";
 
-	private const int LabelWidth = 3;
+	private const int _labelWidth = 3;
 
 	/// <summary>Glyphs in "00:00.000".</summary>
-	private const int TimeWidth = 9;
+	private const int _timeWidth = 9;
 
 	/// <summary>Label, sign and time, the width every row is padded or centred to.</summary>
-	private const int RowWidth = LabelWidth + 1 + TimeWidth;
+	private const int _rowWidth = _labelWidth + 1 + _timeWidth;
 
-	private const string MinusSign = "-";
-	private const string PlusSign = "+";
+	private const string _minusSign = "-";
+	private const string _plusSign = "+";
 
 	/// <summary>Drawn but not seen: the row keeps its place, the player keeps their eye still.</summary>
-	private const string HiddenHex = "#00000000";
+	private const string _hiddenHex = "#00000000";
 
 	/// <summary>
 	///     What GameMaster sets its physics clock to when a level restarts. It ticks up from
 	///     there and the start block releases the moment it hits zero.
 	/// </summary>
-	private const float CountdownSeconds = 1.749f;
+	private const float _countdownSeconds = 1.749f;
 
 	/// <summary>
 	///     Halfway, which is the whole point: red at the start of the countdown, amber here, green
@@ -93,48 +93,48 @@ public class RaceTimeDisplay : IDisposable
 	///     goes amber at 1.25s of its 1.75, so its red lasts two and a half times as long as its
 	///     amber, and the two clocks are one clock - so this could have been inherited and is not.
 	/// </summary>
-	private const float AmberAt = CountdownSeconds / 2f;
+	private const float _amberAt = _countdownSeconds / 2f;
 
-	private const float GreenHoldSeconds = 1f;
+	private const float _greenHoldSeconds = 1f;
 
 	/// <summary>
 	///     The game's label holds one line and grows downwards, and this one holds four. Lifting
 	///     it by all three would put the block where the single line used to be and nothing where
 	///     the eye goes; one line up is the compromise that keeps the clock near its old place.
 	/// </summary>
-	private const float LinesUp = 1f;
+	private const float _linesUp = 1f;
 
-	private const double ShortestLevelWorthLights = 2d;
+	private const double _shortestLevelWorthLights = 2d;
 
 	/// <summary>Glyphs in "● ● ●", so the row can be centred without measuring the markup.</summary>
-	private const int LampRowWidth = 5;
+	private const int _lampRowWidth = 5;
 
-	private const int NoLights = 0;
+	private const int _noLights = 0;
 
 	/// <summary>
 	///     The three the light actually has. Filling the lamps in one at a time gave five stages and
 	///     five beeps for one and a half seconds of countdown, which is a drum roll rather than a
 	///     start light - the real one on the start block has three bulbs and lights one at a time.
 	/// </summary>
-	private const int AllRed = 1;
+	private const int _allRed = 1;
 
-	private const int AllAmber = 2;
+	private const int _allAmber = 2;
 
-	private const int GreenStage = 3;
+	private const int _greenStage = 3;
 
-	private const double CloseFraction = 0.75;
-	private const double CriticalFraction = 0.92;
+	private const double _closeFraction = 0.75;
+	private const double _criticalFraction = 0.92;
 
 	/// <summary>
 	///     How the chase is going, in the three steps the colour already had. Kept as stages rather
 	///     than a flag per sound so each one is announced on its edge, the way the lamps are, and so
 	///     a medal falling away and the next one being picked up walks back down through them.
 	/// </summary>
-	private const int PaceSafe = 0;
+	private const int _paceSafe = 0;
 
-	private const int PaceClose = 1;
+	private const int _paceClose = 1;
 
-	private const int PaceCritical = 2;
+	private const int _paceCritical = 2;
 
 	/// <summary>
 	///     How often the warning swings from yellow to red and back. Slow enough to read as a
@@ -142,7 +142,7 @@ public class RaceTimeDisplay : IDisposable
 	///     the loudest thing on the screen at the moment the player most needs to look at the
 	///     track.
 	/// </summary>
-	private const float PulsesPerSecond = 1.2f;
+	private const float _pulsesPerSecond = 1.2f;
 
 	/// <summary>
 	///     The lamp, in order of preference, from the big filled circle down to a letter every font
@@ -151,11 +151,11 @@ public class RaceTimeDisplay : IDisposable
 	///     The bullet is the one that matters: it is a filled circle, it is small, and a font
 	///     without it does not exist.
 	/// </summary>
-	private static readonly string[] LampGlyphs = ["●", "⬤", "◉", "•", "O"];
+	private static readonly string[] _lampGlyphs = ["●", "⬤", "◉", "•", "O"];
 
-	private static readonly string PlainHex = Hex(Color.Style.Surface.White);
-	private static readonly string AuthorHex = Hex(Color.Zeepkist.Medal.Author);
-	private static readonly string GoldHex = Hex(Color.Zeepkist.Medal.Gold);
+	private static readonly string _plainHex = Hex(Color.Style.Surface.White);
+	private static readonly string _authorHex = Hex(Color.Zeepkist.Medal.Author);
+	private static readonly string _goldHex = Hex(Color.Zeepkist.Medal.Gold);
 
 	/// <summary>
 	///     How the medal being chased is going: comfortable, then tight. Read at a glance out of the
@@ -163,28 +163,28 @@ public class RaceTimeDisplay : IDisposable
 	///     the muted ones a panel would use. The last stretch has no colour of its own - it is a
 	///     pulse between two of these, mixed where it is used.
 	/// </summary>
-	private static readonly string SafeHex = Hex(Color.Style.Status.Positive);
+	private static readonly string _safeHex = Hex(Color.Style.Status.Positive);
 
-	private static readonly string CloseHex = Hex(Color.Style.Status.Close);
+	private static readonly string _closeHex = Hex(Color.Style.Status.Close);
 
-	private static readonly string AmberHex = Hex(Color.Style.Status.Close);
-	private static readonly string RedHex = Hex(Color.Style.Status.Alert);
-	private static readonly string GreenHex = Hex(Color.Style.Status.Positive);
+	private static readonly string _amberHex = Hex(Color.Style.Status.Close);
+	private static readonly string _redHex = Hex(Color.Style.Status.Alert);
+	private static readonly string _greenHex = Hex(Color.Style.Status.Positive);
 
 	/// <summary>The medal is in the bag: nothing left to run out of.</summary>
-	private static readonly string ClaimedHex = Hex(Color.Style.Status.Positive);
+	private static readonly string _claimedHex = Hex(Color.Style.Status.Positive);
 
 	/// <summary>Nothing left to chase. Full red, the one colour that cannot be read as anything else.</summary>
-	private static readonly string MissedHex = Hex(Color.Style.Status.Alert);
+	private static readonly string _missedHex = Hex(Color.Style.Status.Alert);
 
 	/// <summary>The place a sign takes up on a time that has none.</summary>
-	private static readonly string NoSign = Paint(MinusSign, HiddenHex);
+	private static readonly string _noSign = Paint(_minusSign, _hiddenHex);
 
 	/// <summary>A label cell with nothing in it, for the row that is only a clock.</summary>
-	private static readonly string EmptyCell = new(' ', LabelWidth);
+	private static readonly string _emptyCell = new(' ', _labelWidth);
 
 	/// <summary>What follows a medal, the sprite itself taking the first of the cell's three places.</summary>
-	private static readonly string BesideSprite = new(' ', LabelWidth - 1);
+	private static readonly string _besideSprite = new(' ', _labelWidth - 1);
 
 	private readonly RaceTimeBehaviour _behaviour;
 
@@ -203,9 +203,9 @@ public class RaceTimeDisplay : IDisposable
 	private string[] _lampRows;
 
 	/// <summary>How the chase last sounded, so each step is played once as it is entered.</summary>
-	private int _lastPace = PaceSafe;
+	private int _lastPace = _paceSafe;
 
-	private int _lastStage = NoLights;
+	private int _lastStage = _noLights;
 
 	/// <summary>Whether this attempt has already been told the author time is behind it.</summary>
 	private bool _missedAuthor;
@@ -238,9 +238,9 @@ public class RaceTimeDisplay : IDisposable
 
 	private bool IsActive => ActiveRun?.Ctx.CurrentLevel != null;
 
-	private string AuthorCell => Cell(MedalSpriteAsset.Author, AuthorLabel, AuthorHex, PlainHex);
+	private string AuthorCell => Cell(MedalSpriteAsset.Author, _authorLabel, _authorHex, _plainHex);
 
-	private string GoldCell => Cell(MedalSpriteAsset.Gold, GoldLabel, GoldHex, PlainHex);
+	private string GoldCell => Cell(MedalSpriteAsset.Gold, _goldLabel, _goldHex, _plainHex);
 
 	/// <summary>
 	///     The attempt is over and its time is on the board. The level's clock is only stopped
@@ -348,7 +348,7 @@ public class RaceTimeDisplay : IDisposable
 			return;
 		}
 
-		_lastPace = PaceSafe;
+		_lastPace = _paceSafe;
 		_missedAuthor = false;
 	}
 
@@ -400,11 +400,11 @@ public class RaceTimeDisplay : IDisposable
 	/// <summary>
 	///     The whole block, always written in full: the attempt, the lamps, the clock and the
 	///     medal still in reach. What does not apply right now is painted in
-	///     <see cref="HiddenHex" /> instead of being left out, so no row ever moves.
+	///     <see cref="_hiddenHex" /> instead of being left out, so no row ever moves.
 	/// </summary>
 	private string Compose(int stage, float physicsTime, double elapsed, double goldTime, double authorTime)
 	{
-		bool countingDown = stage != NoLights && physicsTime < 0f;
+		bool countingDown = stage != _noLights && physicsTime < 0f;
 		double run = Math.Max(0d, elapsed);
 
 		bool gone = !countingDown && goldTime > 0d && run >= goldTime;
@@ -419,25 +419,25 @@ public class RaceTimeDisplay : IDisposable
 	{
 		if (!Plugin.Instance.MyConfig.StartLights.Value)
 		{
-			return NoLights;
+			return _noLights;
 		}
 
 		if (physicsTime < 0f)
 		{
-			return Countdown(CountdownSeconds + physicsTime);
+			return Countdown(_countdownSeconds + physicsTime);
 		}
 
-		if (physicsTime < GreenHoldSeconds && authorTime > ShortestLevelWorthLights)
+		if (physicsTime < _greenHoldSeconds && authorTime > _shortestLevelWorthLights)
 		{
-			return GreenStage;
+			return _greenStage;
 		}
 
-		return NoLights;
+		return _noLights;
 	}
 
 	private static int Countdown(float countedDown)
 	{
-		return countedDown < AmberAt ? AllRed : AllAmber;
+		return countedDown < _amberAt ? _allRed : _allAmber;
 	}
 
 	/// <summary>
@@ -466,14 +466,14 @@ public class RaceTimeDisplay : IDisposable
 
 	private void PlayStage(int stage)
 	{
-		if (stage == GreenStage)
+		if (stage == _greenStage)
 		{
 			_sounds.Go();
 
 			return;
 		}
 
-		if (stage != NoLights)
+		if (stage != _noLights)
 		{
 			_sounds.Lamp();
 		}
@@ -481,7 +481,7 @@ public class RaceTimeDisplay : IDisposable
 
 	private static string[] BuildLampRows(string glyph)
 	{
-		string[] rows = new string[GreenStage + 1];
+		string[] rows = new string[_greenStage + 1];
 
 		for (int stage = 0; stage < rows.Length; stage++)
 		{
@@ -495,23 +495,23 @@ public class RaceTimeDisplay : IDisposable
 	{
 		string hex = LampHex(stage);
 
-		return Centered(LampRowWidth) + Paint($"{glyph} {glyph} {glyph}", hex);
+		return Centered(_lampRowWidth) + Paint($"{glyph} {glyph} {glyph}", hex);
 	}
 
 	/// <summary>Three red, three amber, three green - the whole light, one colour at a time.</summary>
 	private static string LampHex(int stage)
 	{
-		if (stage == NoLights)
+		if (stage == _noLights)
 		{
-			return HiddenHex;
+			return _hiddenHex;
 		}
 
-		if (stage == GreenStage)
+		if (stage == _greenStage)
 		{
-			return GreenHex;
+			return _greenHex;
 		}
 
-		return stage == AllRed ? RedHex : AmberHex;
+		return stage == _allRed ? _redHex : _amberHex;
 	}
 
 	private string AttemptRow(bool countingDown)
@@ -519,7 +519,7 @@ public class RaceTimeDisplay : IDisposable
 		Level level = ActiveRun?.Ctx.CurrentLevel;
 		string attempt = level == null ? "" : $"Attempt {level.Attempt + 1}";
 
-		return Centered(attempt.Length) + Paint(attempt, countingDown ? PlainHex : HiddenHex);
+		return Centered(attempt.Length) + Paint(attempt, countingDown ? _plainHex : _hiddenHex);
 	}
 
 	/// <summary>
@@ -532,10 +532,10 @@ public class RaceTimeDisplay : IDisposable
 	{
 		if (countingDown)
 		{
-			return Row(EmptyCell, Paint(MinusSign, AmberHex), TimeFormatter.FormatTime(clock), AmberHex);
+			return Row(_emptyCell, Paint(_minusSign, _amberHex), TimeFormatter.FormatTime(clock), _amberHex);
 		}
 
-		return Row(EmptyCell, NoSign, TimeFormatter.FormatTime(clock), gone ? MissedHex : PlainHex);
+		return Row(_emptyCell, _noSign, TimeFormatter.FormatTime(clock), gone ? _missedHex : _plainHex);
 	}
 
 	private string MedalRows(bool countingDown, bool finished, double elapsed, double goldTime,
@@ -563,8 +563,8 @@ public class RaceTimeDisplay : IDisposable
 	/// <summary>A row nobody can see, so the one below it does not climb a line when it appears.</summary>
 	private string HiddenRow()
 	{
-		return Row(Cell(MedalSpriteAsset.Author, AuthorLabel, HiddenHex, HiddenHex), NoSign,
-			TimeFormatter.FormatTime(0d), HiddenHex);
+		return Row(Cell(MedalSpriteAsset.Author, _authorLabel, _hiddenHex, _hiddenHex), _noSign,
+			TimeFormatter.FormatTime(0d), _hiddenHex);
 	}
 
 	/// <summary>
@@ -579,17 +579,17 @@ public class RaceTimeDisplay : IDisposable
 	{
 		if (!_sprites)
 		{
-			return Paint(text.PadRight(LabelWidth), textHex);
+			return Paint(text.PadRight(_labelWidth), textHex);
 		}
 
-		return MedalSpriteAsset.Tag(medal, spriteHex) + BesideSprite;
+		return MedalSpriteAsset.Tag(medal, spriteHex) + _besideSprite;
 	}
 
 	private string Chase(string cell, bool finished, double elapsed, double target)
 	{
-		string paceHex = finished ? ClaimedHex : PaceHex(elapsed, target);
+		string paceHex = finished ? _claimedHex : PaceHex(elapsed, target);
 
-		return Row(cell, Paint(MinusSign, paceHex), TimeFormatter.FormatTime(target - elapsed), paceHex);
+		return Row(cell, Paint(_minusSign, paceHex), TimeFormatter.FormatTime(target - elapsed), paceHex);
 	}
 
 	/// <summary>
@@ -598,9 +598,9 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private static string Lost(string cell, bool finished, double over)
 	{
-		string hex = finished ? MissedHex : PlainHex;
+		string hex = finished ? _missedHex : _plainHex;
 
-		return Row(cell, Paint(PlusSign, hex), TimeFormatter.FormatTime(over), hex);
+		return Row(cell, Paint(_plusSign, hex), TimeFormatter.FormatTime(over), hex);
 	}
 
 	private static string Row(string cell, string sign, string time, string timeHex)
@@ -610,7 +610,7 @@ public class RaceTimeDisplay : IDisposable
 
 	private static string Centered(int width)
 	{
-		return new string(' ', Math.Max(0, (RowWidth - width) / 2));
+		return new string(' ', Math.Max(0, (_rowWidth - width) / 2));
 	}
 
 	private static string Paint(string text, string hex)
@@ -620,7 +620,7 @@ public class RaceTimeDisplay : IDisposable
 
 	private static string Mono(string text)
 	{
-		return $"<mspace={MonoSpace}>{text}</mspace>";
+		return $"<mspace={_monoSpace}>{text}</mspace>";
 	}
 
 	/// <summary>
@@ -636,14 +636,14 @@ public class RaceTimeDisplay : IDisposable
 
 		Sound(pace);
 
-		if (pace == PaceSafe)
+		if (pace == _paceSafe)
 		{
-			return SafeHex;
+			return _safeHex;
 		}
 
-		if (pace == PaceClose)
+		if (pace == _paceClose)
 		{
-			return CloseHex;
+			return _closeHex;
 		}
 
 		return Hex(Color32.Lerp(Color.Style.Status.Close, Color.Style.Status.Alert, Pulse()));
@@ -651,12 +651,12 @@ public class RaceTimeDisplay : IDisposable
 
 	private static int Pace(double fraction)
 	{
-		if (fraction < CloseFraction)
+		if (fraction < _closeFraction)
 		{
-			return PaceSafe;
+			return _paceSafe;
 		}
 
-		return fraction < CriticalFraction ? PaceClose : PaceCritical;
+		return fraction < _criticalFraction ? _paceClose : _paceCritical;
 	}
 
 	/// <summary>
@@ -665,7 +665,7 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private static float Pulse()
 	{
-		return (Mathf.Sin(Time.unscaledTime * PulsesPerSecond * 2f * Mathf.PI) + 1f) * 0.5f;
+		return (Mathf.Sin(Time.unscaledTime * _pulsesPerSecond * 2f * Mathf.PI) + 1f) * 0.5f;
 	}
 
 	/// <summary>
@@ -701,14 +701,14 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private void PlayPace(int pace)
 	{
-		if (pace == PaceClose)
+		if (pace == _paceClose)
 		{
 			_sounds.Warning();
 
 			return;
 		}
 
-		if (pace == PaceCritical)
+		if (pace == _paceCritical)
 		{
 			_sounds.Alert();
 		}
@@ -754,7 +754,7 @@ public class RaceTimeDisplay : IDisposable
 			return;
 		}
 
-		_lampRows ??= BuildLampRows(GlyphChoice.First(label, LampGlyphs));
+		_lampRows ??= BuildLampRows(GlyphChoice.First(label, _lampGlyphs));
 
 		RectTransform transform = label.rectTransform;
 
@@ -767,7 +767,7 @@ public class RaceTimeDisplay : IDisposable
 
 		label.enableAutoSizing = false;
 
-		transform.anchoredPosition += new Vector2(0f, label.fontSize * LinesUp);
+		transform.anchoredPosition += new Vector2(0f, label.fontSize * _linesUp);
 	}
 
 	/// <summary>

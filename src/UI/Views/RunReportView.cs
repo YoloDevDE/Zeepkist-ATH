@@ -277,11 +277,11 @@ public class RunReportView
 	{
 		return level.Status switch
 		{
-			LevelStatus.AUTHOR => Color.Zeepkist.Medal.Author,
-			LevelStatus.GOLD => Color.Zeepkist.Medal.Gold,
-			LevelStatus.FREE => Color.Style.Status.FreeSkip,
-			LevelStatus.BROKEN => Color.Style.Status.Warning,
-			LevelStatus.FAILED => Color.Style.Status.Penalty,
+			LevelStatus.Author => Color.Zeepkist.Medal.Author,
+			LevelStatus.Gold => Color.Zeepkist.Medal.Gold,
+			LevelStatus.Free => Color.Style.Status.FreeSkip,
+			LevelStatus.Broken => Color.Style.Status.Warning,
+			LevelStatus.Failed => Color.Style.Status.Penalty,
 			_ => Color.Style.Text.Muted
 		};
 	}

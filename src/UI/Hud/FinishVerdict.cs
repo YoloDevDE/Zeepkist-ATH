@@ -29,13 +29,13 @@ namespace AuthorTimeHunting.UI.Hud;
 /// </summary>
 public class FinishVerdict
 {
-	private const string AuthorText = "AUTHOR TIME";
+	private const string _authorText = "AUTHOR TIME";
 
-	private const string UnlockedText = "GOLD UNLOCKED";
+	private const string _unlockedText = "GOLD UNLOCKED";
 
-	private const string GoldText = "GOLD";
+	private const string _goldText = "GOLD";
 
-	private const string MissedText = "NO MEDAL";
+	private const string _missedText = "NO MEDAL";
 
 	private TMP_Text _label;
 
@@ -88,17 +88,17 @@ public class FinishVerdict
 
 	private static string Verdict(AthCtx ctx)
 	{
-		if (ctx.LastRunMedalStatus == LevelStatus.AUTHOR)
+		if (ctx.LastRunMedalStatus == LevelStatus.Author)
 		{
-			return Paint(AuthorText, Color.Zeepkist.Medal.Author);
+			return Paint(_authorText, Color.Zeepkist.Medal.Author);
 		}
 
-		if (ctx.LastRunMedalStatus != LevelStatus.GOLD)
+		if (ctx.LastRunMedalStatus != LevelStatus.Gold)
 		{
-			return Paint(MissedText, Color.Style.Status.Bad);
+			return Paint(_missedText, Color.Style.Status.Bad);
 		}
 
-		return Paint(ctx.LastRunMedalWasNew ? UnlockedText : GoldText, Color.Zeepkist.Medal.Gold);
+		return Paint(ctx.LastRunMedalWasNew ? _unlockedText : _goldText, Color.Zeepkist.Medal.Gold);
 	}
 
 	private static string Paint(string text, Color32 colour)

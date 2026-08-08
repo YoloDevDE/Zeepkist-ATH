@@ -15,7 +15,7 @@ namespace AuthorTimeHunting.UI.Views;
 /// </summary>
 public class LevelSummaryView
 {
-	private const int RecentLevels = 8;
+	private const int _recentLevels = 8;
 
 	private LevelSummaryView()
 	{
@@ -90,7 +90,7 @@ public class LevelSummaryView
 			return [];
 		}
 
-		int first = Math.Max(0, levels.Count - RecentLevels);
+		int first = Math.Max(0, levels.Count - _recentLevels);
 		List<Level> recent = new(levels.Count - first);
 
 		for (int i = first; i < levels.Count; i++)

@@ -39,30 +39,30 @@ namespace AuthorTimeHunting.UI.Screens;
 /// </summary>
 public class AthMenu : IZeepGUIDrawer
 {
-	private const string WindowTitle = "Author Time Hunting";
+	private const string _windowTitle = "Author Time Hunting";
 
-	private const string Title = "AUTHOR TIME HUNTING";
+	private const string _title = "AUTHOR TIME HUNTING";
 
-	private const string Footer = "/ath, or the ATH button in the top bar, opens and closes this screen.";
+	private const string _footer = "/ath, or the ATH button in the top bar, opens and closes this screen.";
 
-	private const string ClassicId = "classic";
+	private const string _classicId = "classic";
 
-	private const float TitleSize = 2f;
+	private const float _titleSize = 2f;
 
 	/// <summary>
 	///     Tall enough for a title line, a rule and two lines of caption. Under that the caption
 	///     loses its second line to an ellipsis, which is where "and where this" came from.
 	/// </summary>
-	private const float TileRows = 4.4f;
+	private const float _tileRows = 4.4f;
 
-	private const int TileColumns = 2;
-	private const int TileRowCount = 3;
+	private const int _tileColumns = 2;
+	private const int _tileRowCount = 3;
 
-	private const int MinMinutes = 1;
-	private const int MaxMinutes = 240;
+	private const int _minMinutes = 1;
+	private const int _maxMinutes = 240;
 
-	private const ImWindowFlag WindowFlags = ImWindowFlag.NoResizing | ImWindowFlag.NoMoving |
-	                                         ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton;
+	private const ImWindowFlag _windowFlags = ImWindowFlag.NoResizing | ImWindowFlag.NoMoving |
+	                                          ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton;
 
 	private IReadOnlyList<HistoryRow> _history = [];
 
@@ -150,7 +150,7 @@ public class AthMenu : IZeepGUIDrawer
 	{
 		bool open = true;
 
-		if (!gui.BeginWindow(WindowTitle, ref open, ref _mouseOverWindow, screen, WindowFlags))
+		if (!gui.BeginWindow(_windowTitle, ref open, ref _mouseOverWindow, screen, _windowFlags))
 		{
 			return;
 		}
@@ -178,9 +178,9 @@ public class AthMenu : IZeepGUIDrawer
 	private bool DrawHeadline(ImGui gui)
 	{
 		float text = gui.Style.Layout.TextSize;
-		ImRect band = UiMetrics.Row(gui, TitleSize * 1.6f);
+		ImRect band = UiMetrics.Row(gui, _titleSize * 1.6f);
 
-		UiText.Centre(gui, UiScreen.Spaced(Title), Color.Zeepkist.Medal.Author, band, text * TitleSize);
+		UiText.Centre(gui, UiScreen.Spaced(_title), Color.Zeepkist.Medal.Author, band, text * _titleSize);
 		UiText.Centre(gui, Subtitle(), Color.Style.Text.Muted, UiMetrics.Row(gui, 1.5f), text * 1.05f);
 		UiScreen.Rule(gui, UiMetrics.Row(gui, 1f), Color.Zeepkist.Medal.Author);
 
@@ -282,7 +282,7 @@ public class AthMenu : IZeepGUIDrawer
 	{
 		Spacer(gui, gui.GetLayoutHeight() - FooterHeight(gui));
 
-		UiText.Centre(gui, Footer, Color.Style.Text.Muted, UiMetrics.Row(gui, 1.4f), gui.Style.Layout.TextSize * 0.9f);
+		UiText.Centre(gui, _footer, Color.Style.Text.Muted, UiMetrics.Row(gui, 1.4f), gui.Style.Layout.TextSize * 0.9f);
 	}
 
 	private void DrawPlay(ImGui gui)
@@ -427,10 +427,10 @@ public class AthMenu : IZeepGUIDrawer
 		_page = AthMenuPage.History;
 	}
 
-	private void Quickstart()
+	public void Quickstart()
 	{
 		GamemodeRegistry registry = Plugin.Instance.Services.Gamemodes;
-		IGamemode classic = registry.Resolve(ClassicId);
+		IGamemode classic = registry.Resolve(_classicId);
 
 		if (classic != null)
 		{
@@ -483,8 +483,8 @@ public class AthMenu : IZeepGUIDrawer
 
 		UiText.Left(gui, $"{label} (min)", Color.Style.Text.Muted, labelRect);
 
-		int minutes = Mathf.Clamp(seconds / 60, MinMinutes, MaxMinutes);
-		ImNumericEdit.NumericEdit(gui, ref minutes, valueRect, "0".AsSpan(), step, MinMinutes, MaxMinutes);
+		int minutes = Mathf.Clamp(seconds / 60, _minMinutes, _maxMinutes);
+		ImNumericEdit.NumericEdit(gui, ref minutes, valueRect, "0".AsSpan(), step, _minMinutes, _maxMinutes);
 
 		return minutes;
 	}
@@ -504,7 +504,7 @@ public class AthMenu : IZeepGUIDrawer
 
 	private static ImRect Tile(ImGui gui, ImRect row, int column)
 	{
-		return UiWidgets.Column(gui, row, column, TileColumns);
+		return UiWidgets.Column(gui, row, column, _tileColumns);
 	}
 
 	private static ImRect TileRow(ImGui gui)
@@ -514,12 +514,12 @@ public class AthMenu : IZeepGUIDrawer
 
 	private static float TileHeight(ImGui gui)
 	{
-		return gui.GetRowHeight() * TileRows;
+		return gui.GetRowHeight() * _tileRows;
 	}
 
 	private static float GridHeight(ImGui gui)
 	{
-		return (TileHeight(gui) + gui.Style.Layout.Spacing) * TileRowCount;
+		return (TileHeight(gui) + gui.Style.Layout.Spacing) * _tileRowCount;
 	}
 
 	private static float FooterHeight(ImGui gui)

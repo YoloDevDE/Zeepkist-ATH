@@ -19,11 +19,11 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public class HealthService : IDisposable
 {
-	private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(8);
+	private static readonly TimeSpan _requestTimeout = TimeSpan.FromSeconds(8);
 
 	private readonly GraphQLService _graphQL;
 
-	private readonly HttpClient _http = new() { Timeout = RequestTimeout };
+	private readonly HttpClient _http = new() { Timeout = _requestTimeout };
 
 	public HealthService(GraphQLService graphQL)
 	{
@@ -113,7 +113,7 @@ public class HealthService : IDisposable
 	{
 		if (e is TaskCanceledException)
 		{
-			return $"no answer within {RequestTimeout.TotalSeconds:F0}s";
+			return $"no answer within {_requestTimeout.TotalSeconds:F0}s";
 		}
 
 		return e.InnerException?.Message ?? e.Message;

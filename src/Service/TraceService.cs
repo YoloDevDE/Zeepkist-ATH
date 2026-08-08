@@ -20,7 +20,7 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public class TraceService
 {
-	private static readonly KeyCode[] Keys = (KeyCode[])Enum.GetValues(typeof(KeyCode));
+	private static readonly KeyCode[] _keys = (KeyCode[])Enum.GetValues(typeof(KeyCode));
 
 	private TraceBehaviour _behaviour;
 	private int _lastCount = int.MinValue;
@@ -123,7 +123,7 @@ public class TraceService
 
 	private static void LogPressedKeys()
 	{
-		foreach (KeyCode key in Keys)
+		foreach (KeyCode key in _keys)
 		{
 			if (!Input.GetKeyDown(key))
 			{

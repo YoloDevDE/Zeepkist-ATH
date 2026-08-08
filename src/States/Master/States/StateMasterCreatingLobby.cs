@@ -27,19 +27,19 @@ namespace AuthorTimeHunting.States.Master.States;
 /// </summary>
 public class StateMasterCreatingLobby : StateBase
 {
-	private const string LobbyName = "Author Time Hunting";
+	private const string _lobbyName = "Author Time Hunting";
 
-	private const int MaxPlayers = 16;
+	private const int _maxPlayers = 16;
 
 	/// <summary>A hunt is a lobby of one, so it is never public - at creation and again afterwards.</summary>
-	private const bool IsPublic = false;
+	private const bool _isPublic = false;
 
-	private const string GameScene = "GameScene";
+	private const string _gameScene = "GameScene";
 
-	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
+	private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(30);
 
 	/// <summary>The first level of a fresh lobby still has to be downloaded and built.</summary>
-	private static readonly TimeSpan LevelTimeout = TimeSpan.FromSeconds(60);
+	private static readonly TimeSpan _levelTimeout = TimeSpan.FromSeconds(60);
 
 	/// <summary>
 	///     A lobby that just opened is not ready to be taken over: the playlist is still the default
@@ -48,7 +48,7 @@ public class StateMasterCreatingLobby : StateBase
 	///     for - a fixed ten seconds was a guess that was either a stall or a race, and usually
 	///     both.
 	/// </summary>
-	private static readonly TimeSpan RoundTimeout = TimeSpan.FromSeconds(60);
+	private static readonly TimeSpan _roundTimeout = TimeSpan.FromSeconds(60);
 
 	private readonly CancellationTokenSource _cts = new();
 	private readonly IGamemode _gamemode;
@@ -119,9 +119,9 @@ public class StateMasterCreatingLobby : StateBase
 			return;
 		}
 
-		lobby.IsPublic = IsPublic;
+		lobby.IsPublic = _isPublic;
 
-		ZeepkistNetwork.NetworkClient?.SendPacket(new ChangeLobbyVisibilityPacket { Visiblity = IsPublic });
+		ZeepkistNetwork.NetworkClient?.SendPacket(new ChangeLobbyVisibilityPacket { Visiblity = _isPublic });
 	}
 
 	private static void EnterTheGameScene()
@@ -137,7 +137,7 @@ public class StateMasterCreatingLobby : StateBase
 			PlayerManager.Instance.amountOfPlayers = 1;
 		}
 
-		SceneManager.LoadScene(GameScene);
+		SceneManager.LoadScene(_gameScene);
 	}
 
 	private async Task<bool> Create()
@@ -147,9 +147,9 @@ public class StateMasterCreatingLobby : StateBase
 			return false;
 		}
 
-		ZeepkistNetwork.CreateLobby(LobbyName, MaxPlayers, IsPublic);
+		ZeepkistNetwork.CreateLobby(_lobbyName, _maxPlayers, _isPublic);
 
-		if (!await Wait.UntilAsync(() => ZeepkistNetwork.IsConnectedToGame, Timeout, _cts.Token))
+		if (!await Wait.UntilAsync(() => ZeepkistNetwork.IsConnectedToGame, _timeout, _cts.Token))
 		{
 			return false;
 		}
@@ -158,14 +158,14 @@ public class StateMasterCreatingLobby : StateBase
 		Master.Services.Loading.Step("Loading the lobby level");
 		EnterTheGameScene();
 
-		if (!await Wait.UntilAsync(() => GameStateObserver.IsLevelReady, LevelTimeout, _cts.Token))
+		if (!await Wait.UntilAsync(() => GameStateObserver.IsLevelReady, _levelTimeout, _cts.Token))
 		{
 			Logger.LogWarning("StateMasterCreatingLobby: The lobby is up but no level is running yet.");
 		}
 
 		Master.Services.Loading.Step("Waiting for the round");
 
-		if (!await Wait.UntilAsync(() => _roundStarted, RoundTimeout, _cts.Token))
+		if (!await Wait.UntilAsync(() => _roundStarted, _roundTimeout, _cts.Token))
 		{
 			Logger.LogWarning("StateMasterCreatingLobby: No round start arrived, handing over anyway.");
 		}

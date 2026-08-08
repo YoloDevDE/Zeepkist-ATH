@@ -12,7 +12,7 @@ namespace AuthorTimeHunting.Util;
 /// </summary>
 public static class Wait
 {
-	private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(250);
+	private static readonly TimeSpan _pollInterval = TimeSpan.FromMilliseconds(250);
 
 	/// <summary>Returns false when the timeout ran out first.</summary>
 	public static async Task<bool> UntilAsync(Func<bool> ready, TimeSpan timeout, CancellationToken token)
@@ -21,7 +21,7 @@ public static class Wait
 
 		while (!ready() && DateTime.UtcNow < deadline)
 		{
-			await Task.Delay(PollInterval, token);
+			await Task.Delay(_pollInterval, token);
 		}
 
 		return ready();

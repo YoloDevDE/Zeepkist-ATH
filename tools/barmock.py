@@ -36,8 +36,8 @@ MEDAL_COLUMNS = 7.4
 LEVEL_TIME_COLUMNS = 11.4
 
 # ControlPanel.cs
-TILE_ASPECT = 1.15
-TILE_ROWS = 2.1
+TILE_ASPECT = 1.05
+TILE_ROWS = 2.5
 BUTTONS = 5
 
 # ColorExtensions.cs
@@ -55,12 +55,20 @@ ALERT = (255, 0, 0, 255)
 PENALTY = (200, 90, 60, 255)
 FREE_SKIP = (90, 170, 220, 255)
 ACTION = {
-    "Skip": (60, 120, 200, 255),
-    "Broken": (200, 140, 40, 255),
-    "Pause": (150, 110, 190, 255),
-    "Restart": (70, 150, 150, 255),
-    "Stop": (190, 60, 60, 255),
+    "Skip": (46, 104, 168, 255),
+    "Broken": (168, 106, 34, 255),
+    "Pause": (140, 118, 26, 255),
+    "Restart": (78, 78, 122, 255),
+    "Stop": (150, 46, 46, 255),
 }
+
+# UiIconAtlas.cs: the strip tools/iconatlas.py bakes, one cell per UiIcon in that enum's order.
+ATLAS = os.path.join(REPO, "assets", "icons", "icons.png")
+ICON_ORDER = ["Play", "Pause", "Stop", "Skip", "Restart", "Warning", "Info", "Stopwatch"]
+
+# ControlPanel.cs: which icon each of the five buttons carries.
+BUTTON_ICON = {"Skip": "Skip", "Broken": "Warning", "Pause": "Pause", "Restart": "Restart",
+               "Stop": "Stop"}
 
 FONT_PATH = r"C:\Windows\Fonts\segoeuib.ttf"
 FONT_REG = r"C:\Windows\Fonts\segoeui.ttf"
@@ -100,24 +108,29 @@ def stopwatch(d, rect, colour):
     d.line([cx, cy, cx + radius * 0.42, cy - radius * 0.52], fill=colour, width=int(round(t)))
 
 
-def glyph(d, rect, kind, colour):
+_cells = {}
+
+
+def icon_cell(name):
+    if not _cells:
+        strip = Image.open(ATLAS).convert("RGBA")
+        side = strip.height
+        for i, key in enumerate(ICON_ORDER):
+            _cells[key] = strip.crop((i * side, 0, (i + 1) * side, side))
+
+    return _cells[name]
+
+
+def glyph(layer, rect, kind, colour):
+    """What UiIcons.Draw does: the atlas cell, squared into the rect at full size, tinted."""
     x, y, w, h = rect
-    s = min(w, h) * 0.62
-    cx, cy = x + w / 2, y + h / 2
-    a, b = cx - s / 2, cy - s / 2
-    if kind == "Skip":
-        d.polygon([(a, b), (a + s * 0.6, cy), (a, b + s)], fill=colour)
-        d.rectangle([a + s * 0.7, b, a + s * 0.9, b + s], fill=colour)
-    elif kind == "Broken":
-        d.polygon([(cx, b), (a + s, b + s), (a, b + s)], fill=colour)
-    elif kind == "Pause":
-        d.rectangle([a, b, a + s * 0.32, b + s], fill=colour)
-        d.rectangle([a + s * 0.68, b, a + s, b + s], fill=colour)
-    elif kind == "Restart":
-        d.arc([a, b, a + s, b + s], 40, 330, fill=colour, width=max(2, int(s * 0.16)))
-        d.polygon([(a + s * 0.75, b), (a + s * 1.05, b + s * 0.22), (a + s * 0.72, b + s * 0.3)], fill=colour)
-    elif kind == "Stop":
-        d.rectangle([a, b, a + s, b + s], fill=colour)
+    side = int(round(min(w, h)))
+    if side <= 0:
+        return
+    cell = icon_cell(BUTTON_ICON[kind]).resize((side, side), Image.LANCZOS)
+    tinted = Image.new("RGBA", (side, side), tuple(colour))
+    tinted.putalpha(cell.getchannel("A"))
+    layer.alpha_composite(tinted, (int(round(x + (w - side) / 2)), int(round(y + (h - side) / 2))))
 
 
 def rounded(d, rect, colour, radius, outline=None, width=1):
@@ -199,7 +212,7 @@ def draw_bar(img, open_amount):
             tp = strip_h * 0.12
             label = TEXT_SIZE * 0.75
             lh = label * 1.2
-            glyph(cd, (tx + tp, sy + tp, side - tp * 2, strip_h - tp * 2 - lh), name, WHITE)
+            glyph(clip, (tx + tp, sy + tp, side - tp * 2, strip_h - tp * 2 - lh), name, WHITE)
             text(cd, (tx + tp, sy + strip_h - tp - lh, side - tp * 2, lh), name, WHITE, label, "center")
         mask = Image.new("L", img.size, 0)
         ImageDraw.Draw(mask).rectangle([bx, band_h, bx + width, band_h + drawer_h], fill=255)

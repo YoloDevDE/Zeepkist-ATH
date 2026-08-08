@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using AuthorTimeHunting.UI.Hud;
 using AuthorTimeHunting.UI.Views;
 using AuthorTimeHunting.Util;
 using Imui.Controls;
@@ -18,33 +19,34 @@ namespace AuthorTimeHunting.UI.Toolkit;
 /// </summary>
 public static class UiWidgets
 {
-	public static void MedalCount(ImGui gui, ImRect rect, Sprite sprite, int count, Color32 colour)
+	public static void MedalCount(ImGui gui, ImRect rect, Texture2D medal, int count, Color32 colour)
 	{
 		float iconSize = Mathf.Min(rect.H, rect.W * 0.5f);
 		ImRect icon = rect.TakeLeft(iconSize, gui.Style.Layout.InnerSpacing, out ImRect countRect);
 
 		Color32 tint = count == 0 ? Color.Style.Text.Muted : colour;
 
-		Medal(gui, icon, sprite, tint);
+		Medal(gui, icon, medal, tint);
 
 		UiText.Draw(gui, UiNumbers.Text(count), tint, countRect, gui.Style.Layout.TextSize * 1.5f, 0f);
 	}
 
 	/// <summary>
-	///     The game's own medal, or a dot in its colour where the game has not loaded its art yet.
-	///     Every sprite off PlayerManager can be null and these are drawn from the first frame of a
-	///     level, so the fallback is the ordinary case rather than the broken one.
+	///     The game's own medal, or a dot in its colour where the mod has not got a copy of the art
+	///     yet. <see cref="MedalArt" /> only has one once the game has loaded its own, and these are
+	///     drawn from the first frame of a session, so the fallback is the ordinary case rather than
+	///     the broken one.
 	/// </summary>
-	public static void Medal(ImGui gui, ImRect rect, Sprite sprite, Color32 tint)
+	public static void Medal(ImGui gui, ImRect rect, Texture2D medal, Color32 tint)
 	{
-		if (sprite == null)
+		if (medal == null)
 		{
 			gui.Canvas.Circle(rect.Center, Mathf.Min(rect.W, rect.H) * 0.3f, tint);
 
 			return;
 		}
 
-		gui.Image(sprite, Square(rect), true);
+		gui.Image(medal, Square(rect), true);
 	}
 
 	/// <summary>

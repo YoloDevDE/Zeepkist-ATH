@@ -18,7 +18,7 @@ namespace AuthorTimeHunting.Service;
 /// </summary>
 public class RandomLevelService
 {
-	private const int LevelBatchSize = 100;
+	private const int _levelBatchSize = 100;
 
 	private readonly GraphQLService _graphQL;
 	private readonly LocalLevelCacheService _localLevelCache;
@@ -58,6 +58,23 @@ public class RandomLevelService
 		}
 
 		return DrawnFrom.TryGetValue(levelUid, out string source) ? source : null;
+	}
+
+	/// <summary>
+	///     What this pool knows about the level with this uid, or null if it never handed it out.
+	///     The lobby's playlist carries a level's name and author and nothing else, so this is the
+	///     only place the author and gold times of a level that has not loaded yet can come from -
+	///     and only for the levels the pool drew itself, with the times attached.
+	/// </summary>
+	public LevelItem Drawn(string levelUid)
+	{
+		if (string.IsNullOrEmpty(levelUid))
+		{
+			return null;
+		}
+
+		return PlayedLevels.FirstOrDefault(level =>
+			string.Equals(level.FileUid, levelUid, StringComparison.OrdinalIgnoreCase));
 	}
 
 	public async Task<OnlineZeeplevel> DrawRandomLevelAsync()
@@ -134,7 +151,7 @@ public class RandomLevelService
 	private List<LevelItem> FetchFromLocalPlaylists()
 	{
 		List<LevelItem> localLevels =
-			_localLevelCache.GetRandomLevelItems(LevelBatchSize, FetchedLevelUids);
+			_localLevelCache.GetRandomLevelItems(_levelBatchSize, FetchedLevelUids);
 		Logger.LogInfo($"RandomLevelService: Fetched {localLevels.Count} new levels from local playlists.");
 		return localLevels;
 	}
