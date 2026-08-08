@@ -30,7 +30,8 @@ public class ModServices
 		Toolbar = new AthToolbar(this);
 		DebugToolbar = new AthDebugToolbar(this);
 		Health = new HealthService(GraphQL);
-		RunOverlay = new RunOverlay(Control);
+		RunOverlay = new RunOverlay(Control, Thumbnail);
+		Loading = new LoadingOverlay(Thumbnail);
 	}
 
 	public AthToolbar Toolbar { get; }
@@ -65,8 +66,6 @@ public class ModServices
 
 	public RunOverlay RunOverlay { get; }
 
-	public LevelCard LevelCard { get; } = new();
-
 	public DebugPanel Debug { get; } = new();
 
 	public LevelSummaryOverlay LevelSummary { get; } = new();
@@ -81,7 +80,10 @@ public class ModServices
 
 	public HelpWindow Help { get; } = new();
 
-	public LoadingOverlay Loading { get; } = new();
+	public LoadingOverlay Loading { get; }
+
+	/// <summary>The mod's logo, shared by the loading screen and the run bar.</summary>
+	public AthThumbnail Thumbnail { get; } = new();
 
 	public LobbySilence Silence { get; } = new();
 
@@ -94,8 +96,6 @@ public class ModServices
 		RunHudView.Clear();
 
 		RunOverlay.ActiveRun = run;
-		LevelCard.ActiveRun = run;
-		LevelCard.Visible = run != null;
 		Debug.ActiveRun = run;
 		Status.ActiveRun = run;
 		RaceTime.ActiveRun = run;
@@ -113,7 +113,6 @@ public class ModServices
 		Menu.Visible = false;
 		Status.Visible = false;
 		RunOverlay.Visible = false;
-		LevelCard.Visible = false;
 		Leaderboard.Visible = false;
 		Welcome.Visible = false;
 		Help.Visible = false;

@@ -56,20 +56,25 @@ This one stops trying. ATH now draws its own game.
 - **Medals instead of initials.** The rows are labelled with the game's own author and gold medal art.
 - **The finish tells you what happened.** Where the game printed your time again, it now says what the run was worth:
   *author time*, *gold unlocked*, *gold*, or *no medal*.
-- **The hunt is a line, not a panel.** Everything about the hour - how much of it is left, whether it is running, and
-  the medals it has bought so far - is one line along the very top of the screen. It cannot grow into the middle of
-  your view again, because there is nothing there to grow into.
+- **A broadcast bar, not a panel.** Everything ATH has to say while you drive is one band across the top of the screen,
+  with the mod's crest in the middle of it: the hour on the left, the level on the right. It is a fraction of the screen
+  wide and centred, so it is over your game the way an overlay is - not stretched corner to corner, and never in the
+  middle of your view.
+- **It waits for the green light.** The bar does not appear until you are actually on a level. It used to come up with
+  the run and hang there through the whole lobby setup with nothing in it.
 - **A dot that says it is live.** Beside the clock, blinking once a second the way a recording light does, so a
   running hour looks different from a stopped one at a glance. Pause, and it becomes a stop symbol.
-- **The bar shows where the hour went.** Not a fill any more but a run of blocks, one per level, as wide as the level
-  took and coloured by what you got out of it - author, gold, free skip, penalty. Skips you paid for sit on the end in
-  red. What is left over is what you have left.
+- **The bar shows where the hour went.** Not a fill any more but a run of blocks along the bottom edge, one per level,
+  as wide as the level took and coloured by what you got out of it - author, gold, free skip, penalty. Skips you paid
+  for sit on the end in red. What is left over is what you have left.
+- **The level rides along.** What you are driving, whose it is, and the two times to beat sit on the right of the crest.
+  The separate *Current Level* window is gone, and so is the card that briefly replaced it.
 - **The buttons are in a drawer.** Skip, *Level is Broken*, pause, restart and stop hang under the bar and slide out
-  when you move the pointer up to it, then slide away again. They were a panel in the corner all hour for something
+  the moment you touch the mouse, then slide away again once you leave it alone. You no longer have to find the bar with
+  the pointer first - reaching for the mouse at all is enough. They were a panel in the corner all hour for something
   pressed a handful of times.
-- **The level lives in the corner.** What you are driving, whose it is, and the two times to beat sit bottom right,
-  where the buttons used to be - out of your way but never behind a window you have to open. The separate *Current
-  Level* window is gone.
+- **Buttons you can tell apart.** Each one is its symbol with its word underneath. Symbols alone turned the row into
+  five identical boxes, which is fine for a transport bar you use every day and no help at all for five presses an hour.
 
 ### Between levels
 
@@ -82,6 +87,9 @@ This one stops trying. ATH now draws its own game.
 
 - The finish verdict no longer stays on screen through the next attempt after you respawn.
 - The setup screen no longer disappears halfway through the podium.
+- **The setup screen can no longer trap you.** It covers the whole game on purpose, which meant that when a hunt failed
+  to start, it took the game with it. Now it stands down by itself the moment you are on a track, gives up after thirty
+  seconds with nothing happening, and closes on Escape whenever you have had enough of it.
 
 ### Also
 

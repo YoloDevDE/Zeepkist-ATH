@@ -25,21 +25,26 @@ public static class UiWidgets
 
 		Color32 tint = count == 0 ? Color.Style.Text.Muted : colour;
 
-		DrawMedalIcon(gui, icon, sprite, iconSize, tint);
+		Medal(gui, icon, sprite, tint);
 
 		UiText.Draw(gui, UiNumbers.Text(count), tint, countRect, gui.Style.Layout.TextSize * 1.5f, 0f);
 	}
 
-	private static void DrawMedalIcon(ImGui gui, ImRect icon, Sprite sprite, float iconSize, Color32 tint)
+	/// <summary>
+	///     The game's own medal, or a dot in its colour where the game has not loaded its art yet.
+	///     Every sprite off PlayerManager can be null and these are drawn from the first frame of a
+	///     level, so the fallback is the ordinary case rather than the broken one.
+	/// </summary>
+	public static void Medal(ImGui gui, ImRect rect, Sprite sprite, Color32 tint)
 	{
 		if (sprite == null)
 		{
-			gui.Canvas.Circle(icon.Center, iconSize * 0.3f, tint);
+			gui.Canvas.Circle(rect.Center, Mathf.Min(rect.W, rect.H) * 0.3f, tint);
 
 			return;
 		}
 
-		gui.Image(sprite, Square(icon), true);
+		gui.Image(sprite, Square(rect), true);
 	}
 
 	/// <summary>
@@ -89,16 +94,16 @@ public static class UiWidgets
 	}
 
 	/// <summary>
-	///     A button that is only its symbol, for a strip where five of them sit side by side and
-	///     the words would not fit any of them. What the strip is about is written once above it
-	///     rather than five times inside it.
+	///     A button that is its symbol over a word: the shape carries it at a glance and the word
+	///     settles which one it was. This is the shape for a fixed row of a handful of actions -
+	///     the icon-only strip read as five identical boxes, and a run does not happen often enough
+	///     to have learned which box is stop.
 	/// </summary>
-	public static bool IconOnlyButton(ImGui gui, ImRect rect, UiIcon icon, Color32 accent, bool enabled)
+	public static bool IconTile(ImGui gui, ImRect rect, UiIcon icon, string label, Color32 accent, bool enabled)
 	{
 		if (!enabled)
 		{
-			gui.Canvas.Rect(rect, Color.Style.Surface.Track, rect.H * 0.2f);
-			UiIcons.Draw(gui, Inset(rect), icon, Color.Style.Text.Muted);
+			DrawTile(gui, rect, icon, label, Color.Style.Surface.Track, Color.Style.Text.Muted);
 
 			return false;
 		}
@@ -107,17 +112,23 @@ public static class UiWidgets
 		bool clicked = gui.InvisibleButton(id, rect);
 		bool hovered = gui.IsControlHovered(id);
 
-		gui.Canvas.Rect(rect, hovered ? Lighten(accent, 1.35f) : accent, rect.H * 0.2f);
-		UiIcons.Draw(gui, Inset(rect), icon, Color.Style.Surface.White);
+		DrawTile(gui, rect, icon, label, hovered ? Lighten(accent, 1.35f) : accent, Color.Style.Surface.White);
 
 		return clicked;
 	}
 
-	private static ImRect Inset(ImRect rect)
+	private static void DrawTile(ImGui gui, ImRect rect, UiIcon icon, string label, Color32 back, Color32 front)
 	{
-		float inset = Mathf.Min(rect.W, rect.H) * 0.26f;
+		float pad = rect.H * 0.12f;
+		float labelSize = gui.Style.Layout.TextSize * 0.75f;
 
-		return new ImRect(rect.X + inset, rect.Y + inset, rect.W - inset * 2f, rect.H - inset * 2f);
+		gui.Canvas.Rect(rect, back, rect.H * 0.16f);
+
+		ImRect inner = new(rect.X + pad, rect.Y + pad, rect.W - pad * 2f, rect.H - pad * 2f);
+		ImRect glyph = inner.TakeTop(inner.H - UiText.LineHeight(gui, labelSize), 0f, out ImRect caption);
+
+		UiIcons.Draw(gui, glyph, icon, front);
+		UiText.Centre(gui, label, front, caption, labelSize);
 	}
 
 	public static void Row(ImGui gui, ImRect rect, string label, string value, Color32 valueColour)

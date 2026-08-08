@@ -14,22 +14,26 @@ using Logger = AuthorTimeHunting.Util.Logger;
 namespace AuthorTimeHunting.UI.Screens;
 
 /// <summary>
-///     The hunt, as one line along the top edge of the screen, with the controls in a drawer
-///     underneath it.
-///     It was a window in the middle of the top of the screen and it kept growing. Everything
-///     worth knowing that had nowhere else to live moved in, until it was eleven rows tall and
-///     sat exactly where a player looks on a jump. So the run's own numbers - how much hour is
-///     left, whether it is being spent, how it has been spent, what has been won with it - are a
-///     strip one line high that no amount of new information can inflate, and the rest was given
-///     places of its own: the level to <see cref="LevelCard" /> in the corner, the attempt and
-///     the medal gaps to the ticker at the bottom, which was already saying them.
-///     The buttons hang under it in a drawer that opens when the pointer arrives and slides shut
-///     when it leaves. Skip, restart and stop are pressed a handful of times an hour and were
-///     costing a permanent panel; now they cost nothing until a hand is on its way to them.
-///     There is no visible window here, but there is a window. Imui draws text through the
-///     window it is inside, and an earlier attempt at drawing a line of it against the bare
-///     canvas drew nothing at all - so the frame is styled away rather than done without, the
-///     same way <see cref="AthMenu" /> turns a window into a fullscreen screen.
+///     The hunt as a broadcast bar: a band across the top of the screen with the mod's crest in
+///     the middle of it, the hour on the left of the crest and the level on the right, and the
+///     controls in a drawer underneath.
+///     It was a window in the middle of the top of the screen and it kept growing, until it was
+///     eleven rows tall and sat exactly where a player looks on a jump. Flattening it to one line
+///     fixed the height and broke the shape instead: a strip the full width of the screen is a
+///     letterbox bar, and on an ultrawide it put the clock and the medals a monitor's width
+///     apart. So the band is a fraction of the screen and centred, which is what a bar over a
+///     game looks like everywhere else it is done.
+///     The crest is the middle of it because that is what the middle is for. Neither wing carries
+///     a number worth putting under the eye - the countdown a player actually drives to is the
+///     ticker at the bottom of the screen, and this is the hour, which is read between attempts.
+///     Nothing here is drawn before there is a level under the wheels. The bar used to come up
+///     with the run, which meant it hung over the whole of the lobby setup with nothing in it but
+///     dashes - and over the loading screen that exists to hide exactly that.
+///     There is no visible window here, but there is a window. Imui draws text through the window
+///     it is inside, and an earlier attempt at drawing a line of it against the bare canvas drew
+///     nothing at all - so the frame is styled away rather than done without, the same way
+///     <see cref="AthMenu" /> turns a window into a fullscreen screen. The band is then drawn by
+///     hand, because a window box is a rectangle and this one has its corners cut off.
 /// </summary>
 public class RunOverlay : IZeepGUIDrawer
 {
@@ -38,10 +42,28 @@ public class RunOverlay : IZeepGUIDrawer
 	private const ImWindowFlag WindowFlags =
 		ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton | ImWindowFlag.NoMovingAndResizing;
 
-	private const float ClockSize = 1.4f;
+	private const float WidthFraction = 0.58f;
+	private const float MinWidth = 640f;
+	private const float MaxWidth = 1180f;
 
-	/// <summary>How much of the bar the hunt's own block gets before the timeline takes the rest.</summary>
-	private const float StatusFraction = 0.34f;
+	/// <summary>How many rows of content the band holds, the rule along its bottom edge aside.</summary>
+	private const float ContentRows = 2.7f;
+
+	private const float RuleFraction = 0.16f;
+
+	/// <summary>How much of the band's height its cut corners take. The bar's whole silhouette.</summary>
+	private const float ChamferFraction = 0.45f;
+
+	private const float BadgeAspect = 16f / 9f;
+
+	private const float PennantWidthFraction = 0.34f;
+	private const float PennantRows = 0.55f;
+
+	private const float ClockShare = 0.55f;
+	private const float ClockSize = 1.3f;
+
+	private const float NameShare = 0.37f;
+	private const float AuthorShare = 0.4f;
 
 	/// <summary>Open or shut in a fifth of a second: too fast to wait for, too slow to be a jump cut.</summary>
 	private const float SlideSeconds = 0.2f;
@@ -49,22 +71,35 @@ public class RunOverlay : IZeepGUIDrawer
 	/// <summary>One blink a second, lit for most of it. A recording light, not a turn signal.</summary>
 	private const float BlinkOnFraction = 0.6f;
 
+	/// <summary>Pixels the pointer has to travel in a frame before it counts as having been moved.</summary>
+	private const float MotionThreshold = 1.5f;
+
+	/// <summary>How long a still pointer stays "just used" before the drawer takes it back.</summary>
+	private const float RestSeconds = 2.5f;
+
 	private readonly ControlPanel _controls;
+
+	private readonly AthThumbnail _thumbnail;
 
 	private bool _mouseOverWindow;
 
 	/// <summary>How far out the drawer is, 0 shut and 1 open. Everything about it follows from this.</summary>
 	private float _open;
 
-	public RunOverlay(ControlPanel controls)
+	private Vector3 _pointer;
+
+	private float _stirred;
+
+	public RunOverlay(ControlPanel controls, AthThumbnail thumbnail)
 	{
 		_controls = controls;
+		_thumbnail = thumbnail;
 	}
 
 	/// <summary>
-	///     Starting a hunt puts the bar up and leaves it up, which is what the controls did when
-	///     they were their own panel: the drawer is where the next hunt is started from, so it has
-	///     to still be there once this one is over.
+	///     Starting a hunt arms the bar; the first level is what puts it on screen. Everything the
+	///     bar has to say comes off the level being driven, so between the two there is nothing to
+	///     draw, and a band of empty dashes over the setup screen is worse than no band.
 	/// </summary>
 	public AthStateMachine ActiveRun
 	{
@@ -102,30 +137,41 @@ public class RunOverlay : IZeepGUIDrawer
 
 	/// <summary>
 	///     The drawer is sized before it is drawn, from how far open it was last frame, because the
-	///     window it lives in has to be given its rect up front. <see cref="_mouseOverWindow" /> is
-	///     last frame's answer for the same reason - which is the right answer anyway, since it was
-	///     taken against the window at the size the player was actually pointing at.
+	///     window it lives in has to be given its rect up front.
+	///     The pennant is in the window's rect whether the drawer is out or not. It hangs below the
+	///     band by design, and a window clips what is drawn in it - a rect that stopped at the band
+	///     would cut the point off every time the drawer was shut.
 	/// </summary>
 	private void Draw(ImGui gui)
 	{
 		AthStateMachine run = ActiveRun;
 		RunHudView view = RunHudView.ForFrame(run);
-		bool idle = view == null;
+
+		if (view == null)
+		{
+			return;
+		}
+
+		float row = gui.GetRowHeight();
+		float pad = UiMetrics.Margin(gui) * 0.5f;
+		float rule = Mathf.Max(3f, row * RuleFraction);
+		float band = row * ContentRows + pad * 2f + rule;
+
+		float full = _controls.Height(gui);
+		float drawer = full * Advance();
+		float below = Mathf.Max(row * PennantRows, drawer);
 
 		ImRect screen = gui.Canvas.SafeScreenRect;
+		float width = UiMetrics.Width(gui, WidthFraction, MinWidth, MaxWidth);
+		ImRect rect = new(screen.X + (screen.W - width) * 0.5f, screen.Top - band - below, width, band + below);
 
-		float bar = gui.GetRowHeight() * ClockSize + UiMetrics.Margin(gui);
-		float full = _controls.Height(gui, idle);
-		float drawer = full * Advance(idle);
-
-		ImRect rect = new(screen.X, screen.Top - bar - drawer, screen.W, bar + drawer);
 		ImStyleWindow previous = gui.Style.Window;
 
-		Strip(gui);
+		Bare(gui);
 
 		try
 		{
-			DrawWindow(gui, rect, bar, full, run, view);
+			DrawWindow(gui, rect, band, drawer, run, view);
 		}
 		finally
 		{
@@ -134,18 +180,24 @@ public class RunOverlay : IZeepGUIDrawer
 	}
 
 	/// <summary>
-	///     Turns the window into a strip: no border, no corners, no padding of its own. The bar has
-	///     to sit against the very edge of the screen, and a window's chrome is what would stop it.
+	///     Takes the window's frame away entirely: the band is a cut-cornered shape drawn by hand,
+	///     and anything the window painted underneath it would show at the corners as the rectangle
+	///     the band is not.
 	/// </summary>
-	private static void Strip(ImGui gui)
+	private static void Bare(ImGui gui)
 	{
-		gui.Style.Window.Box.BackColor = Color.Style.Surface.Panel;
+		gui.Style.Window.Box.BackColor = Color.clear;
 		gui.Style.Window.Box.BorderThickness = 0f;
 		gui.Style.Window.Box.BorderRadius = 0f;
 		gui.Style.Window.ContentPadding = 0f;
 	}
 
-	private void DrawWindow(ImGui gui, ImRect rect, float bar, float full, AthStateMachine run, RunHudView view)
+	/// <summary>
+	///     Back to front, which in an immediate mode GUI is call order: the drawer first so it
+	///     comes out from behind the band, then the band, then the crest over the seam between
+	///     them, then everything that is words.
+	/// </summary>
+	private void DrawWindow(ImGui gui, ImRect rect, float band, float drawer, AthStateMachine run, RunHudView view)
 	{
 		bool open = true;
 
@@ -156,11 +208,12 @@ public class RunOverlay : IZeepGUIDrawer
 
 		try
 		{
-			ImRect strip = gui.AddLayoutRect(gui.GetLayoutWidth(), bar);
+			ImRect area = gui.AddLayoutRect(gui.GetLayoutWidth(), rect.H);
+			ImRect strip = area.TakeTop(band);
 
-			DrawBar(gui, Padded(gui, strip), view);
-			DrawGrip(gui, strip);
-			DrawDrawer(gui, gui.AddLayoutRect(gui.GetLayoutWidth(), rect.H - bar), full, run, view);
+			DrawDrawer(gui, new ImRect(area.X, strip.Y - drawer, area.W, drawer), run, view);
+			DrawBand(gui, strip);
+			DrawContent(gui, strip, view);
 		}
 		finally
 		{
@@ -169,34 +222,107 @@ public class RunOverlay : IZeepGUIDrawer
 	}
 
 	/// <summary>
-	///     The left third is the hunt itself - the hour, whether it is running, and what has been
-	///     won with it. The rest is the timeline, because it is the one thing here that is worth
-	///     more the wider it is drawn.
+	///     The band itself: a rectangle against the top edge of the screen with its two bottom
+	///     corners cut away, which is the whole of the shape. Imui's window box cannot do it, so it
+	///     is six points and a convex fill - counter-clockwise, the winding Imui's own arrows use.
 	/// </summary>
-	private static void DrawBar(ImGui gui, ImRect rect, RunHudView view)
+	private static void DrawBand(ImGui gui, ImRect rect)
 	{
-		if (view == null)
+		float cut = Chamfer(rect);
+
+		Span<Vector2> points = stackalloc Vector2[6];
+
+		points[0] = new Vector2(rect.X + cut, rect.Y);
+		points[1] = new Vector2(rect.Right - cut, rect.Y);
+		points[2] = new Vector2(rect.Right, rect.Y + cut);
+		points[3] = new Vector2(rect.Right, rect.Top);
+		points[4] = new Vector2(rect.X, rect.Top);
+		points[5] = new Vector2(rect.X, rect.Y + cut);
+
+		gui.Canvas.ConvexFill(points, Color.Style.Surface.Panel);
+	}
+
+	private static float Chamfer(ImRect rect)
+	{
+		return Mathf.Min(rect.H * ChamferFraction, rect.W * 0.03f);
+	}
+
+	private void DrawContent(ImGui gui, ImRect strip, RunHudView view)
+	{
+		float pad = UiMetrics.Margin(gui) * 0.5f;
+		float rule = Mathf.Max(3f, gui.GetRowHeight() * RuleFraction);
+		float cut = Chamfer(strip);
+
+		ImRect inner = strip.WithPadding(pad + cut, pad + cut, pad, rule + pad);
+		float badgeWidth = inner.H * BadgeAspect;
+		ImRect badge = new(inner.Center.x - badgeWidth * 0.5f, inner.Y, badgeWidth, inner.H);
+		float wing = (inner.W - badgeWidth) * 0.5f - pad;
+
+		DrawPennant(gui, strip, badgeWidth * PennantWidthFraction, gui.GetRowHeight() * PennantRows);
+		DrawBadge(gui, badge);
+		DrawHunt(gui, new ImRect(inner.X, inner.Y, wing, inner.H), view);
+		DrawLevel(gui, new ImRect(inner.Right - wing, inner.Y, wing, inner.H), view);
+
+		UiWidgets.Timeline(gui, new ImRect(strip.X + cut, strip.Y + pad * 0.4f, strip.W - cut * 2f, rule),
+			view.Timeline);
+	}
+
+	/// <summary>
+	///     The tab hanging off the middle of the band. It is the only part of the bar that is not
+	///     information, and it is worth its pixels twice over: it is what says there is a drawer,
+	///     and it is what stops the crest looking like it was dropped on the band by accident.
+	/// </summary>
+	private static void DrawPennant(ImGui gui, ImRect strip, float width, float height)
+	{
+		float half = width * 0.5f;
+		float x = strip.Center.x;
+
+		Span<Vector2> points = stackalloc Vector2[5];
+
+		points[0] = new Vector2(x - half, strip.Y);
+		points[1] = new Vector2(x - half, strip.Y - height * 0.45f);
+		points[2] = new Vector2(x, strip.Y - height);
+		points[3] = new Vector2(x + half, strip.Y - height * 0.45f);
+		points[4] = new Vector2(x + half, strip.Y);
+
+		gui.Canvas.ConvexFill(points, Color.Zeepkist.Medal.Gold);
+	}
+
+	/// <summary>The mod's own crest, or its initials where the plugin was built without the picture.</summary>
+	private void DrawBadge(ImGui gui, ImRect rect)
+	{
+		float radius = rect.H * 0.14f;
+		Texture2D logo = _thumbnail.Texture;
+
+		gui.Canvas.Rect(rect, Color.Style.Surface.Tile, radius);
+		gui.Canvas.RectOutline(rect, Color.Zeepkist.Medal.Gold, Mathf.Max(1f, rect.H * 0.045f), radius);
+
+		if (logo == null)
 		{
-			UiText.Left(gui, "No hunt running.", Color.Style.Text.Muted, rect);
+			UiText.Centre(gui, "ATH", Color.Zeepkist.Medal.Gold, rect, gui.Style.Layout.TextSize);
 
 			return;
 		}
 
-		ImRect status = rect.TakeLeft(rect.W * StatusFraction, UiMetrics.Margin(gui), out ImRect timeline);
-		ImRect clock = status.TakeLeft(gui.GetRowHeight() * 5.6f, gui.Style.Layout.InnerSpacing, out ImRect medals);
+		gui.Image(logo, rect.WithPadding(Mathf.Max(2f, rect.H * 0.09f)), true);
+	}
+
+	/// <summary>The left wing: the hour, whether it is being spent, and what has been bought with it.</summary>
+	private static void DrawHunt(ImGui gui, ImRect rect, RunHudView view)
+	{
+		ImRect clock = rect.TakeTop(rect.H * ClockShare, out ImRect medals);
 
 		DrawClock(gui, clock, view);
 		DrawMedals(gui, medals, view);
-
-		UiWidgets.Timeline(gui, Hairline(timeline), view.Timeline);
 	}
 
 	private static void DrawClock(ImGui gui, ImRect rect, RunHudView view)
 	{
-		float icon = rect.H * 0.7f;
+		float icon = rect.H * 0.8f;
+		float gap = gui.Style.Layout.InnerSpacing;
 
-		ImRect watch = rect.TakeLeft(icon, gui.Style.Layout.InnerSpacing, out ImRect rest);
-		ImRect light = rest.TakeRight(icon, gui.Style.Layout.InnerSpacing, out ImRect clock);
+		ImRect watch = rect.TakeLeft(icon, gap, out ImRect rest);
+		ImRect light = rest.TakeRight(icon, gap, out ImRect clock);
 
 		UiIcons.Draw(gui, watch, UiIcon.Stopwatch, view.TimeColour);
 		UiText.Draw(gui, view.TimeLeft, view.TimeColour, clock, gui.Style.Layout.TextSize * ClockSize, 0f);
@@ -238,39 +364,58 @@ public class RunOverlay : IZeepGUIDrawer
 	}
 
 	/// <summary>
-	///     The handle every drawer has, so there is something to say one is there. It is the only
-	///     part of the bar that is not information, and it is worth its two pixels: a drawer nobody
-	///     knows about is a panel that was deleted.
+	///     The right wing: what is being driven, whose it is, and the two times to beat. These four
+	///     lines have been a window of their own, then a block in the middle of the view, then a
+	///     card in the corner. Beside the crest is where they stop moving - they are the other half
+	///     of what the bar is about, and a hunt with no level in front of it is not on screen.
 	/// </summary>
-	private static void DrawGrip(ImGui gui, ImRect strip)
+	private static void DrawLevel(ImGui gui, ImRect rect, RunHudView view)
 	{
-		float width = strip.W * 0.04f;
-		float thickness = Mathf.Max(2f, gui.GetRowHeight() * 0.08f);
+		float text = gui.Style.Layout.TextSize;
 
-		gui.Canvas.Rect(new ImRect(strip.Center.x - width * 0.5f, strip.Y + thickness, width, thickness),
-			Color.Style.Text.Muted, thickness * 0.5f);
+		ImRect name = rect.TakeTop(rect.H * NameShare, out ImRect rest);
+		ImRect author = rest.TakeTop(rest.H * AuthorShare, out ImRect times);
+
+		UiText.Right(gui, view.LevelName, Color.Style.Text.LevelName, name, text * 1.05f);
+		UiText.Right(gui, view.ByAuthor, Color.Style.Text.AuthorName, author, text * 0.8f);
+
+		DrawMedalTime(gui, UiWidgets.Column(gui, times, 0, 2), GameSprites.AuthorMedal, view.AuthorTime,
+			Color.Zeepkist.Medal.Author);
+		DrawMedalTime(gui, UiWidgets.Column(gui, times, 1, 2), GameSprites.GoldMedal, view.GoldTime,
+			Color.Zeepkist.Medal.Gold);
+	}
+
+	private static void DrawMedalTime(ImGui gui, ImRect cell, Sprite sprite, string time, Color32 colour)
+	{
+		ImRect icon = cell.TakeLeft(cell.H, gui.Style.Layout.InnerSpacing, out ImRect text);
+
+		UiWidgets.Medal(gui, icon, sprite, colour);
+		UiText.Draw(gui, time, colour, text, gui.Style.Layout.TextSize * 0.9f, 0f);
 	}
 
 	/// <summary>
-	///     The controls, always laid out at their full height against the underside of the bar, and
-	///     clipped to however far the drawer has come out. That is what makes it read as a drawer
-	///     rather than as a fade: the buttons arrive from behind the bar with their far edge still
-	///     cut off by it.
+	///     The controls, always laid out at their full height against the underside of the band,
+	///     and clipped to however far the drawer has come out. That is what makes it read as a
+	///     drawer rather than as a fade: the buttons arrive from behind the band with their far
+	///     edge still cut off by it.
 	///     The clip does the input too. Imui throws away a hover that falls outside the active clip
 	///     rect, so a button half out of the slot is live on exactly the half that can be seen.
 	/// </summary>
-	private void DrawDrawer(ImGui gui, ImRect rect, float full, AthStateMachine run, RunHudView view)
+	private void DrawDrawer(ImGui gui, ImRect rect, AthStateMachine run, RunHudView view)
 	{
 		if (rect.H <= 0f)
 		{
 			return;
 		}
 
+		float full = _controls.Height(gui);
+		float pad = UiMetrics.Margin(gui);
+
 		gui.Canvas.PushClipRect(rect);
 
 		try
 		{
-			_controls.Draw(gui, Padded(gui, new ImRect(rect.X, rect.Top - full, rect.W, full)), run, view);
+			_controls.Draw(gui, new ImRect(rect.X + pad, rect.Top - full, rect.W - pad * 2f, full), run, view);
 		}
 		finally
 		{
@@ -278,39 +423,36 @@ public class RunOverlay : IZeepGUIDrawer
 		}
 	}
 
-	/// <summary>
-	///     Open while the pointer is on it, shut once it has gone, and never anywhere but on its
-	///     way between the two. Unscaled, so the drawer moves at the same speed in a paused game -
-	///     which is exactly where the stop button is wanted.
-	/// </summary>
-	private float Advance(bool idle)
+	private float Advance()
 	{
-		if (idle)
-		{
-			_open = 1f;
-
-			return _open;
-		}
-
 		float step = Time.unscaledDeltaTime / SlideSeconds;
 
-		_open = Mathf.Clamp01(_open + (_mouseOverWindow ? step : -step));
+		_open = Mathf.Clamp01(_open + (PointerActive() ? step : -step));
 
 		return _open;
 	}
 
-	private static ImRect Padded(ImGui gui, ImRect rect)
+	/// <summary>
+	///     Whether the pointer has been used lately, which is the question the drawer actually
+	///     wants answered. Opening on hover meant aiming at a strip of screen to reach the buttons
+	///     behind it, and the strip is at the very top edge, which is the one place a pointer
+	///     cannot overshoot into - so it was a drawer that only opened for somebody who already
+	///     knew where it was.
+	///     Moving the mouse at all is the honest signal here: this is a racing game, the pointer
+	///     does not steer anything, and a hand that has gone to it has gone to it for the buttons.
+	/// </summary>
+	private bool PointerActive()
 	{
-		float margin = UiMetrics.Margin(gui);
+		Vector3 now = Input.mousePosition;
+		bool moved = (now - _pointer).sqrMagnitude > MotionThreshold * MotionThreshold;
 
-		return rect.WithPadding(margin, margin, margin * 0.5f, margin * 0.5f);
-	}
+		_pointer = now;
 
-	/// <summary>The timeline is a rule, not a row: it keeps its own height whatever it is given.</summary>
-	private static ImRect Hairline(ImRect rect)
-	{
-		float height = Mathf.Max(4f, rect.H * 0.34f);
+		if (moved)
+		{
+			_stirred = Time.unscaledTime;
+		}
 
-		return new ImRect(rect.X, rect.Y + (rect.H - height) * 0.5f, rect.W, height);
+		return Time.unscaledTime - _stirred < RestSeconds;
 	}
 }

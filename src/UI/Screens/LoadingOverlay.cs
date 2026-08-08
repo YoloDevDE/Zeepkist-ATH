@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using AuthorTimeHunting.Gamemodes;
+using AuthorTimeHunting.Service;
 using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI.Hud;
 using AuthorTimeHunting.UI.Toolkit;
 using AuthorTimeHunting.UI.Views;
 using AuthorTimeHunting.Util;
@@ -14,7 +14,6 @@ using UnityEngine.SceneManagement;
 using ZeepSDK.Racing;
 using ZeepSDK.UI;
 using Logger = AuthorTimeHunting.Util.Logger;
-using Object = UnityEngine.Object;
 
 namespace AuthorTimeHunting.UI.Screens;
 
@@ -39,8 +38,6 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 {
 	private const string Title = "AUTHOR TIME HUNTING";
 
-	private const string ThumbnailResource = "AuthorTimeHunting.Thumbnail.png";
-
 	private const float TitleSize = 1.8f;
 	private const float MessageSize = 1.05f;
 
@@ -63,11 +60,12 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	private const float DotsPerSecond = 2f;
 
 	/// <summary>
-	///     Nothing the mod waits for takes two minutes. Past that something has gone wrong that
-	///     nobody wrote a handler for, and a screen covering the whole game is the worst possible
-	///     thing to leave behind.
+	///     Nothing the mod waits for takes half a minute, and the clock is put back to the top by
+	///     every step that finishes - so this is thirty seconds of no progress at all, not thirty
+	///     seconds of setup. Past that something has gone wrong that nobody wrote a handler for,
+	///     and a screen covering the whole game is the worst possible thing to leave behind.
 	/// </summary>
-	private const float MaxSeconds = 120f;
+	private const float MaxSeconds = 30f;
 
 	/// <summary>
 	///     How long the podium runs for. It is the one wait in the whole setup with a fixed length,
@@ -93,6 +91,8 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	/// <summary>What the mod has done so far, oldest first. The last one is the one it is doing.</summary>
 	private readonly List<SetupStep> _steps = [];
 
+	private readonly AthThumbnail _thumbnail;
+
 	private float _countdownEnd;
 
 	/// <summary>
@@ -110,14 +110,19 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 
 	private SetupLine[] _lines = [];
 
+	/// <summary>
+	///     Whether the game has been seen without a level loaded since this screen went up. The
+	///     screen can be raised while the player is still standing on the track of the lobby they
+	///     are about to be taken out of, and "there is a level under the wheels" is only a reason
+	///     to stand down once there has been a moment where there was not one.
+	/// </summary>
+	private bool _offTrack;
+
 	private string _tagline = "";
 
-	private Texture2D _thumbnail;
-
-	private bool _thumbnailTried;
-
-	public LoadingOverlay()
+	public LoadingOverlay(AthThumbnail thumbnail)
 	{
+		_thumbnail = thumbnail;
 		RacingApi.RoundEnded += OnRoundEnded;
 		SceneManager.sceneLoaded += OnSceneLoaded;
 	}
@@ -133,20 +138,11 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	/// </summary>
 	public AthStateMachine ActiveRun { get; set; }
 
-	/// <summary>The thumbnail is loaded from the plugin's own resources, so nothing else owns it.</summary>
 	public void Dispose()
 	{
 		RacingApi.RoundEnded -= OnRoundEnded;
 		SceneManager.sceneLoaded -= OnSceneLoaded;
 		_layer.Drop();
-
-		if (_thumbnail == null)
-		{
-			return;
-		}
-
-		Object.Destroy(_thumbnail);
-		_thumbnail = null;
 	}
 
 	public void OnZeepGUI(ImGui gui)
@@ -156,7 +152,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 			return;
 		}
 
-		if (ActiveRun?.Ctx.CurrentLevel != null || Time.unscaledTime > _hideAt || _handedOver)
+		if (Done())
 		{
 			Hide();
 
@@ -172,6 +168,54 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 			Logger.LogError($"LoadingOverlay: Draw failed, hiding it: {e.Message}\n{e.StackTrace}");
 			Visible = false;
 		}
+	}
+
+	/// <summary>
+	///     Five ways this screen ends, and it needs all five, because it is painted over the whole
+	///     game and nothing behind it can be reached while it is up: the hunt got its level, the
+	///     game took the screen for its own loading, the player is standing on a track and so is
+	///     plainly not waiting for anything, the player asked for it to go, or nothing has happened
+	///     for long enough that nothing is going to.
+	///     The last three are the ones added after a setup got stuck behind it. Up to then the
+	///     screen only came down when the thing it was waiting for arrived, which is fine until it
+	///     does not arrive - and then the mod has taken the game away and nobody can take it back.
+	/// </summary>
+	private bool Done()
+	{
+		_offTrack |= !GameStateObserver.IsLevelReady;
+
+		if (ActiveRun?.Ctx.CurrentLevel != null || _handedOver)
+		{
+			return true;
+		}
+
+		if (_offTrack && GameStateObserver.IsLevelReady)
+		{
+			Logger.LogInfo("LoadingOverlay: A level is loaded and the hunt is not waiting on one. Standing down.");
+
+			return true;
+		}
+
+		if (Input.GetKeyDown(KeyCode.Escape))
+		{
+			Logger.LogInfo("LoadingOverlay: Dismissed with Escape.");
+
+			return true;
+		}
+
+		return TimedOut();
+	}
+
+	private bool TimedOut()
+	{
+		if (Time.unscaledTime <= _hideAt)
+		{
+			return false;
+		}
+
+		Logger.LogWarning($"LoadingOverlay: '{Message}' has been up for {MaxSeconds:0} seconds. Standing down.");
+
+		return true;
 	}
 
 	private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -204,6 +248,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	{
 		Message = message;
 		_handedOver = false;
+		_offTrack = false;
 		_lines = [];
 		_steps.Clear();
 		_tagline = "";
@@ -391,7 +436,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 
 	private void DrawThumbnail(ImGui gui, ImRect rect)
 	{
-		Texture2D thumbnail = Thumbnail();
+		Texture2D thumbnail = _thumbnail.Texture;
 
 		if (thumbnail == null)
 		{
@@ -399,48 +444,6 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 		}
 
 		gui.Image(thumbnail, rect, true);
-	}
-
-	private Texture2D Thumbnail()
-	{
-		if (_thumbnailTried)
-		{
-			return _thumbnail;
-		}
-
-		_thumbnailTried = true;
-		_thumbnail = Load();
-
-		return _thumbnail;
-	}
-
-	private static Texture2D Load()
-	{
-		try
-		{
-			using Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ThumbnailResource);
-
-			if (stream == null)
-			{
-				Logger.LogWarning($"LoadingOverlay: '{ThumbnailResource}' is not in the plugin.");
-
-				return null;
-			}
-
-			byte[] png = new byte[stream.Length];
-			stream.Read(png, 0, png.Length);
-
-			Texture2D texture = new(2, 2, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
-			texture.LoadImage(png);
-
-			return texture;
-		}
-		catch (Exception e)
-		{
-			Logger.LogWarning($"LoadingOverlay: Could not load the thumbnail: {e.Message}");
-
-			return null;
-		}
 	}
 
 	private static string Dots()
