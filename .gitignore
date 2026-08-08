@@ -245,3 +245,6 @@ costura_files.txt
 *.sln
 *.slnf
 *.slnx
+
+# Renders of the UI mockup (tools/barmock.py). Regenerated on demand, never reviewed.
+/tools/out/
