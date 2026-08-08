@@ -9,8 +9,9 @@ namespace AuthorTimeHunting.States.Ath;
 /// <summary>
 ///     The state of a single run: which levels were played, how much of the time budget is
 ///     left, and the scratch values the states hand to each other.
-///     Two collaborators hang off it rather than living in it - <see cref="Messages" /> for
-///     everything the run says, and <see cref="RunStatistics" /> for the end-of-run numbers.
+///     The end-of-run numbers are not among them: <see cref="RunStatistics" /> reads the level
+///     list once, when a run stops, rather than being carried along by every run that never
+///     asks for it.
 /// </summary>
 public class AthCtx
 {

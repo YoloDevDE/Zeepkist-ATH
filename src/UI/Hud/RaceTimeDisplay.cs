@@ -109,8 +109,6 @@ public class RaceTimeDisplay : IDisposable
 	/// <summary>Glyphs in "● ● ●", so the row can be centred without measuring the markup.</summary>
 	private const int LampRowWidth = 5;
 
-	private const int Lamps = 3;
-
 	private const int NoLights = 0;
 
 	/// <summary>
@@ -160,19 +158,18 @@ public class RaceTimeDisplay : IDisposable
 	private static readonly string GoldHex = Hex(Color.Zeepkist.Medal.Gold);
 
 	/// <summary>
-	///     How the medal being chased is going: comfortable, tight, about to be gone. Read at a
-	///     glance out of the corner of an eye while driving, so they are the saturated ends of the
-	///     palette rather than the muted ones a panel would use.
+	///     How the medal being chased is going: comfortable, then tight. Read at a glance out of the
+	///     corner of an eye while driving, so they are the saturated ends of the palette rather than
+	///     the muted ones a panel would use. The last stretch has no colour of its own - it is a
+	///     pulse between two of these, mixed where it is used.
 	/// </summary>
 	private static readonly string SafeHex = Hex(Color.Style.Status.Positive);
 
 	private static readonly string CloseHex = Hex(Color.Style.Status.Close);
-	private static readonly string CriticalHex = Hex(Color.Style.Status.Alert);
 
 	private static readonly string AmberHex = Hex(Color.Style.Status.Close);
 	private static readonly string RedHex = Hex(Color.Style.Status.Alert);
 	private static readonly string GreenHex = Hex(Color.Style.Status.Positive);
-	private static readonly string UnlitHex = Hex(Color.Style.Surface.Unlit);
 
 	/// <summary>The medal is in the bag: nothing left to run out of.</summary>
 	private static readonly string ClaimedHex = Hex(Color.Style.Status.Positive);

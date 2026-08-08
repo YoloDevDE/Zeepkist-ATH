@@ -90,6 +90,18 @@ public class RunOverlay : IZeepGUIDrawer
 	/// <summary>How long a still pointer stays "just used" before the drawer takes it back.</summary>
 	private const float RestSeconds = 2.5f;
 
+	/// <summary>
+	///     The corner points of the two hand-drawn shapes, written afresh every frame rather than
+	///     allocated every frame. Both are filled up to three times a frame.
+	///     A <c>stackalloc</c> would say this without a field, and the compiler takes one. The IDE
+	///     does not: the plugin hides System.Memory behind an alias so that only the game's own
+	///     <c>Span</c> is visible, the IDE resolves references without applying it, and every
+	///     <c>stackalloc</c> here then reads as an error. Do not put them back.
+	/// </summary>
+	private static readonly Vector2[] BandPoints = new Vector2[6];
+
+	private static readonly Vector2[] PennantPoints = new Vector2[5];
+
 	private readonly ControlPanel _controls;
 
 	private readonly AthThumbnail _thumbnail;
@@ -244,16 +256,14 @@ public class RunOverlay : IZeepGUIDrawer
 	/// </summary>
 	private static void Chamfered(ImGui gui, ImRect rect, float cut, Color32 colour)
 	{
-		Span<Vector2> points = stackalloc Vector2[6];
+		BandPoints[0] = new Vector2(rect.X + cut, rect.Y);
+		BandPoints[1] = new Vector2(rect.Right - cut, rect.Y);
+		BandPoints[2] = new Vector2(rect.Right, rect.Y + cut);
+		BandPoints[3] = new Vector2(rect.Right, rect.Top);
+		BandPoints[4] = new Vector2(rect.X, rect.Top);
+		BandPoints[5] = new Vector2(rect.X, rect.Y + cut);
 
-		points[0] = new Vector2(rect.X + cut, rect.Y);
-		points[1] = new Vector2(rect.Right - cut, rect.Y);
-		points[2] = new Vector2(rect.Right, rect.Y + cut);
-		points[3] = new Vector2(rect.Right, rect.Top);
-		points[4] = new Vector2(rect.X, rect.Top);
-		points[5] = new Vector2(rect.X, rect.Y + cut);
-
-		gui.Canvas.ConvexFill(points, colour);
+		gui.Canvas.ConvexFill(BandPoints, colour);
 	}
 
 	private static float Chamfer(ImRect rect)
@@ -290,15 +300,13 @@ public class RunOverlay : IZeepGUIDrawer
 		float half = width * 0.5f;
 		float x = strip.Center.x;
 
-		Span<Vector2> points = stackalloc Vector2[5];
+		PennantPoints[0] = new Vector2(x - half, strip.Y);
+		PennantPoints[1] = new Vector2(x - half, strip.Y - height * 0.45f);
+		PennantPoints[2] = new Vector2(x, strip.Y - height);
+		PennantPoints[3] = new Vector2(x + half, strip.Y - height * 0.45f);
+		PennantPoints[4] = new Vector2(x + half, strip.Y);
 
-		points[0] = new Vector2(x - half, strip.Y);
-		points[1] = new Vector2(x - half, strip.Y - height * 0.45f);
-		points[2] = new Vector2(x, strip.Y - height);
-		points[3] = new Vector2(x + half, strip.Y - height * 0.45f);
-		points[4] = new Vector2(x + half, strip.Y);
-
-		gui.Canvas.ConvexFill(points, Color.Zeepkist.Medal.Gold);
+		gui.Canvas.ConvexFill(PennantPoints, Color.Zeepkist.Medal.Gold);
 	}
 
 	/// <summary>The mod's own crest, or its initials where the plugin was built without the picture.</summary>

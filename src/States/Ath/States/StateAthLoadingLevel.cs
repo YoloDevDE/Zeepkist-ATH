@@ -5,13 +5,6 @@ namespace AuthorTimeHunting.States.Ath.States;
 
 public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
 {
-	public override void Enter()
-	{
-		string levelInfo = AthStateMachine.Ctx.CurrentLevel != null ?
-			$"Level: <b>{AthStateMachine.Ctx.CurrentLevel.StatusString}</b>" :
-			"Good Luck Have Fun!";
-	}
-
 	public override void OnLevelLoaded()
 	{
 		if (!AthStateMachine.Ctx.IsTimeOver() && (AthStateMachine.Ctx.Settings.RandomPlaylist ||
