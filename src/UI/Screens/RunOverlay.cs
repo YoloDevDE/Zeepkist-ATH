@@ -62,6 +62,19 @@ public class RunOverlay : IZeepGUIDrawer
 	private const float ClockShare = 0.55f;
 	private const float ClockSize = 1.3f;
 
+	/// <summary>
+	///     How wide each block of a wing actually is, in rows.
+	///     A wing is as wide as the band leaves it, which is far wider than anything standing in
+	///     one. Spread to fill, three medal counts land a hand's width apart and stop reading as
+	///     three medal counts, and the live dot ends up nearer the crest than the clock it belongs
+	///     to. So every block takes what it needs off its own edge and leaves the rest empty.
+	/// </summary>
+	private const float ClockColumns = 6.4f;
+
+	private const float MedalColumns = 7.4f;
+
+	private const float LevelTimeColumns = 11.4f;
+
 	private const float NameShare = 0.37f;
 	private const float AuthorShare = 0.4f;
 
@@ -210,10 +223,11 @@ public class RunOverlay : IZeepGUIDrawer
 		{
 			ImRect area = gui.AddLayoutRect(gui.GetLayoutWidth(), rect.H);
 			ImRect strip = area.TakeTop(band);
+			float cut = Chamfer(strip);
 
-			DrawDrawer(gui, new ImRect(area.X, strip.Y - drawer, area.W, drawer), run, view);
-			DrawBand(gui, strip);
-			DrawContent(gui, strip, view);
+			DrawDrawer(gui, new ImRect(area.X, strip.Y - drawer, area.W, drawer), cut, run, view);
+			Chamfered(gui, strip, cut, Color.Style.Surface.Panel);
+			DrawContent(gui, strip, cut, view);
 		}
 		finally
 		{
@@ -222,14 +236,14 @@ public class RunOverlay : IZeepGUIDrawer
 	}
 
 	/// <summary>
-	///     The band itself: a rectangle against the top edge of the screen with its two bottom
-	///     corners cut away, which is the whole of the shape. Imui's window box cannot do it, so it
-	///     is six points and a convex fill - counter-clockwise, the winding Imui's own arrows use.
+	///     The bar's silhouette: a rectangle with its two bottom corners cut away. Imui's window
+	///     box cannot do it, so it is six points and a convex fill - counter-clockwise, the winding
+	///     Imui's own arrows use.
+	///     The band and the drawer are both drawn with it, off the same cut, because the drawer is
+	///     the band coming open rather than a second thing under it.
 	/// </summary>
-	private static void DrawBand(ImGui gui, ImRect rect)
+	private static void Chamfered(ImGui gui, ImRect rect, float cut, Color32 colour)
 	{
-		float cut = Chamfer(rect);
-
 		Span<Vector2> points = stackalloc Vector2[6];
 
 		points[0] = new Vector2(rect.X + cut, rect.Y);
@@ -239,7 +253,7 @@ public class RunOverlay : IZeepGUIDrawer
 		points[4] = new Vector2(rect.X, rect.Top);
 		points[5] = new Vector2(rect.X, rect.Y + cut);
 
-		gui.Canvas.ConvexFill(points, Color.Style.Surface.Panel);
+		gui.Canvas.ConvexFill(points, colour);
 	}
 
 	private static float Chamfer(ImRect rect)
@@ -247,11 +261,10 @@ public class RunOverlay : IZeepGUIDrawer
 		return Mathf.Min(rect.H * ChamferFraction, rect.W * 0.03f);
 	}
 
-	private void DrawContent(ImGui gui, ImRect strip, RunHudView view)
+	private void DrawContent(ImGui gui, ImRect strip, float cut, RunHudView view)
 	{
 		float pad = UiMetrics.Margin(gui) * 0.5f;
 		float rule = Mathf.Max(3f, gui.GetRowHeight() * RuleFraction);
-		float cut = Chamfer(strip);
 
 		ImRect inner = strip.WithPadding(pad + cut, pad + cut, pad, rule + pad);
 		float badgeWidth = inner.H * BadgeAspect;
@@ -310,10 +323,11 @@ public class RunOverlay : IZeepGUIDrawer
 	/// <summary>The left wing: the hour, whether it is being spent, and what has been bought with it.</summary>
 	private static void DrawHunt(ImGui gui, ImRect rect, RunHudView view)
 	{
+		float row = gui.GetRowHeight();
 		ImRect clock = rect.TakeTop(rect.H * ClockShare, out ImRect medals);
 
-		DrawClock(gui, clock, view);
-		DrawMedals(gui, medals, view);
+		DrawClock(gui, clock.TakeLeft(Mathf.Min(clock.W, row * ClockColumns)), view);
+		DrawMedals(gui, medals.TakeLeft(Mathf.Min(medals.W, row * MedalColumns)), view);
 	}
 
 	private static void DrawClock(ImGui gui, ImRect rect, RunHudView view)
@@ -379,9 +393,14 @@ public class RunOverlay : IZeepGUIDrawer
 		UiText.Right(gui, view.LevelName, Color.Style.Text.LevelName, name, text * 1.05f);
 		UiText.Right(gui, view.ByAuthor, Color.Style.Text.AuthorName, author, text * 0.8f);
 
-		DrawMedalTime(gui, UiWidgets.Column(gui, times, 0, 2), GameSprites.AuthorMedal, view.AuthorTime,
+		DrawTimes(gui, times.TakeRight(Mathf.Min(times.W, gui.GetRowHeight() * LevelTimeColumns)), view);
+	}
+
+	private static void DrawTimes(ImGui gui, ImRect rect, RunHudView view)
+	{
+		DrawMedalTime(gui, UiWidgets.Column(gui, rect, 0, 2), GameSprites.AuthorMedal, view.AuthorTime,
 			Color.Zeepkist.Medal.Author);
-		DrawMedalTime(gui, UiWidgets.Column(gui, times, 1, 2), GameSprites.GoldMedal, view.GoldTime,
+		DrawMedalTime(gui, UiWidgets.Column(gui, rect, 1, 2), GameSprites.GoldMedal, view.GoldTime,
 			Color.Zeepkist.Medal.Gold);
 	}
 
@@ -401,7 +420,7 @@ public class RunOverlay : IZeepGUIDrawer
 	///     The clip does the input too. Imui throws away a hover that falls outside the active clip
 	///     rect, so a button half out of the slot is live on exactly the half that can be seen.
 	/// </summary>
-	private void DrawDrawer(ImGui gui, ImRect rect, AthStateMachine run, RunHudView view)
+	private void DrawDrawer(ImGui gui, ImRect rect, float cut, AthStateMachine run, RunHudView view)
 	{
 		if (rect.H <= 0f)
 		{
@@ -415,6 +434,7 @@ public class RunOverlay : IZeepGUIDrawer
 
 		try
 		{
+			Chamfered(gui, rect, Mathf.Min(cut, rect.H), Color.Style.Surface.Panel);
 			_controls.Draw(gui, new ImRect(rect.X + pad, rect.Top - full, rect.W - pad * 2f, full), run, view);
 		}
 		finally
