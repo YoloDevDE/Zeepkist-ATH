@@ -24,7 +24,7 @@ public class RunHudView
 {
 	private static int _frame = -1;
 
-	private static AthStateMachine _run;
+	private static AthController _run;
 	private static RunHudView _view;
 
 	private RunHudView()
@@ -40,7 +40,7 @@ public class RunHudView
 
 	public Color32 SkipColour { get; private set; }
 
-	public static RunHudView ForFrame(AthStateMachine run)
+	public static RunHudView ForFrame(AthController run)
 	{
 		if (_frame == Time.frameCount && ReferenceEquals(_run, run))
 		{
@@ -61,7 +61,7 @@ public class RunHudView
 		_view = null;
 	}
 
-	private static RunHudView From(AthStateMachine run)
+	private static RunHudView From(AthController run)
 	{
 		AthCtx ctx = run?.Ctx;
 		Level level = ctx?.CurrentLevel;
@@ -92,7 +92,7 @@ public class RunHudView
 			SkipType = SkipTypeLabel(ctx),
 			SkipColour = SkipTypeColour(ctx),
 			LevelName = level.Name,
-			ByAuthor = $"by {level.Author}",
+			Author = level.Author,
 			AuthorTime = TimeFormatter.FormatTime(level.AuthorTime),
 			GoldTime = TimeFormatter.FormatTime(level.GoldTime)
 		};
@@ -239,7 +239,8 @@ public class RunHudView
 
 	public string LevelName { get; private set; }
 
-	public string ByAuthor { get; private set; }
+	/// <summary>The name on its own. The bar writes the "by" itself, in a colour of its own.</summary>
+	public string Author { get; private set; }
 
 	public string AuthorTime { get; private set; }
 	public string GoldTime { get; private set; }

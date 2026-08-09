@@ -112,9 +112,13 @@ public static class UiWidgets
 
 		uint id = gui.GetNextControlId();
 		bool clicked = gui.InvisibleButton(id, rect);
-		bool hovered = gui.IsControlHovered(id);
+		float hover = UiMotion.Hover(id, gui.IsControlHovered(id));
+		float press = UiMotion.Press(id, gui.IsControlActive(id));
 
-		DrawTile(gui, rect, icon, label, hovered ? Lighten(accent, 1.35f) : accent, Color.Style.Surface.White);
+		ImRect drawn = Lift(rect, hover, press);
+
+		Outline(gui, drawn, drawn.H * 0.16f);
+		DrawTile(gui, drawn, icon, label, Shade(accent, hover, press), Color.Style.Surface.White);
 
 		return clicked;
 	}
@@ -122,7 +126,11 @@ public static class UiWidgets
 	private static void DrawTile(ImGui gui, ImRect rect, UiIcon icon, string label, Color32 back, Color32 front)
 	{
 		float pad = rect.H * 0.12f;
-		float labelSize = gui.Style.Layout.TextSize * 0.75f;
+
+		// The caption is a share of the tile as well as of the theme, so that a smaller tile keeps
+		// its symbol. Sized off the theme alone, a tile half the height gave the fixed line of text
+		// most of the room and left the icon a sliver.
+		float labelSize = Mathf.Min(gui.Style.Layout.TextSize * 0.75f, rect.H * 0.26f);
 
 		gui.Canvas.Rect(rect, back, rect.H * 0.16f);
 
@@ -163,12 +171,52 @@ public static class UiWidgets
 
 		uint id = gui.GetNextControlId();
 		bool clicked = gui.InvisibleButton(id, rect);
-		bool hovered = gui.IsControlHovered(id);
+		float hover = UiMotion.Hover(id, gui.IsControlHovered(id));
+		float press = UiMotion.Press(id, gui.IsControlActive(id));
 
-		DrawCard(gui, rect, title, caption, accent,
-			hovered ? Color.Style.Surface.TileHovered : Color.Style.Surface.Tile, Color.Style.Surface.White);
+		ImRect drawn = Lift(rect, hover, press);
+
+		Outline(gui, drawn, drawn.H * 0.1f);
+		DrawCard(gui, drawn, title, caption, accent, Face(hover, press), Color.Style.Surface.White);
 
 		return clicked;
+	}
+
+	/// <summary>
+	///     The button under the pointer stands up, and the one being held sinks past where it
+	///     started. Only what is drawn moves - the rect the click is tested against stays put, or a
+	///     button would step out from under the pointer that reached it and light up and go dark in
+	///     a loop.
+	///     Y is up here, so rising is adding.
+	/// </summary>
+	private static ImRect Lift(ImRect rect, float hover, float press)
+	{
+		float rise = rect.H * (0.03f * hover - 0.02f * press);
+
+		return new ImRect(rect.X, rect.Y + rise, rect.W, rect.H);
+	}
+
+	/// <summary>A hairline behind the fill, drawn as a rect one pixel bigger on every side.</summary>
+	private static void Outline(ImGui gui, ImRect rect, float radius)
+	{
+		gui.Canvas.Rect(new ImRect(rect.X - 1f, rect.Y - 1f, rect.W + 2f, rect.H + 2f), Color.Style.Surface.Outline,
+			radius);
+	}
+
+	/// <summary>The three states of a plain button, as one colour: resting, lit, pushed in.</summary>
+	private static Color32 Face(float hover, float press)
+	{
+		Color32 lit = Color32.Lerp(Color.Style.Surface.Button, Color.Style.Surface.ButtonHovered, hover);
+
+		return Color32.Lerp(lit, Color.Style.Surface.ButtonPressed, press);
+	}
+
+	/// <summary>The same three states for a button whose fill is its accent.</summary>
+	private static Color32 Shade(Color32 accent, float hover, float press)
+	{
+		Color32 lit = Color32.Lerp(accent, Lighten(accent, 1.35f), hover);
+
+		return Color32.Lerp(lit, Lighten(accent, 0.75f), press);
 	}
 
 	/// <summary>

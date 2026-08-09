@@ -37,20 +37,20 @@ public class StateMasterConnectingToServer : StateBase
 	private bool _connected;
 	private bool _left;
 
-	public StateMasterConnectingToServer(MasterStateMachine stateMachine, IGamemode gamemode) : base(stateMachine)
+	public StateMasterConnectingToServer(AthMasterController controller, IGamemode gamemode) : base(controller)
 	{
 		_gamemode = gamemode;
 	}
 
-	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
+	private AthMasterController AthMaster => (AthMasterController)Controller;
 
 	public override async void Enter()
 	{
 		AthRequests.StopRequested += Cancel;
 		ZeepkistNetwork.ConnectedToMasterServer += OnConnected;
 
-		Master.Services.HideUi();
-		Master.Services.Loading.Show("Leaving the lobby");
+		AthMaster.Services.HideUi();
+		AthMaster.Services.Loading.Show("Leaving the lobby");
 
 		try
 		{
@@ -101,7 +101,7 @@ public class StateMasterConnectingToServer : StateBase
 			return false;
 		}
 
-		Master.Services.Loading.Show("Connecting to the lobby server");
+		AthMaster.Services.Loading.Show("Connecting to the lobby server");
 		StartConnecting();
 
 		return await Wait.UntilAsync(() => _connected, _timeout, _cts.Token);
@@ -121,20 +121,20 @@ public class StateMasterConnectingToServer : StateBase
 
 		if (!connected)
 		{
-			Master.Services.Loading.Hide();
+			AthMaster.Services.Loading.Hide();
 			FrogNotification.Error("Could not reach the lobby server, the hunt did not start");
-			StateMachine.TransitionTo(new StateMasterOff(Master));
+			Controller.TransitionTo(new StateMasterOff(AthMaster));
 
 			return;
 		}
 
-		StateMachine.TransitionTo(new StateMasterCreatingLobby(Master, _gamemode));
+		Controller.TransitionTo(new StateMasterCreatingLobby(AthMaster, _gamemode));
 	}
 
 	private void Cancel()
 	{
-		Master.Services.Loading.Hide();
+		AthMaster.Services.Loading.Hide();
 		FrogNotification.Info("Start cancelled");
-		StateMachine.TransitionTo(new StateMasterOff(Master));
+		Controller.TransitionTo(new StateMasterOff(AthMaster));
 	}
 }

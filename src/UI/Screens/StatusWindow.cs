@@ -36,7 +36,7 @@ public class StatusWindow : IZeepGUIDrawer
 
 	private bool _mouseOverWindow;
 
-	public AthStateMachine ActiveRun { get; set; }
+	public AthController ActiveRun { get; set; }
 
 	public bool Visible
 	{
@@ -148,7 +148,7 @@ public class StatusWindow : IZeepGUIDrawer
 	{
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "CURRENT LEVEL");
 
-		AthStateMachine run = ActiveRun;
+		AthController run = ActiveRun;
 		Level level = run?.Ctx.CurrentLevel;
 
 		if (level == null)

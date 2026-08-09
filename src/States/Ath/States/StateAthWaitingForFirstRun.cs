@@ -7,26 +7,25 @@ using ZeepSDK.Level;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthWaitingForFirstRun(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForFirstRun(AthController controller) : AthState(controller)
 {
 	public override void Enter()
 	{
 		try
 		{
-			AthStateMachine.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
-			AthStateMachine.SetServerMessage(true);
+			AthController.Ctx.InitializingNewLevel(LevelApi.CurrentLevel);
 		}
 		catch (Exception e)
 		{
 			Logger.LogError(
 				$"StateAthWaitingForFirstRun: Failed to start level: {e.Message}\nStack trace: {e.StackTrace}");
-			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
+			Controller.TransitionTo(new StateAthStopping(AthController));
 		}
 	}
 
 	private async Task AddLevelAsync()
 	{
-		if (!AthStateMachine.Ctx.Settings.RandomPlaylist)
+		if (!AthController.Ctx.Settings.RandomPlaylist)
 		{
 			return;
 		}
@@ -47,6 +46,6 @@ public class StateAthWaitingForFirstRun(AthStateMachine stateMachine) : AthState
 	public override void OnRoundStarted()
 	{
 		_ = AddLevelAsync();
-		StateMachine.TransitionTo(new StateAthWaitingForFinish(AthStateMachine));
+		Controller.TransitionTo(new StateAthWaitingForFinish(AthController));
 	}
 }

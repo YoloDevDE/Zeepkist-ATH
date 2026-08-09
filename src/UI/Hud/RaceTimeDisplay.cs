@@ -15,20 +15,19 @@ namespace AuthorTimeHunting.UI.Hud;
 ///     Rewrites the game's own running-time display into the only number that decides
 ///     anything: how much time is left before the next medal is gone.
 ///     <code>
-///     counting down          driving               all medals gone
-/// 
+///     counting down          driving               nothing left to chase
+///
 ///        ● ● ●
 ///      Attempt 3
 ///      -00:01.749             00:12.340             00:34.343
-///     AT -00:32.123          G  +00:02.100
-///                            AT +00:12.300
+///                            G  -00:02.100
 ///     </code>
 ///     The time counting up was never the question. Every run is a race against one of two
 ///     numbers, and reading a rising clock against a fixed target means doing the subtraction
 ///     yourself, every second, while driving. So the subtraction is the display: the medal
 ///     still in reach, and the time until it is not. It goes yellow as that time gets short and
-///     flashes red once it is nearly out, and when both medals are gone it stops pretending: the
-///     clock itself turns red and the two gaps take the place of the countdown.
+///     flashes red once it is nearly out, and when the last medal is gone it stops pretending:
+///     the row goes away and the clock itself turns red.
 ///     Every row is the same width and every line is always written, because a block that
 ///     changes shape moves the number the eye came to read. Rows that do not apply right now
 ///     are written in a fully transparent colour rather than left out, and so is the sign in
@@ -38,11 +37,11 @@ namespace AuthorTimeHunting.UI.Hud;
 ///     this wants, to the frame, so there is no second one running alongside it - the run's own
 ///     ticker cannot serve here because it does not start until the release and the game reads
 ///     the finish time straight off it.
-///     A run that is over stops being a race, and the medal row says which way it went. Chasing a
-///     medal it had been reddening against, it turns the colour of a medal taken; past both of
-///     them it turns the colour of one lost. Leaving either as the warning it was while driving
-///     reads as a verdict that never came. The game's own finish panel gets the verdict in words,
-///     in place of a time nobody needs twice (see <see cref="FinishVerdict" />).
+///     A run that is over stops being a race, and the medal row says which way it went: a medal
+///     it had been reddening against turns the colour of a medal taken, and leaving it as the
+///     warning it was while driving reads as a verdict that never came. The game's own finish
+///     panel gets the verdict in words, in place of a time nobody needs twice (see
+///     <see cref="FinishVerdict" />).
 ///     The lamps sit above the clock, where a start light belongs: three red, then three amber,
 ///     then three green on the release. All three are always on screen and only their colour
 ///     changes, because lamps appearing one at a time move the row under the eye that is trying to
@@ -76,7 +75,6 @@ public class RaceTimeDisplay : IDisposable
 	private const int _rowWidth = _labelWidth + 1 + _timeWidth;
 
 	private const string _minusSign = "-";
-	private const string _plusSign = "+";
 
 	/// <summary>Drawn but not seen: the row keeps its place, the player keeps their eye still.</summary>
 	private const string _hiddenHex = "#00000000";
@@ -202,6 +200,9 @@ public class RaceTimeDisplay : IDisposable
 	/// </summary>
 	private string[] _lampRows;
 
+	/// <summary>Whether this level already had gold when this attempt started.</summary>
+	private bool _goldOwned;
+
 	/// <summary>How the chase last sounded, so each step is played once as it is entered.</summary>
 	private int _lastPace = _paceSafe;
 
@@ -222,7 +223,7 @@ public class RaceTimeDisplay : IDisposable
 		_behaviour.Bind(this);
 	}
 
-	public AthStateMachine ActiveRun
+	public AthController ActiveRun
 	{
 		get;
 		set
@@ -340,7 +341,12 @@ public class RaceTimeDisplay : IDisposable
 		Judge(player.screenPointer.resultTime);
 	}
 
-	/// <summary>A new attempt is a new warning, and the countdown running is what says one has begun.</summary>
+	/// <summary>
+	///     A new attempt is a new warning, and the countdown running is what says one has begun.
+	///     Whether gold is already owned is read here rather than off the level while driving,
+	///     because the attempt that claims it sets it the moment it finishes - and a row that
+	///     disappeared on the finish line would take the good news with it.
+	/// </summary>
 	private void Rearm(float physicsTime)
 	{
 		if (physicsTime >= 0f)
@@ -350,6 +356,7 @@ public class RaceTimeDisplay : IDisposable
 
 		_lastPace = _paceSafe;
 		_missedAuthor = false;
+		_goldOwned = ActiveRun?.Ctx.CurrentLevel?.GoldMedalAcquired == true;
 	}
 
 	/// <summary>
@@ -407,7 +414,8 @@ public class RaceTimeDisplay : IDisposable
 		bool countingDown = stage != _noLights && physicsTime < 0f;
 		double run = Math.Max(0d, elapsed);
 
-		bool gone = !countingDown && goldTime > 0d && run >= goldTime;
+		double last = _goldOwned ? authorTime : goldTime;
+		bool gone = !countingDown && last > 0d && run >= last;
 
 		return Mono(AttemptRow(countingDown)
 		            + "\n" + _lampRows[stage]
@@ -538,6 +546,15 @@ public class RaceTimeDisplay : IDisposable
 		return Row(_emptyCell, _noSign, TimeFormatter.FormatTime(clock), gone ? _missedHex : _plainHex);
 	}
 
+	/// <summary>
+	///     The one medal still in reach, and nothing once there is none.
+	///     A medal that is gone used to keep its row, counting how far past it the clock was. That
+	///     is a number nobody acts on: the run is over either way, and two of them under a red
+	///     clock read as three verdicts on one attempt. The clock going red says it once.
+	///     Gold is only in reach while the level has not got it yet. Once it has, the medal is
+	///     unlocked for good and the row would be counting down to something already owned, so
+	///     the author time is the only thing left to chase and the only thing shown.
+	/// </summary>
 	private string MedalRows(bool countingDown, bool finished, double elapsed, double goldTime,
 		double authorTime)
 	{
@@ -551,13 +568,12 @@ public class RaceTimeDisplay : IDisposable
 			return Chase(AuthorCell, finished, elapsed, authorTime);
 		}
 
-		if (elapsed < goldTime)
+		if (_goldOwned || elapsed >= goldTime)
 		{
-			return Chase(GoldCell, finished, elapsed, goldTime);
+			return HiddenRow();
 		}
 
-		return Lost(GoldCell, finished, elapsed - goldTime)
-		       + "\n" + Lost(AuthorCell, finished, elapsed - authorTime);
+		return Chase(GoldCell, finished, elapsed, goldTime);
 	}
 
 	/// <summary>A row nobody can see, so the one below it does not climb a line when it appears.</summary>
@@ -590,17 +606,6 @@ public class RaceTimeDisplay : IDisposable
 		string paceHex = finished ? _claimedHex : PaceHex(elapsed, target);
 
 		return Row(cell, Paint(_minusSign, paceHex), TimeFormatter.FormatTime(target - elapsed), paceHex);
-	}
-
-	/// <summary>
-	///     A medal that is already gone. While driving that is just how far past it the clock is;
-	///     once the attempt is over it is the result, and reads as one.
-	/// </summary>
-	private static string Lost(string cell, bool finished, double over)
-	{
-		string hex = finished ? _missedHex : _plainHex;
-
-		return Row(cell, Paint(_plusSign, hex), TimeFormatter.FormatTime(over), hex);
 	}
 
 	private static string Row(string cell, string sign, string time, string timeHex)
@@ -720,19 +725,19 @@ public class RaceTimeDisplay : IDisposable
 	}
 
 	/// <summary>
-	///     Asks for the medals on every frame that has not got them yet, rather than once when the
-	///     label is first taken. The sprites are cut out of the game's own art, and the game loads
-	///     that when it feels like it - a label borrowed one frame too early answered "no medals"
-	///     and then kept that answer for the rest of the session, which is how a feature that works
-	///     ends up showing "AT" and "G" forever.
+	///     Asks for the medals every frame rather than once, and asks on behalf of the label that
+	///     is about to be written rather than on behalf of the session.
+	///     Both halves of that are a bug that was there. The sprites are cut out of the game's own
+	///     art, and the game loads that when it feels like it, so a label borrowed one frame too
+	///     early answers "no medals" - remembering that answer showed "AT" and "G" for the rest of
+	///     the session. Remembering the opposite answer was worse: every level load builds a new
+	///     label, and one already-dressed label was taken as all of them, so from the second level
+	///     on the medal tags were written against whatever sprite asset the game keeps on the new
+	///     one. Asking per label costs a reference comparison, which is what
+	///     <see cref="MedalSpriteAsset.Install" /> does before it assigns anything.
 	/// </summary>
 	private void Dress(TMP_Text label)
 	{
-		if (_sprites)
-		{
-			return;
-		}
-
 		_sprites = _medals.Install(label);
 	}
 

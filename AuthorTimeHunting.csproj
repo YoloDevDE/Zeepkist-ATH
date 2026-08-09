@@ -4,6 +4,8 @@
         <Description>Zeepkist Plugin to help with Author Time Hunting</Description>
         <Title>Author Time Hunting</Title>
         <PackageId>Author Time Hunting</PackageId>
+        <AssemblyName>AuthorTimeHunting</AssemblyName>
+        <Product>Author Time Hunting</Product>
     </PropertyGroup>
 
     <!--
@@ -18,6 +20,12 @@
     <!-- The mod's own picture, for the loading screen. Embedded so there is nothing to install. -->
     <ItemGroup>
         <EmbeddedResource Include="assets\thumbnail\ATH_16-9.png" LogicalName="AuthorTimeHunting.Thumbnail.png"/>
+    </ItemGroup>
+
+    <!-- What the mod's menu puts behind itself instead of a flat black screen. -->
+    <ItemGroup>
+        <EmbeddedResource Include="assets\menu\ATH_Menu_Background.jpg"
+                          LogicalName="AuthorTimeHunting.MenuBackground.jpg"/>
     </ItemGroup>
 
     <!-- The button icons, baked from Bootstrap Icons by tools/iconatlas.py. -->

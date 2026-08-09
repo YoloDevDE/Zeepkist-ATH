@@ -126,6 +126,37 @@ public class LevelTests
 	}
 
 	/// <summary>
+	///     The splits are what the split list measures every later attempt against, so they have to
+	///     belong to the run the personal best belongs to. A slower attempt keeps its own time out
+	///     of the record and must keep its checkpoints out too.
+	/// </summary>
+	[Fact]
+	public void OnlyTheBestRunLeavesItsCheckpointsBehind()
+	{
+		Level level = Fresh();
+
+		level.RecordRun(30f, new SplitSet([10d, 20d], [60d, 70d]));
+		level.RecordRun(22f, new SplitSet([8d, 15d], [66d, 78d]));
+		level.RecordRun(24f, new SplitSet([9d, 17d], [61d, 71d]));
+
+		Assert.Equal(22f, level.PersonalBestTime);
+		Assert.Equal([8d, 15d], level.BestSplits.Times);
+		Assert.Equal([66d, 78d], level.BestSplits.Speeds);
+	}
+
+	/// <summary>A level nobody has finished has nothing to measure against, and says so as an empty set.</summary>
+	[Fact]
+	public void ALevelWithoutAFinishHasNoSplits()
+	{
+		Level level = Fresh();
+
+		level.RecordRun(-1f, new SplitSet([10d], [60d]));
+
+		Assert.Equal(0, level.BestSplits.Count);
+		Assert.Equal(-1d, level.BestSplits.TimeAt(0));
+	}
+
+	/// <summary>
 	///     Attempts are counted when the zeepkists are released, not when the level loads, so a
 	///     level that has just come up is on none of them.
 	/// </summary>

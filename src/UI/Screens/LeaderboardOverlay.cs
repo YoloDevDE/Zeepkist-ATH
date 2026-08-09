@@ -64,13 +64,13 @@ public class LeaderboardOverlay : IZeepGUIDrawer
 
 	private float _nextRefresh;
 
-	public AthStateMachine ActiveRun { get; set; }
+	public AthController ActiveRun { get; set; }
 
 	public bool Visible { get; set; } = true;
 
 	public void OnZeepGUI(ImGui gui)
 	{
-		AthStateMachine run = ActiveRun;
+		AthController run = ActiveRun;
 
 		if (!Visible || run?.Ctx.CurrentLevel == null || !Plugin.Instance.MyConfig.LeaderboardMedals.Value)
 		{

@@ -7,7 +7,7 @@ using ZeepkistNetworking;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForNextRun(AthController controller) : AthState(controller)
 {
 	private bool _hasShownMedal;
 
@@ -18,11 +18,11 @@ public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(
 		if (!_hasShownMedal)
 		{
 			PlayerBase.Result currentResult = ZeepkistNetwork.LocalPlayer?.CurrentResult;
-			double lastRunTime = AthStateMachine.Ctx.LastRunTime > 0 ?
-				AthStateMachine.Ctx.LastRunTime :
+			double lastRunTime = AthController.Ctx.LastRunTime > 0 ?
+				AthController.Ctx.LastRunTime :
 				currentResult?.Time ?? -1;
 			bool hasMedalToShow =
-				AthStateMachine.Ctx.LastRunMedalStatus is LevelStatus.Author or LevelStatus.Gold;
+				AthController.Ctx.LastRunMedalStatus is LevelStatus.Author or LevelStatus.Gold;
 
 			if (currentResult != null && hasMedalToShow && lastRunTime >= 0)
 			{
@@ -30,23 +30,18 @@ public class StateAthWaitingForNextRun(AthStateMachine stateMachine) : AthState(
 			}
 		}
 
-		AthStateMachine.Ctx.ResetRetries();
-		AthStateMachine.SetServerMessage(true);
+
+		AthController.Ctx.ResetRetries();
 	}
 
 	public override void OnRoundEnded()
 	{
-		StateMachine.TransitionTo(new StateAthSkippingLevel(AthStateMachine));
-	}
-
-	public override void Update()
-	{
-		AthStateMachine.SetServerMessage(true);
+		Controller.TransitionTo(new StateAthSkippingLevel(AthController));
 	}
 
 	public override void OnRoundStarted()
 	{
-		StateMachine.TransitionTo(new StateAthWaitingForFinish(AthStateMachine));
+		Controller.TransitionTo(new StateAthWaitingForFinish(AthController));
 	}
 
 	public override void OnPhotoModeEntered()

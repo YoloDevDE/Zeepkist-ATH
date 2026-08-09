@@ -57,22 +57,22 @@ public class StateMasterCreatingLobby : StateBase
 
 	private bool _roundStarted;
 
-	public StateMasterCreatingLobby(MasterStateMachine stateMachine, IGamemode gamemode) : base(stateMachine)
+	public StateMasterCreatingLobby(AthMasterController controller, IGamemode gamemode) : base(controller)
 	{
 		_gamemode = gamemode;
 	}
 
-	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
+	private AthMasterController AthMaster => (AthMasterController)Controller;
 
 	public override async void Enter()
 	{
 		AthRequests.StopRequested += Cancel;
 		RacingApi.RoundStarted += OnRoundStarted;
 
-		Master.Services.Silence.Silence();
-		Master.Services.Loading.Show("Opening a private lobby");
-		Master.Services.Loading.ShowWelcome(_gamemode);
-		Master.Services.Loading.Step("Creating lobby");
+		AthMaster.Services.Silence.Silence();
+		AthMaster.Services.Loading.Show("Opening a private lobby");
+		AthMaster.Services.Loading.ShowWelcome(_gamemode);
+		AthMaster.Services.Loading.Step("Creating lobby");
 
 		try
 		{
@@ -93,7 +93,7 @@ public class StateMasterCreatingLobby : StateBase
 		_left = true;
 		AthRequests.StopRequested -= Cancel;
 		RacingApi.RoundStarted -= OnRoundStarted;
-		Master.Services.Silence.Restore();
+		AthMaster.Services.Silence.Restore();
 		_cts.Cancel();
 		_cts.Dispose();
 	}
@@ -107,7 +107,7 @@ public class StateMasterCreatingLobby : StateBase
 	private void OnRoundStarted()
 	{
 		_roundStarted = true;
-		Master.Services.Silence.Restore();
+		AthMaster.Services.Silence.Restore();
 	}
 
 	private static void HideFromTheRoomList()
@@ -155,7 +155,7 @@ public class StateMasterCreatingLobby : StateBase
 		}
 
 		HideFromTheRoomList();
-		Master.Services.Loading.Step("Loading the lobby level");
+		AthMaster.Services.Loading.Step("Loading the lobby level");
 		EnterTheGameScene();
 
 		if (!await Wait.UntilAsync(() => GameStateObserver.IsLevelReady, _levelTimeout, _cts.Token))
@@ -163,14 +163,14 @@ public class StateMasterCreatingLobby : StateBase
 			Logger.LogWarning("StateMasterCreatingLobby: The lobby is up but no level is running yet.");
 		}
 
-		Master.Services.Loading.Step("Waiting for the round");
+		AthMaster.Services.Loading.Step("Waiting for the round");
 
 		if (!await Wait.UntilAsync(() => _roundStarted, _roundTimeout, _cts.Token))
 		{
 			Logger.LogWarning("StateMasterCreatingLobby: No round start arrived, handing over anyway.");
 		}
 
-		Master.Services.Loading.Step("Fetching levels");
+		AthMaster.Services.Loading.Step("Fetching levels");
 
 		return true;
 	}
@@ -184,20 +184,20 @@ public class StateMasterCreatingLobby : StateBase
 
 		if (!created)
 		{
-			Master.Services.Loading.Hide();
+			AthMaster.Services.Loading.Hide();
 			FrogNotification.Error("Could not open a lobby, the hunt did not start");
-			StateMachine.TransitionTo(new StateMasterOff(Master));
+			Controller.TransitionTo(new StateMasterOff(AthMaster));
 
 			return;
 		}
 
-		StateMachine.TransitionTo(new StateMasterOff(Master, _gamemode));
+		Controller.TransitionTo(new StateMasterOff(AthMaster, _gamemode));
 	}
 
 	private void Cancel()
 	{
-		Master.Services.Loading.Hide();
+		AthMaster.Services.Loading.Hide();
 		FrogNotification.Info("Start cancelled");
-		StateMachine.TransitionTo(new StateMasterOff(Master));
+		Controller.TransitionTo(new StateMasterOff(AthMaster));
 	}
 }

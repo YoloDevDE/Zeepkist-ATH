@@ -40,6 +40,7 @@ public class Plugin : BaseUnityPlugin
 		UIApi.AddZeepGUIDrawer(Services.RunOverlay);
 
 		UIApi.AddZeepGUIDrawer(Services.Leaderboard);
+		UIApi.AddZeepGUIDrawer(Services.Splits);
 		UIApi.AddZeepGUIDrawer(Services.LevelSummary);
 		UIApi.AddZeepGUIDrawer(Services.Results);
 		UIApi.AddZeepGUIDrawer(Services.Help);
@@ -69,6 +70,7 @@ public class Plugin : BaseUnityPlugin
 			Services.PlayMenu.Dispose();
 			UIApi.RemoveZeepGUIDrawer(Services.RunOverlay);
 			UIApi.RemoveZeepGUIDrawer(Services.Leaderboard);
+			UIApi.RemoveZeepGUIDrawer(Services.Splits);
 			UIApi.RemoveZeepGUIDrawer(Services.LevelSummary);
 			UIApi.RemoveZeepGUIDrawer(Services.Results);
 			UIApi.RemoveZeepGUIDrawer(Services.Help);
@@ -113,7 +115,7 @@ public class Plugin : BaseUnityPlugin
 
 	private void InitializeStateMachine()
 	{
-		_masterStateMachine = new MasterStateMachine(Services);
+		_masterStateMachine = new AthMasterController(Services);
 		_masterStateMachine.Init();
 	}
 }

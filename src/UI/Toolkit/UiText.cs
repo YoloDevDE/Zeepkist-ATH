@@ -77,6 +77,23 @@ public static class UiText
 		return gui.TextDrawer.GetLineHeightFromFontSize(size);
 	}
 
+	/// <summary>
+	///     How wide a line of text comes out. Only worth asking when several runs of text in
+	///     different colours have to sit on one line: Imui draws one colour per call, so the line
+	///     is laid out by measuring the pieces and handing each one the rect it ends in.
+	/// </summary>
+	public static float Width(ImGui gui, string text, float size)
+	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return 0f;
+		}
+
+		ImTextSettings settings = new(size, 0f, 0.5f, false, ImTextOverflow.Overflow);
+
+		return gui.MeasureTextSize(text.AsSpan(), in settings).x;
+	}
+
 	/// <summary>A rect too short for one line, grown around its own middle until it is not.</summary>
 	private static ImRect Fits(ImGui gui, ImRect rect, float size)
 	{

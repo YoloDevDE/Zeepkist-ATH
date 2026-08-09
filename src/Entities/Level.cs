@@ -87,6 +87,9 @@ public class Level
 		}
 	} = -1f;
 
+	/// <summary>What the best attempt so far did at each checkpoint. The run everything is measured against.</summary>
+	public SplitSet BestSplits { get; private set; } = SplitSet.Empty;
+
 	public TimeSpan TimeWasted =>
 		LevelBroken ? TimeSpan.Zero
 		: AuthorTimeAcquired ? GetPlayDuration() - TimeSpan.FromSeconds(PersonalBestTime)
@@ -132,6 +135,27 @@ public class Level
 		{
 			TimeStamps.Add(DateTime.Now);
 		}
+	}
+
+	/// <summary>
+	///     A finished attempt and the checkpoints it went through. The splits are the ones the
+	///     later runs are measured against, so they are only kept when this attempt is the new
+	///     best - and whether it is, is what <see cref="PersonalBestTime" /> answers by either
+	///     taking the time or leaving it. Asking the setter rather than repeating its rule here
+	///     is what keeps the time and the splits describing the same run.
+	/// </summary>
+	public void RecordRun(float time, SplitSet splits)
+	{
+		float previous = PersonalBestTime;
+
+		PersonalBestTime = time;
+
+		if (PersonalBestTime == previous)
+		{
+			return;
+		}
+
+		BestSplits = splits ?? SplitSet.Empty;
 	}
 
 	public void RegisterCrash()

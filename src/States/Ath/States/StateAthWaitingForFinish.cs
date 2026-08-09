@@ -14,15 +14,15 @@ namespace AuthorTimeHunting.States.Ath.States;
 ///     having reached the finish at all: the level's clock keeps running and the player gets
 ///     another attempt.
 /// </summary>
-public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForFinish(AthController controller) : AthState(controller)
 {
 	public override void Enter()
 	{
-		AthStateMachine.Ctx.CurrentLevel.Attempt++;
+		AthController.Ctx.CurrentLevel.Attempt++;
 
-		if (!AthStateMachine.Ctx.IsPaused)
+		if (!AthController.Ctx.IsPaused)
 		{
-			AthStateMachine.Ctx.CurrentLevel.ResumeTiming();
+			AthController.Ctx.CurrentLevel.ResumeTiming();
 		}
 
 		Update();
@@ -30,12 +30,12 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 
 	public override void Exit()
 	{
-		AthStateMachine.Ctx.CurrentLevel.PauseTiming();
+		AthController.Ctx.CurrentLevel.PauseTiming();
 	}
 
 	public override void OnRoundEnded()
 	{
-		StateMachine.TransitionTo(new StateAthSkippingLevel(AthStateMachine));
+		Controller.TransitionTo(new StateAthSkippingLevel(AthController));
 	}
 
 	public override void OnCrossedFinishLine(float time)
@@ -51,28 +51,28 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 
 		ZeepkistNetworkPlayer networkPlayer = ZeepkistNetwork.LocalPlayer;
 		PlayerBase.Result currentResult = networkPlayer?.CurrentResult;
-		Level currentLevel = AthStateMachine.Ctx.CurrentLevel;
+		Level currentLevel = AthController.Ctx.CurrentLevel;
 
 		if (currentResult == null)
 		{
-			StateMachine.TransitionTo(new StateAthWaitingForNextRun(AthStateMachine));
+			Controller.TransitionTo(new StateAthWaitingForNextRun(AthController));
 			return;
 		}
 
 		LevelStatus previousStatus = currentLevel.Status;
 
-		currentLevel.PersonalBestTime = currentResult.Time;
+		currentLevel.RecordRun(currentResult.Time, GameStateObserver.CurrentSplits);
 		LevelStatus runMedalStatus = ResolveRunMedalStatus(currentResult.Time, currentLevel);
 
-		AthStateMachine.Ctx.LastRunTime = currentResult.Time;
-		AthStateMachine.Ctx.LastRunMedalStatus = runMedalStatus;
-		AthStateMachine.Ctx.LastRunMedalWasNew = GetMedalRank(runMedalStatus) > GetMedalRank(previousStatus);
+		AthController.Ctx.LastRunTime = currentResult.Time;
+		AthController.Ctx.LastRunMedalStatus = runMedalStatus;
+		AthController.Ctx.LastRunMedalWasNew = GetMedalRank(runMedalStatus) > GetMedalRank(previousStatus);
 
 		bool wasGoldMedalAcquiredBeforeRun = GetMedalRank(previousStatus) >= GetMedalRank(LevelStatus.Gold);
 
 		if (currentLevel.Status == LevelStatus.Author)
 		{
-			StateMachine.TransitionTo(new StateAthWaitingForRespawn(AthStateMachine));
+			Controller.TransitionTo(new StateAthWaitingForRespawn(AthController));
 			return;
 		}
 
@@ -81,26 +81,24 @@ public class StateAthWaitingForFinish(AthStateMachine stateMachine) : AthState(s
 			FrogNotification.Gold("Gold medal claimed!<br>You can now skip without penalty");
 		}
 
-		StateMachine.TransitionTo(new StateAthWaitingForNextRun(AthStateMachine));
+		Controller.TransitionTo(new StateAthWaitingForNextRun(AthController));
 	}
 
 	public override void OnRoundStarted()
 	{
-		AthStateMachine.Ctx.CurrentLevel.Attempt++;
+		AthController.Ctx.CurrentLevel.Attempt++;
 		Update();
 	}
 
 	public override void Update()
 	{
-		if (AthStateMachine.Ctx.IsTimeOver())
+		if (AthController.Ctx.IsTimeOver())
 		{
-			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
+			Controller.TransitionTo(new StateAthStopping(AthController));
 			return;
 		}
 
-		AthStateMachine.SetServerMessage(false);
-
-		if (AthStateMachine.Ctx.CheckAndNotifyTimeRunningLow())
+		if (AthController.Ctx.CheckAndNotifyTimeRunningLow())
 		{
 			FrogNotification.Info("<b>Time is running low!</b><br>A 'Penalty-Skip' will end the run!", 10f);
 		}

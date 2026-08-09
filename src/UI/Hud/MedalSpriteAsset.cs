@@ -72,6 +72,11 @@ public class MedalSpriteAsset : IDisposable
 			return false;
 		}
 
+		if (label.spriteAsset == asset)
+		{
+			return true;
+		}
+
 		label.spriteAsset = asset;
 
 		return true;

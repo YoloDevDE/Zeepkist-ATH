@@ -3,18 +3,18 @@ using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthLoadingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthLoadingLevel(AthController controller) : AthState(controller)
 {
 	public override void OnLevelLoaded()
 	{
-		if (!AthStateMachine.Ctx.IsTimeOver() && (AthStateMachine.Ctx.Settings.RandomPlaylist ||
-		                                          AthStateMachine.Ctx.Levels.Count <
+		if (!AthController.Ctx.IsTimeOver() && (AthController.Ctx.Settings.RandomPlaylist ||
+		                                          AthController.Ctx.Levels.Count <
 		                                          ZeepkistNetwork.CurrentLobby.Playlist.Count))
 		{
-			StateMachine.TransitionTo(new StateAthWaitingForLevelData(AthStateMachine));
+			Controller.TransitionTo(new StateAthWaitingForLevelData(AthController));
 			return;
 		}
 
-		StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
+		Controller.TransitionTo(new StateAthStopping(AthController));
 	}
 }

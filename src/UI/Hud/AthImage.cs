@@ -8,15 +8,16 @@ using Object = UnityEngine.Object;
 namespace AuthorTimeHunting.UI.Hud;
 
 /// <summary>
-///     The mod's own logo, loaded once from the plugin's resources and shared by everyone who
-///     draws it: the loading screen while a hunt is being set up, and the bar once it is running.
-///     It used to be loaded and owned by the loading screen alone. The bar wants the same image,
-///     and two screens each carrying their own copy of the same PNG is one copy too many - so the
-///     texture lives here, loaded on the first ask and dropped once with the session.
+///     A picture baked into the plugin, loaded once on the first ask and dropped with the
+///     session: the mod's crest, the menu's backdrop.
+///     It used to be loaded and owned by the loading screen alone. The bar wants the same crest,
+///     and two screens each carrying their own copy of the same PNG is one copy too many - so
+///     every picture lives here and is handed out by the composition root, which is also what
+///     stops the second one being a second class that does the same thing.
 /// </summary>
-public class AthThumbnail : IDisposable
+public class AthImage : IDisposable
 {
-	private const string _resource = "AuthorTimeHunting.Thumbnail.png";
+	private readonly string _resource;
 
 	private bool _sliced;
 
@@ -25,6 +26,11 @@ public class AthThumbnail : IDisposable
 	private Texture2D _texture;
 
 	private bool _tried;
+
+	public AthImage(string resource)
+	{
+		_resource = resource;
+	}
 
 	public Texture2D Texture
 	{
@@ -96,7 +102,7 @@ public class AthThumbnail : IDisposable
 		return sprite;
 	}
 
-	private static Texture2D Load()
+	private Texture2D Load()
 	{
 		try
 		{
@@ -104,7 +110,7 @@ public class AthThumbnail : IDisposable
 
 			if (stream == null)
 			{
-				Logger.LogWarning($"AthThumbnail: '{_resource}' is not in the plugin.");
+				Logger.LogWarning($"AthImage: '{_resource}' is not in the plugin.");
 
 				return null;
 			}
@@ -119,7 +125,7 @@ public class AthThumbnail : IDisposable
 		}
 		catch (Exception e)
 		{
-			Logger.LogWarning($"AthThumbnail: Could not load the thumbnail: {e.Message}");
+			Logger.LogWarning($"AthImage: Could not load the thumbnail: {e.Message}");
 
 			return null;
 		}

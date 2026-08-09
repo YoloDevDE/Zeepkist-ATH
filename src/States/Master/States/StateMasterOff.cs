@@ -12,19 +12,19 @@ public class StateMasterOff : StateBase
 {
 	private IGamemode _pendingGamemode;
 
-	public StateMasterOff(MasterStateMachine stateMachine, IGamemode pendingGamemode = null) : base(stateMachine)
+	public StateMasterOff(AthMasterController controller, IGamemode pendingGamemode = null) : base(controller)
 	{
 		_pendingGamemode = pendingGamemode;
 	}
 
-	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
+	private AthMasterController AthMaster => (AthMasterController)Controller;
 
 	public override void Enter()
 	{
 		AthRequests.StopRequested += StopChallenge;
 		AthRequests.StartRequested += StartChallenge;
 		AthRequests.RestartRequested += StartChallenge;
-		Master.Services.GameState.BecameRacing += OnBecameRacing;
+		AthMaster.Services.GameState.BecameRacing += OnBecameRacing;
 
 		StartPendingRun();
 	}
@@ -66,7 +66,7 @@ public class StateMasterOff : StateBase
 		AthRequests.StopRequested -= StopChallenge;
 		AthRequests.StartRequested -= StartChallenge;
 		AthRequests.RestartRequested -= StartChallenge;
-		Master.Services.GameState.BecameRacing -= OnBecameRacing;
+		AthMaster.Services.GameState.BecameRacing -= OnBecameRacing;
 		_pendingGamemode = null;
 	}
 
@@ -79,7 +79,7 @@ public class StateMasterOff : StateBase
 	/// </summary>
 	private void StartChallenge()
 	{
-		StateMachine.TransitionTo(new StateMasterConnectingToServer(Master, Master.Services.Gamemodes.Selected));
+		Controller.TransitionTo(new StateMasterConnectingToServer(AthMaster, AthMaster.Services.Gamemodes.Selected));
 	}
 
 	private void OnBecameRacing()
@@ -102,7 +102,7 @@ public class StateMasterOff : StateBase
 			return;
 		}
 
-		StateMachine.TransitionTo(new StateMasterOn(Master, gamemode));
+		Controller.TransitionTo(new StateMasterOn(AthMaster, gamemode));
 	}
 
 	private bool IsHudReady()

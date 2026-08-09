@@ -3,17 +3,17 @@ using AuthorTimeHunting.Util;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthSkippingLevel(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthSkippingLevel(AthController controller) : AthState(controller)
 {
 	public override void Enter()
 	{
-		AthCtx athCtx = AthStateMachine.Ctx;
+		AthCtx athCtx = AthController.Ctx;
 
 		Announce(athCtx);
 
 		athCtx.CurrentLevel.Skipped = true;
 		athCtx.CurrentLevel.Stop();
-		StateMachine.TransitionTo(new StateAthLevelSummary(AthStateMachine));
+		Controller.TransitionTo(new StateAthLevelSummary(AthController));
 	}
 
 	private void Announce(AthCtx ctx)

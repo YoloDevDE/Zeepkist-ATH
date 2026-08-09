@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using AuthorTimeHunting.Entities;
 using AuthorTimeHunting.Enums;
 using UnityEngine;
 using ZeepkistClient;
@@ -69,6 +71,70 @@ public class GameStateObserver
 			}
 
 			return master.playerResults[0].racepoints >= master.racePoints;
+		}
+	}
+
+	/// <summary>
+	///     How many checkpoints the level has. The finish is not one of them - the game counts
+	///     racepoints off the checkpoint blocks alone and scores the finish separately.
+	/// </summary>
+	public static int CheckpointCount
+	{
+		get
+		{
+			GameMaster master = Master;
+
+			return master == null ? 0 : master.racePoints;
+		}
+	}
+
+	/// <summary>
+	///     The checkpoints the current attempt has already taken. The game appends one the moment
+	///     the car crosses a checkpoint trigger and starts a fresh list with every restart, so
+	///     this is the attempt being driven and nothing else.
+	///     Copied into plain numbers rather than handed out as the game's own split objects, so
+	///     that everything downstream of it - and every test of that - can be written without the
+	///     game.
+	/// </summary>
+	public static SplitSet CurrentSplits
+	{
+		get
+		{
+			List<WinCompare.SplitTime> splits = LocalSplits;
+
+			if (splits == null)
+			{
+				return SplitSet.Empty;
+			}
+
+			double[] times = new double[splits.Count];
+			double[] speeds = new double[splits.Count];
+
+			for (int i = 0; i < splits.Count; i++)
+			{
+				times[i] = splits[i].time;
+				speeds[i] = splits[i].velocity;
+			}
+
+			return new SplitSet(times, speeds);
+		}
+	}
+
+	private static GameMaster Master => PlayerManager.Instance == null ? null : PlayerManager.Instance.currentMaster;
+
+	/// <summary>The local player's splits, or null when there is no race to read them off.</summary>
+	private static List<WinCompare.SplitTime> LocalSplits
+	{
+		get
+		{
+			GameMaster master = Master;
+
+			if (master == null || master.playerResults == null || master.playerResults.Count == 0)
+			{
+				return null;
+			}
+
+			return master.playerResults[0].split_times;
 		}
 	}
 

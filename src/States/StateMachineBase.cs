@@ -51,11 +51,13 @@ public abstract class StateMachineBase
 		Logger.LogDebug($"StateMachine: Entering state {CurrentState.GetType().Name}");
 		CurrentState.Enter();
 
-		if (CurrentState.SubStateMachine != null)
+		if (CurrentState.SubStateMachine == null)
 		{
-			Logger.LogDebug($"StateMachine: Initializing sub-state machine in {CurrentState.GetType().Name}");
-			CurrentState.SubStateMachine.Init();
+			return;
 		}
+
+		Logger.LogDebug($"StateMachine: Initializing sub-state machine in {CurrentState.GetType().Name}");
+		CurrentState.SubStateMachine.Init();
 	}
 
 	public virtual void Update()

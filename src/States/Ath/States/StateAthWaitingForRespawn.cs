@@ -4,7 +4,7 @@ using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForRespawn(AthController controller) : AthState(controller)
 {
 	private bool _hasShownAuthorMedal;
 
@@ -12,13 +12,13 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 	{
 		_hasShownAuthorMedal = false;
 
-		AthStateMachine.Ctx.CurrentLevel.Stop();
+		AthController.Ctx.CurrentLevel.Stop();
 
 		if (!_hasShownAuthorMedal)
 		{
 			FrogNotification.Author("Author time claimed!<br>[Respawn to continue]");
 
-			double lastRunTime = AthStateMachine.Ctx.LastRunTime;
+			double lastRunTime = AthController.Ctx.LastRunTime;
 
 			if (lastRunTime < 0)
 			{
@@ -31,18 +31,11 @@ public class StateAthWaitingForRespawn(AthStateMachine stateMachine) : AthState(
 
 			_hasShownAuthorMedal = true;
 		}
-
-		AthStateMachine.SetServerMessage(true);
-	}
-
-	public override void Update()
-	{
-		AthStateMachine.SetServerMessage(true);
 	}
 
 	public override void OnRoundEnded()
 	{
-		StateMachine.TransitionTo(new StateAthLevelSummary(AthStateMachine));
+		Controller.TransitionTo(new StateAthLevelSummary(AthController));
 	}
 
 	public override void OnPlayerSpawned()

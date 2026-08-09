@@ -2,12 +2,12 @@
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthLevelSummary(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthLevelSummary(AthController controller) : AthState(controller)
 {
 	public override void Enter()
 	{
-		AthStateMachine.Services.LevelSummary.Show(AthStateMachine.Ctx);
+		AthController.Services.LevelSummary.Show(AthController.Ctx);
 
-		StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
+		Controller.TransitionTo(new StateAthLoadingLevel(AthController));
 	}
 }

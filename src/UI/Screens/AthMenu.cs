@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using AuthorTimeHunting.Commands;
 using AuthorTimeHunting.Gamemodes;
 using AuthorTimeHunting.Service;
+using AuthorTimeHunting.States.Ath.StateMachine;
+using AuthorTimeHunting.UI.Hud;
 using AuthorTimeHunting.UI.Toolkit;
 using AuthorTimeHunting.UI.Views;
 using AuthorTimeHunting.Util;
@@ -43,7 +45,9 @@ public class AthMenu : IZeepGUIDrawer
 
 	private const string _title = "AUTHOR TIME HUNTING";
 
-	private const string _footer = "/ath, or the ATH button in the top bar, opens and closes this screen.";
+	private const string _footer = "Escape closes this screen. /ath, or the ATH button in the top bar, reopens it.";
+
+	private const string _endRunLabel = "End Run";
 
 	private const string _classicId = "classic";
 
@@ -58,15 +62,32 @@ public class AthMenu : IZeepGUIDrawer
 	private const int _tileColumns = 2;
 	private const int _tileRowCount = 3;
 
+	/// <summary>
+	///     Taller than the same five tiles in the run bar's drawer, which are sized to keep the
+	///     drawer out of the way. Here they are the top row of a menu and have to weigh what a card
+	///     weighs, or the five things a player came for read as a caption over the four they did not.
+	/// </summary>
+	private const float _runTileRows = 2.6f;
+
+	/// <summary>The strip of run buttons, and the two card rows under it.</summary>
+	private const int _sharedRowCount = 2;
+
 	private const int _minMinutes = 1;
 	private const int _maxMinutes = 240;
 
 	private const ImWindowFlag _windowFlags = ImWindowFlag.NoResizing | ImWindowFlag.NoMoving |
 	                                          ImWindowFlag.NoTitleBar | ImWindowFlag.NoCloseButton;
 
+	private readonly AthImage _background;
+
 	private IReadOnlyList<HistoryRow> _history = [];
 
 	private bool _mouseOverWindow;
+
+	public AthMenu(AthImage background)
+	{
+		_background = background;
+	}
 
 	private AthMenuPage _page;
 
@@ -90,6 +111,13 @@ public class AthMenu : IZeepGUIDrawer
 	{
 		if (!Visible)
 		{
+			return;
+		}
+
+		if (Input.GetKeyDown(KeyCode.Escape))
+		{
+			Plugin.Instance.Services.HideUi();
+
 			return;
 		}
 
@@ -137,7 +165,7 @@ public class AthMenu : IZeepGUIDrawer
 		float side = (screen.W - UiScreen.Width(screen)) * 0.5f;
 		float top = UiMetrics.Margin(gui) * 2f;
 
-		gui.Style.Window.Box.BackColor = Color.Style.Surface.Backdrop;
+		gui.Style.Window.Box.BackColor = Color.clear;
 		gui.Style.Window.Box.BorderThickness = 0f;
 		gui.Style.Window.Box.BorderRadius = 0f;
 		gui.Style.Window.ContentPadding.Left = side;
@@ -157,6 +185,8 @@ public class AthMenu : IZeepGUIDrawer
 
 		try
 		{
+			DrawBackdrop(gui, screen);
+
 			if (DrawHeadline(gui))
 			{
 				return;
@@ -168,6 +198,37 @@ public class AthMenu : IZeepGUIDrawer
 		{
 			gui.EndWindow();
 		}
+	}
+
+	/// <summary>
+	///     What the screen puts over the game: the mod's own picture, and a veil over that so the
+	///     words on top of it stay words. Drawn first inside the window, so everything laid out
+	///     after it lands on top - the window's own box is cleared for exactly this reason.
+	///     The picture is scaled to cover rather than to fit. A backdrop with the game showing
+	///     down two sides of it is a picture in a frame, not a backdrop, and the window clips
+	///     whatever hangs over the edges anyway.
+	///     Without the picture the veil is still drawn, which is the screen it used to be.
+	/// </summary>
+	private void DrawBackdrop(ImGui gui, ImRect screen)
+	{
+		Texture2D picture = _background.Texture;
+
+		if (picture == null)
+		{
+			gui.Canvas.Rect(screen, Color.Style.Surface.Backdrop);
+
+			return;
+		}
+
+		float scale = Mathf.Max(screen.W / picture.width, screen.H / picture.height);
+		float width = picture.width * scale;
+		float height = picture.height * scale;
+
+		gui.Image(picture,
+			new ImRect(screen.X + (screen.W - width) * 0.5f, screen.Y + (screen.H - height) * 0.5f, width, height),
+			false);
+
+		gui.Canvas.Rect(screen, Color.Style.Surface.Veil);
 	}
 
 	/// <summary>
@@ -200,7 +261,9 @@ public class AthMenu : IZeepGUIDrawer
 			case AthMenuPage.Settings:
 				return "Settings";
 			default:
-				return "Beat the author's time. Then do it again, until the hour is gone.";
+				return Plugin.Instance.Services.RunOverlay.ActiveRun == null
+					? "Beat the author's time. Then do it again, until the hour is gone."
+					: "A hunt is running.";
 		}
 	}
 
@@ -223,59 +286,102 @@ public class AthMenu : IZeepGUIDrawer
 		}
 	}
 
+	private void DrawRoot(ImGui gui)
+	{
+		AthController run = Plugin.Instance.Services.RunOverlay.ActiveRun;
+
+		if (run != null)
+		{
+			DrawRunRoot(gui, run);
+
+			return;
+		}
+
+		DrawIdleRoot(gui);
+	}
+
 	/// <summary>
 	///     Six tiles in two columns, sitting in the middle of whatever height is left, with the
 	///     line about /ath at the bottom of it.
 	/// </summary>
-	private void DrawRoot(ImGui gui)
+	private void DrawIdleRoot(ImGui gui)
 	{
-		bool idle = Plugin.Instance.Services.RunOverlay.ActiveRun == null;
-
 		Spacer(gui, (gui.GetLayoutHeight() - GridHeight(gui) - FooterHeight(gui)) * 0.5f);
 
 		ImRect first = TileRow(gui);
 
 		if (UiWidgets.Card(gui, Tile(gui, first, 0), "Quickstart",
-			    "Classic ATH, on the settings it has always had.", Color.Style.Action.Resume, idle))
+			    "Classic ATH, on the settings it has always had.", Color.Style.Action.Resume, true))
 		{
 			Quickstart();
 		}
 
 		if (UiWidgets.Card(gui, Tile(gui, first, 1), "Play",
-			    "Pick the gamemode and what the run is worth first.", Color.Style.Action.Skip, idle))
+			    "Pick the gamemode and what the run is worth first.", Color.Style.Action.Skip, true))
 		{
 			_page = AthMenuPage.Play;
 		}
 
-		ImRect second = TileRow(gui);
+		DrawSharedTiles(gui);
+		DrawFooter(gui);
+	}
 
-		if (UiWidgets.Card(gui, Tile(gui, second, 0), "Challenge History",
+	/// <summary>
+	///     What the screen is for once a hunt is on: the run's own five buttons where Quickstart
+	///     and Play used to be.
+	///     Those two were drawn greyed out for the whole hour, which is a menu telling a player
+	///     twice a minute that the thing they are doing is not available. The five that took their
+	///     place are the ones that were only reachable by opening the drawer on the run bar - and a
+	///     player who has hit Escape and gone looking for a menu is exactly the player looking for
+	///     them.
+	/// </summary>
+	private void DrawRunRoot(ImGui gui, AthController run)
+	{
+		Spacer(gui, (gui.GetLayoutHeight() - RunGridHeight(gui) - FooterHeight(gui)) * 0.5f);
+
+		DrawRunControls(gui, run);
+		DrawSharedTiles(gui);
+		DrawFooter(gui);
+	}
+
+	private static void DrawRunControls(ImGui gui, AthController run)
+	{
+		float height = RunStripHeight(gui);
+		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), height);
+
+		ControlPanel.Buttons(gui, ControlPanel.Centred(gui, row, height), run, RunHudView.ForFrame(run), _endRunLabel);
+	}
+
+	/// <summary>The four tiles that mean the same thing whether a hunt is on or not.</summary>
+	private void DrawSharedTiles(ImGui gui)
+	{
+		ImRect first = TileRow(gui);
+
+		if (UiWidgets.Card(gui, Tile(gui, first, 0), "Challenge History",
 			    "Every hunt this machine has recorded.", Color.Style.Action.Restart, true))
 		{
 			OpenHistory();
 		}
 
-		if (UiWidgets.Card(gui, Tile(gui, second, 1), "Status",
+		if (UiWidgets.Card(gui, Tile(gui, first, 1), "Status",
 			    "Whether the backends are up, and where this level came from.", Color.Style.Action.Restart, true))
 		{
 			Plugin.Instance.Services.Status.Visible = true;
 		}
 
-		ImRect third = TileRow(gui);
+		ImRect second = TileRow(gui);
 
-		if (UiWidgets.Card(gui, Tile(gui, third, 0), "Settings",
+		if (UiWidgets.Card(gui, Tile(gui, second, 0), "Settings",
 			    "What the mod draws and how loud it is.", Color.Style.Action.Restart, true))
 		{
 			_page = AthMenuPage.Settings;
 		}
 
-		if (UiWidgets.Card(gui, Tile(gui, third, 1), "Quit",
-			    "Puts every ATH window away, this one included.", Color.Style.Action.Stop, true))
+		if (UiWidgets.Card(gui, Tile(gui, second, 1), "Quit",
+			    "Puts every ATH window away. A hunt that is on keeps running.", Color.Style.Action.Stop, true))
 		{
 			Plugin.Instance.Services.HideUi();
 		}
-
-		DrawFooter(gui);
 	}
 
 	private static void DrawFooter(ImGui gui)
@@ -365,13 +471,11 @@ public class AthMenu : IZeepGUIDrawer
 		DrawWindowToggles(gui);
 
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "WHAT ATH DRAWS");
-		Toggle(gui, "Run HUD as a window", config.InGameHud);
 		Toggle(gui, "Start lights", config.StartLights);
 		Toggle(gui, "Medals in the leaderboard", config.LeaderboardMedals);
 
 		gui.AddSpacing();
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "THE REST");
-		Toggle(gui, "Less chat text", config.Minimalist);
 		Toggle(gui, "Save the playlist when a run ends", config.SavePlaylistOnRunEnd);
 
 		gui.AddSpacing();
@@ -520,6 +624,18 @@ public class AthMenu : IZeepGUIDrawer
 	private static float GridHeight(ImGui gui)
 	{
 		return (TileHeight(gui) + gui.Style.Layout.Spacing) * _tileRowCount;
+	}
+
+	private static float RunStripHeight(ImGui gui)
+	{
+		return gui.GetRowHeight() * _runTileRows;
+	}
+
+	private static float RunGridHeight(ImGui gui)
+	{
+		float spacing = gui.Style.Layout.Spacing;
+
+		return RunStripHeight(gui) + spacing + (TileHeight(gui) + spacing) * _sharedRowCount;
 	}
 
 	private static float FooterHeight(ImGui gui)

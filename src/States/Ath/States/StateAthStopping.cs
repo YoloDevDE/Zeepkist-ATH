@@ -8,21 +8,20 @@ using ZeepkistClient;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthStopping(AthController controller) : AthState(controller)
 {
 	public override void Enter()
 	{
 		try
 		{
-			AthStateMachine.Ctx.CurrentLevel?.Stop();
+			AthController.Ctx.CurrentLevel?.Stop();
 
-			AthStateMachine.Services.LevelSummary.Hide();
+			AthController.Services.LevelSummary.Hide();
 
-			AthStateMachine.Services.History.Add(BuildRecord());
+			AthController.Services.History.Add(BuildRecord());
 
-			AthStateMachine.Services.Results.Show(RunReportView.From(AthStateMachine.Ctx, PlayerName(),
-				AthStateMachine.Services.History.Records));
-			AthStateMachine.SetServerMessage(true);
+			AthController.Services.Results.Show(RunReportView.From(AthController.Ctx, PlayerName(),
+				AthController.Services.History.Records));
 			SavePlaylistIfConfigured();
 		}
 		catch (Exception e)
@@ -33,7 +32,7 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 		{
 			try
 			{
-				StateMachine.InvokeFinish();
+				Controller.InvokeFinish();
 			}
 			catch (Exception e)
 			{
@@ -44,13 +43,13 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 
 	private RunRecord BuildRecord()
 	{
-		AthCtx ctx = AthStateMachine.Ctx;
+		AthCtx ctx = AthController.Ctx;
 
 		return new RunRecord
 		{
 			EndedAt = DateTime.Now,
 			PlayerName = PlayerName(),
-			Gamemode = AthStateMachine.Gamemode?.DisplayName,
+			Gamemode = AthController.Gamemode?.DisplayName,
 			LevelsPlayed = ctx.Levels.Count,
 			AuthorMedals = ctx.AuthorMedals,
 			GoldMedals = ctx.GoldMedals,
@@ -101,7 +100,7 @@ public class StateAthStopping(AthStateMachine stateMachine) : AthState(stateMach
 			return;
 		}
 
-		AthCtx ctx = AthStateMachine.Ctx;
+		AthCtx ctx = AthController.Ctx;
 		string playlistName =
 			$"ATH-RUN-{DateTime.Now.ToString($"yyyy-MM-dd_HH-mm-ss_{ctx.AuthorMedals}_{ctx.GoldMedals}_{ctx.Penalties}")}";
 		PlaylistSaveJSON playlistSaveFile = new();

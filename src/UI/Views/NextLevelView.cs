@@ -27,7 +27,7 @@ public class NextLevelView
 
 	public string GoldTime { get; private set; }
 
-	public static NextLevelView From(AthStateMachine run)
+	public static NextLevelView From(AthController run)
 	{
 		OnlineZeeplevel queued = Queued();
 

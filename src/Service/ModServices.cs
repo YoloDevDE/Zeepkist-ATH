@@ -33,6 +33,7 @@ public class ModServices
 		RunOverlay = new RunOverlay(Control, Thumbnail, Medals);
 		Results = new ResultsScreen(Medals);
 		Loading = new LoadingOverlay(Thumbnail);
+		Menu = new AthMenu(MenuBackground);
 	}
 
 	public AthToolbar Toolbar { get; }
@@ -54,7 +55,7 @@ public class ModServices
 
 	public TraceService Trace { get; } = new();
 
-	public AthMenu Menu { get; } = new();
+	public AthMenu Menu { get; }
 
 	public StatusWindow Status { get; } = new();
 
@@ -75,6 +76,8 @@ public class ModServices
 
 	public LeaderboardOverlay Leaderboard { get; } = new();
 
+	public SplitsOverlay Splits { get; } = new();
+
 	public ResultsScreen Results { get; }
 
 	public WelcomeWindow Welcome { get; } = new();
@@ -84,7 +87,10 @@ public class ModServices
 	public LoadingOverlay Loading { get; }
 
 	/// <summary>The mod's logo, shared by the loading screen and the run bar.</summary>
-	public AthThumbnail Thumbnail { get; } = new();
+	public AthImage Thumbnail { get; } = new("AuthorTimeHunting.Thumbnail.png");
+
+	/// <summary>What the menu puts behind itself instead of a flat black screen.</summary>
+	public AthImage MenuBackground { get; } = new("AuthorTimeHunting.MenuBackground.jpg");
 
 	/// <summary>The game's medals, copied once and shared by everything that draws one.</summary>
 	public MedalArt Medals { get; } = new();
@@ -95,7 +101,7 @@ public class ModServices
 
 	public MatchHistoryService History { get; } = new();
 
-	public void PublishRun(AthStateMachine run)
+	public void PublishRun(AthController run)
 	{
 		RunHudView.Clear();
 
@@ -104,6 +110,7 @@ public class ModServices
 		Status.ActiveRun = run;
 		RaceTime.ActiveRun = run;
 		Leaderboard.ActiveRun = run;
+		Splits.ActiveRun = run;
 		Loading.ActiveRun = run;
 	}
 
@@ -118,6 +125,7 @@ public class ModServices
 		Status.Visible = false;
 		RunOverlay.Visible = false;
 		Leaderboard.Visible = false;
+		Splits.Visible = false;
 		Welcome.Visible = false;
 		Help.Visible = false;
 		Debug.Visible = false;

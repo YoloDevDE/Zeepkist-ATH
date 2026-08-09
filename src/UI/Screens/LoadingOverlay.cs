@@ -90,7 +90,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	/// <summary>What the mod has done so far, oldest first. The last one is the one it is doing.</summary>
 	private readonly List<SetupStep> _steps = [];
 
-	private readonly AthThumbnail _thumbnail;
+	private readonly AthImage _thumbnail;
 
 	private float _countdownEnd;
 
@@ -117,7 +117,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 
 	private string _tagline = "";
 
-	public LoadingOverlay(AthThumbnail thumbnail)
+	public LoadingOverlay(AthImage thumbnail)
 	{
 		_thumbnail = thumbnail;
 		RacingApi.RoundEnded += OnRoundEnded;
@@ -133,7 +133,7 @@ public class LoadingOverlay : IZeepGUIDrawer, IDisposable
 	///     under the wheels - which is after the game's own loading screen, not before it, so the
 	///     player never looks at a lobby they have no business in.
 	/// </summary>
-	public AthStateMachine ActiveRun { get; set; }
+	public AthController ActiveRun { get; set; }
 
 	public void Dispose()
 	{

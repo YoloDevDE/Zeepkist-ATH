@@ -71,6 +71,9 @@ public static class ColorExtensions
 		public Color32 LevelName { get; } = new(100, 210, 255, 255);
 
 		public Color32 AuthorName { get; } = new(255, 215, 0, 255);
+
+		/// <summary>The little word between two names, coloured so that both of them read as names.</summary>
+		public Color32 Joiner { get; } = new(255, 150, 60, 255);
 	}
 
 	/// <summary>How a value or an outcome stands: fine, worth a look, or lost.</summary>
@@ -129,6 +132,12 @@ public static class ColorExtensions
 		public Color32 Backdrop { get; } = new(8, 9, 12, 242);
 
 		/// <summary>
+		///     The same, thinned until a picture behind it is still a picture. Anything darker and
+		///     the backdrop might as well be flat; anything lighter and the words stop being words.
+		/// </summary>
+		public Color32 Veil { get; } = new(8, 9, 12, 176);
+
+		/// <summary>
 		///     The same, for a screen the player still has to see past - the podium behind the level
 		///     summary is where "press Y" is written, and covering that up would strand them.
 		/// </summary>
@@ -138,6 +147,22 @@ public static class ColorExtensions
 		public Color32 Tile { get; } = new(255, 255, 255, 20);
 
 		public Color32 TileHovered { get; } = new(255, 255, 255, 48);
+
+		/// <summary>
+		///     A button that is a button: opaque, so the picture behind the menu stops showing
+		///     through the thing you are supposed to press. The tile colours above are a wash over
+		///     whatever is behind them, which is right for a panel and wrong for a menu over art -
+		///     six translucent rectangles over a photograph read as six lighter patches of
+		///     photograph.
+		/// </summary>
+		public Color32 Button { get; } = new(30, 33, 40, 255);
+
+		public Color32 ButtonHovered { get; } = new(46, 50, 60, 255);
+
+		public Color32 ButtonPressed { get; } = new(20, 22, 27, 255);
+
+		/// <summary>The hairline that keeps a dark button off a dark backdrop.</summary>
+		public Color32 Outline { get; } = new(255, 255, 255, 40);
 
 		/// <summary>A lamp that is not lit yet: visible enough to be counted, dark enough to be off.</summary>
 		public Color32 Unlit { get; } = new(64, 64, 64, 255);

@@ -31,6 +31,8 @@ public class ControlPanel
 {
 	private const int _buttons = 5;
 
+	private const string _stopLabel = "Stop";
+
 	/// <summary>
 	///     Barely wider than tall. The word underneath the symbol is what sets the width, and the
 	///     tile was wider than that when the symbol was a triangle drawn to fill its box: an icon
@@ -39,7 +41,15 @@ public class ControlPanel
 	/// </summary>
 	private const float _tileAspect = 1.05f;
 
-	private const float _tileRows = 2.5f;
+	/// <summary>
+	///     Half of what it was. The drawer holds five buttons pressed a handful of times an hour,
+	///     and at its old size it came out over a third of the screen to say so - which is a lot of
+	///     game covered up by a thing whose whole point is that it is not there most of the time.
+	/// </summary>
+	private const float _tileRows = 1.25f;
+
+	/// <summary>The skip price above the row, shrunk with the tiles so the drawer stays one block.</summary>
+	private const float _captionRows = 0.75f;
 
 	private float _height;
 
@@ -50,12 +60,12 @@ public class ControlPanel
 	/// </summary>
 	public float Height(ImGui gui)
 	{
-		float fallback = gui.GetRowHeight() * (_tileRows + 1.4f);
+		float fallback = gui.GetRowHeight() * (_tileRows + _captionRows + 0.4f);
 
 		return (_height > 0f ? _height : fallback) + UiMetrics.Margin(gui);
 	}
 
-	public void Draw(ImGui gui, ImRect rect, AthStateMachine run, RunHudView view)
+	public void Draw(ImGui gui, ImRect rect, AthController run, RunHudView view)
 	{
 		gui.Layout.Push(ImAxis.Vertical, rect);
 
@@ -71,42 +81,56 @@ public class ControlPanel
 		}
 	}
 
-	private static void DrawControls(ImGui gui, AthStateMachine run, RunHudView view)
+	private static void DrawControls(ImGui gui, AthController run, RunHudView view)
 	{
-		UiText.Centre(gui, view.SkipType, view.SkipColour, UiMetrics.Row(gui, 1f), gui.Style.Layout.TextSize * 0.95f);
+		UiText.Centre(gui, view.SkipType, view.SkipColour, UiMetrics.Row(gui, _captionRows),
+			gui.Style.Layout.TextSize * 0.8f);
 
+		Buttons(gui, Strip(gui), run, view, _stopLabel);
+	}
+
+	/// <summary>
+	///     The five buttons themselves, laid into whatever strip they are handed. The main menu puts
+	///     the same five up while a hunt is running, and a second copy of them would be five chances
+	///     for the two to drift apart - one of them keeping a colour the other lost, or still
+	///     sending /fs after the drawer stopped.
+	///     Only the last one is named differently. On the drawer, above a bar that is plainly the
+	///     run, "Stop" is enough; on a menu that also has a Quit on it, the button that ends the hour
+	///     has to say which of the two it is.
+	/// </summary>
+	public static void Buttons(ImGui gui, ImRect strip, AthController run, RunHudView view, string stopLabel)
+	{
 		bool racing = GameStateObserver.IsRacing;
-		ImRect row = Strip(gui);
 
-		if (UiWidgets.IconTile(gui, Tile(gui, row, 0), UiIcon.Skip, "Skip", Color.Style.Action.Skip, racing))
+		if (UiWidgets.IconTile(gui, Tile(gui, strip, 0), UiIcon.Skip, "Skip", Color.Style.Action.Skip, racing))
 		{
 			ChatApi.SendMessage("/fs");
 		}
 
-		if (UiWidgets.IconTile(gui, Tile(gui, row, 1), UiIcon.Warning, "Broken", Color.Style.Action.Broken, racing))
+		if (UiWidgets.IconTile(gui, Tile(gui, strip, 1), UiIcon.Warning, "Broken", Color.Style.Action.Broken, racing))
 		{
 			AthRequests.SkipBroken();
 		}
 
-		if (UiWidgets.IconTile(gui, Tile(gui, row, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
+		if (UiWidgets.IconTile(gui, Tile(gui, strip, 2), view.Paused ? UiIcon.Play : UiIcon.Pause,
 			    view.Paused ? "Resume" : "Pause",
 			    view.Paused ? Color.Style.Action.Resume : Color.Style.Action.Pause, true))
 		{
 			TogglePause(run, view);
 		}
 
-		if (UiWidgets.IconTile(gui, Tile(gui, row, 3), UiIcon.Restart, "Restart", Color.Style.Action.Restart, true))
+		if (UiWidgets.IconTile(gui, Tile(gui, strip, 3), UiIcon.Restart, "Restart", Color.Style.Action.Restart, true))
 		{
 			AthRequests.Restart();
 		}
 
-		if (UiWidgets.IconTile(gui, Tile(gui, row, 4), UiIcon.Stop, "Stop", Color.Style.Action.Stop, true))
+		if (UiWidgets.IconTile(gui, Tile(gui, strip, 4), UiIcon.Stop, stopLabel, Color.Style.Action.Stop, true))
 		{
 			AthRequests.Stop();
 		}
 	}
 
-	private static void TogglePause(AthStateMachine run, RunHudView view)
+	private static void TogglePause(AthController run, RunHudView view)
 	{
 		if (view.Paused)
 		{
@@ -126,11 +150,20 @@ public class ControlPanel
 	private static ImRect Strip(ImGui gui)
 	{
 		float height = gui.GetRowHeight() * _tileRows;
+
+		return Centred(gui, gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), height), height);
+	}
+
+	/// <summary>
+	///     Five tiles of the given height, centred in the row. The menu draws them taller than the
+	///     drawer does - it has the whole screen and the drawer has a strip of it - so the height is
+	///     the caller's to pick and everything else follows from it.
+	/// </summary>
+	public static ImRect Centred(ImGui gui, ImRect row, float height)
+	{
 		float side = height * _tileAspect;
 		float gap = gui.Style.Layout.InnerSpacing;
 		float width = side * _buttons + gap * (_buttons - 1);
-
-		ImRect row = gui.AddLayoutRectWithSpacing(gui.GetLayoutWidth(), height);
 
 		return new ImRect(row.X + (row.W - width) * 0.5f, row.Y, width, height);
 	}

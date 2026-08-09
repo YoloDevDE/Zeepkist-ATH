@@ -18,16 +18,15 @@ public class PluginConfig
 		PenaltyTime = config.Bind("Gameplay", "Penalty Time", 300,
 			"Penalty time per failed level in seconds. Default is 300 (5 minutes).");
 
-		Minimalist = config.Bind("Misc", "Minimalist", false, "Makes it a bit less text");
-
-		InGameHud = config.Bind("Misc", "In-Game HUD", true,
-			"Draws the run HUD as a movable in-game window instead of the server message block.");
-
 		SavePlaylistOnRunEnd = config.Bind("Misc", "Save Playlist on Run End", false,
 			"Literally what it says. what did you expect");
 
 		StartLights = config.Bind("Race Timer", "Start Lights", true,
 			"Replaces the running time with three lights during the start countdown.");
+
+		Splits = config.Bind("Race Timer", "Checkpoint Splits", true,
+			"Lists every checkpoint of the level down the left of the screen, with the gap to your best run "
+			+ "on it, instead of the one-second popup the game shows.");
 
 		LeaderboardMedals = config.Bind("Race Timer", "Medals in the Leaderboard", true,
 			"Adds the author and gold times to the small in-race leaderboard as if they were two more players, "
@@ -43,10 +42,6 @@ public class PluginConfig
 
 	public ConfigEntry<bool> SavePlaylistOnRunEnd { get; }
 
-	public ConfigEntry<bool> Minimalist { get; }
-
-	public ConfigEntry<bool> InGameHud { get; }
-
 	public ConfigEntry<bool> RandomPlaylist { get; }
 
 	public ConfigEntry<int> Duration { get; }
@@ -60,6 +55,8 @@ public class PluginConfig
 	#region Race Timer
 
 	public ConfigEntry<bool> StartLights { get; }
+
+	public ConfigEntry<bool> Splits { get; }
 
 	public ConfigEntry<bool> LeaderboardMedals { get; }
 

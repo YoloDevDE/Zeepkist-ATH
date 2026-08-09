@@ -8,12 +8,12 @@ namespace AuthorTimeHunting.States;
 /// </summary>
 public abstract class StateBase
 {
-	protected StateBase(StateMachineBase stateMachine)
+	protected StateBase(StateMachineBase controller)
 	{
-		StateMachine = stateMachine;
+		Controller = controller;
 	}
 
-	public StateMachineBase StateMachine { get; }
+	public StateMachineBase Controller { get; }
 
 	public virtual StateMachineBase SubStateMachine => null;
 

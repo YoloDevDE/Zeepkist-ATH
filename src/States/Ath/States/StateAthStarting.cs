@@ -16,7 +16,7 @@ namespace AuthorTimeHunting.States.Ath.States;
 ///     skip goes out right behind it - and the player, who has just watched a ten second
 ///     countdown on the welcome screen, gets the level they were counting down to.
 /// </summary>
-public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthStarting(AthController controller) : AthState(controller)
 {
 	private CancellationTokenSource _cts;
 
@@ -29,12 +29,12 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 		{
 			ZeepkistNetwork.CurrentLobby.RoundTime = 86400;
 
-			if (!AthStateMachine.Ctx.Settings.RandomPlaylist)
+			if (!AthController.Ctx.Settings.RandomPlaylist)
 			{
 				await Task.Delay(2500, stopped);
 				MultiplayerApi.UpdateServerPlaylist();
 				await Task.Delay(500, stopped);
-				StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
+				Controller.TransitionTo(new StateAthLoadingLevel(AthController));
 				return;
 			}
 
@@ -66,9 +66,9 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 			// The setup screen is still up and its watchdog only counts silence. Downloading a
 			// level off the workshop is the longest wait in the whole setup and the only one that
 			// arrives without a step of its own, so it says so before it starts.
-			AthStateMachine.Services.Loading.Step("Downloading the level");
+			AthController.Services.Loading.Step("Downloading the level");
 
-			await AthStateMachine.Services.WorkshopDownloads.WaitUntilReadyAsync(firstLevel);
+			await AthController.Services.WorkshopDownloads.WaitUntilReadyAsync(firstLevel);
 
 			try
 			{
@@ -80,7 +80,7 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 				FrogNotification.Error("Error while skipping to the first level");
 			}
 
-			StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
+			Controller.TransitionTo(new StateAthLoadingLevel(AthController));
 		}
 		catch (OperationCanceledException)
 		{
@@ -101,6 +101,6 @@ public class StateAthStarting(AthStateMachine stateMachine) : AthState(stateMach
 
 	public override void OnRoundEnded()
 	{
-		StateMachine.TransitionTo(new StateAthLoadingLevel(AthStateMachine));
+		Controller.TransitionTo(new StateAthLoadingLevel(AthController));
 	}
 }

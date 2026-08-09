@@ -35,6 +35,8 @@ public class PlayMenuButton
 
 	private const string _copyName = "ATH Button";
 
+	private const string _rowName = "ATH Row";
+
 	/// <summary>How much of the button's height the label keeps for itself, under the picture.</summary>
 	private const float _labelBand = 0.28f;
 
@@ -94,7 +96,7 @@ public class PlayMenuButton
 
 		Transform slot = Slot(online.transform);
 
-		if (slot.parent == null || slot.parent.Find(_copyName) != null)
+		if (slot.parent == null || slot.parent.Find(_rowName) != null)
 		{
 			return;
 		}
@@ -157,12 +159,13 @@ public class PlayMenuButton
 
 	private static void Clone(StartGameUI screen, GenericButton online, Transform slot)
 	{
-		GameObject copy = Object.Instantiate(slot.gameObject, slot.parent);
+		RectTransform row = Row(slot as RectTransform);
+
+		GameObject copy = Object.Instantiate(slot.gameObject, row);
 
 		copy.name = _copyName;
-		copy.transform.SetSiblingIndex(slot.GetSiblingIndex() + 1);
 
-		Split(slot as RectTransform, copy.GetComponent<RectTransform>());
+		Share(copy);
 
 		GenericButton button = copy.GetComponentInChildren<GenericButton>(true);
 
@@ -177,71 +180,121 @@ public class PlayMenuButton
 
 		screen.buttonsToDisableWhenGoingIntoAthing.Add(button);
 
-		Report(slot.parent, copy);
+		Report(row, copy);
 	}
 
 	/// <summary>
-	///     A copy of a row lands exactly on top of the row it was copied from, which is the hunt
-	///     sitting in Online rather than beside it. The rows already fill the panel from top to
-	///     bottom, so there is no room for a fifth one; what there is room for is a row of two,
-	///     which the panel already does once for Splitscreen and Free Play. Online gives up its
-	///     right half and the hunt takes it.
-	///     The halves are cut with anchors rather than with pixels. The play menu is switched off
-	///     when the button is added, so nothing has laid it out yet and a width read off it is the
-	///     width it had in the editor, or none at all; anchors are fractions of the panel and are
-	///     right whether anything has been laid out or not.
+	///     Where the two halves of the row live. A copy dropped in beside Online lands exactly on top
+	///     of it, and cutting the two apart with anchors only holds until something lays the panel out
+	///     again - a <c>LayoutGroup</c> writes its own anchors over both halves on the next frame and
+	///     the hunt is back in Online.
+	///     So the split is not written, it is arranged: Online's holder moves into a new holder that
+	///     carries a <c>HorizontalLayoutGroup</c> and stands where Online's holder stood. The group
+	///     divides whatever width it is given between its children every time it is laid out, which is
+	///     what keeps the two apart no matter who lays out the panel or how wide the screen is.
 	/// </summary>
-	private static void Split(RectTransform online, RectTransform hunt)
+	private static RectTransform Row(RectTransform slot)
 	{
-		if (online == null || hunt == null)
-		{
-			return;
-		}
+		GameObject row = new GameObject(_rowName, typeof(RectTransform), typeof(HorizontalLayoutGroup));
 
-		float middle = (online.anchorMin.x + online.anchorMax.x) / 2f;
+		RectTransform rect = row.GetComponent<RectTransform>();
 
-		Half(online, online.anchorMin.x, middle, -_gap / 2f);
-		Half(hunt, middle, online.anchorMax.x, _gap / 2f);
+		rect.SetParent(slot.parent, false);
+		rect.SetSiblingIndex(slot.GetSiblingIndex());
+
+		Fit(rect, slot);
+		Arrange(row.GetComponent<HorizontalLayoutGroup>());
+
+		slot.SetParent(rect, false);
+
+		Share(slot.gameObject);
+
+		return rect;
 	}
 
 	/// <summary>
-	///     One half of the row's width, and half the gap eaten out of the side that faces the other
-	///     half. A row anchored to a single line rather than stretched across one has both anchors in
-	///     the same place and cannot be cut this way, so it is halved by its size instead.
+	///     The row stands exactly where Online's holder stood, in whatever terms the panel places its
+	///     rows: anchors if the panel places them itself, and a preferred height if a
+	///     <c>LayoutGroup</c> does. Both are taken, because which of the two is read is the panel's
+	///     business and the play menu is switched off while this happens, so nothing can be measured.
 	/// </summary>
-	private static void Half(RectTransform rect, float from, float to, float inset)
+	private static void Fit(RectTransform row, RectTransform slot)
 	{
-		if (Mathf.Approximately(from, to))
-		{
-			float shift = rect.sizeDelta.x / 4f + _gap / 4f;
+		row.anchorMin = slot.anchorMin;
+		row.anchorMax = slot.anchorMax;
+		row.pivot = slot.pivot;
+		row.anchoredPosition = slot.anchoredPosition;
+		row.sizeDelta = slot.sizeDelta;
 
-			rect.sizeDelta = new Vector2(rect.sizeDelta.x / 2f - _gap / 2f, rect.sizeDelta.y);
-			rect.anchoredPosition = new Vector2(rect.anchoredPosition.x + Mathf.Sign(inset) * shift,
-				rect.anchoredPosition.y);
+		LayoutElement mine = Element(row.gameObject);
+		LayoutElement theirs = slot.GetComponent<LayoutElement>();
+
+		if (theirs == null)
+		{
+			mine.preferredHeight = slot.rect.height;
 
 			return;
 		}
 
-		rect.anchorMin = new Vector2(from, rect.anchorMin.y);
-		rect.anchorMax = new Vector2(to, rect.anchorMax.y);
-		rect.offsetMin = new Vector2(inset > 0f ? inset : 0f, rect.offsetMin.y);
-		rect.offsetMax = new Vector2(inset < 0f ? inset : 0f, rect.offsetMax.y);
+		mine.minHeight = theirs.minHeight;
+		mine.preferredHeight = theirs.preferredHeight;
+		mine.flexibleHeight = theirs.flexibleHeight;
+		mine.flexibleWidth = theirs.flexibleWidth;
+	}
+
+	/// <summary>
+	///     Two halves, side by side, each as tall as the row and each given the same share of its
+	///     width once the gap between them is taken out.
+	/// </summary>
+	private static void Arrange(HorizontalLayoutGroup layout)
+	{
+		layout.spacing = _gap;
+		layout.childControlWidth = true;
+		layout.childControlHeight = true;
+		layout.childForceExpandWidth = true;
+		layout.childForceExpandHeight = true;
+	}
+
+	/// <summary>
+	///     One half of the row. Neither half asks for a width of its own, and both stretch by the same
+	///     amount, so the row's width lands on them evenly however wide the row turns out to be.
+	/// </summary>
+	private static void Share(GameObject half)
+	{
+		LayoutElement element = Element(half);
+
+		element.minWidth = 0f;
+		element.preferredWidth = 0f;
+		element.flexibleWidth = 1f;
+	}
+
+	private static LayoutElement Element(GameObject target)
+	{
+		LayoutElement element = target.GetComponent<LayoutElement>();
+
+		if (element == null)
+		{
+			return target.AddComponent<LayoutElement>();
+		}
+
+		return element;
 	}
 
 	/// <summary>
 	///     Which of the panel's own arrangers ends up placing the new row. Whatever the panel does
 	///     with the rows it already had, it now does with one more.
 	/// </summary>
-	private static void Report(Transform panel, GameObject copy)
+	private static void Report(RectTransform row, GameObject copy)
 	{
+		Transform panel = row.parent;
+
 		LayoutGroup layout = panel.GetComponent<LayoutGroup>();
 
-		RectTransform rect = copy.GetComponent<RectTransform>();
-
-		Logger.LogInfo($"PlayMenuButton: '{copy.name}' is row {copy.transform.GetSiblingIndex()} "
+		Logger.LogInfo($"PlayMenuButton: '{copy.name}' is half {copy.transform.GetSiblingIndex()} "
+		               + $"of {row.childCount} in '{row.name}', which is row {row.GetSiblingIndex()} "
 		               + $"of {panel.childCount} in '{panel.name}', "
 		               + $"arranged by {(layout == null ? "nothing but its anchors" : layout.GetType().Name)}, "
-		               + $"anchored {rect.anchorMin.x} to {rect.anchorMax.x} at {rect.anchoredPosition}.");
+		               + $"anchored {row.anchorMin.x} to {row.anchorMax.x} at {row.anchoredPosition}.");
 
 		Parts(copy);
 	}

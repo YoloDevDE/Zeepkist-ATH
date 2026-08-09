@@ -40,7 +40,7 @@ public class DebugPanel : IZeepGUIDrawer
 	private float _contentHeight;
 	private bool _mouseOverWindow;
 
-	public AthStateMachine ActiveRun { get; set; }
+	public AthController ActiveRun { get; set; }
 
 	public bool Visible { get; set; }
 
@@ -83,7 +83,7 @@ public class DebugPanel : IZeepGUIDrawer
 
 		try
 		{
-			AthStateMachine run = ActiveRun;
+			AthController run = ActiveRun;
 
 			DrawGameState(gui);
 			DrawRunState(gui, run);
@@ -122,7 +122,7 @@ public class DebugPanel : IZeepGUIDrawer
 		return $"{lobby.CurrentPlaylistIndex + 1} / {lobby.Playlist.Count}";
 	}
 
-	private static void DrawRunState(ImGui gui, AthStateMachine run)
+	private static void DrawRunState(ImGui gui, AthController run)
 	{
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "RUN");
 
@@ -148,7 +148,7 @@ public class DebugPanel : IZeepGUIDrawer
 		gui.AddSpacing();
 	}
 
-	private static void DrawLevelPool(ImGui gui, AthStateMachine run)
+	private static void DrawLevelPool(ImGui gui, AthController run)
 	{
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "LEVEL POOL");
 
@@ -190,7 +190,7 @@ public class DebugPanel : IZeepGUIDrawer
 		}
 	}
 
-	private static void DrawActions(ImGui gui, AthStateMachine run)
+	private static void DrawActions(ImGui gui, AthController run)
 	{
 		UiWidgets.Heading(gui, UiMetrics.Row(gui, 0.85f), "GRANT A TIME");
 
@@ -222,7 +222,7 @@ public class DebugPanel : IZeepGUIDrawer
 		UiText.Left(gui, "Only improvements stick.", Color.Style.Text.Muted, UiMetrics.Row(gui, 0.9f));
 	}
 
-	private static void Grant(AthStateMachine run, float time)
+	private static void Grant(AthController run, float time)
 	{
 		Level level = run.Ctx.CurrentLevel;
 		float clamped = Math.Max(0.001f, time);

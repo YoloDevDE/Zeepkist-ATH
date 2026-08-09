@@ -1,4 +1,5 @@
 using System;
+using AuthorTimeHunting.States.Ath.States;
 using AuthorTimeHunting.States.Ath.StateMachine;
 using AuthorTimeHunting.UI.Hud;
 using AuthorTimeHunting.UI.Toolkit;
@@ -29,6 +30,12 @@ namespace AuthorTimeHunting.UI.Screens;
 ///     Nothing here is drawn before there is a level under the wheels. The bar used to come up
 ///     with the run, which meant it hung over the whole of the lobby setup with nothing in it but
 ///     dashes - and over the loading screen that exists to hide exactly that.
+///     It has two heights, because it answers two questions and they are not asked at the same
+///     time. Between attempts the question is how the hunt is going: the medal tally, the hour
+///     spent on the timeline, whose level this is. On the way down a hill none of that is worth a
+///     row - the questions are what the clock says, what is being driven, and what leaving would
+///     cost - so the bar folds to those and gives the screen back. See <see cref="Stage" /> for
+///     when it switches, and why only one of the two directions waits.
 ///     There is no visible window here, but there is a window. Imui draws text through the window
 ///     it is inside, and an earlier attempt at drawing a line of it against the bare canvas drew
 ///     nothing at all - so the frame is styled away rather than done without, the same way
@@ -48,6 +55,22 @@ public class RunOverlay : IZeepGUIDrawer
 
 	/// <summary>How many rows of content the band holds, the rule along its bottom edge aside.</summary>
 	private const float _contentRows = 2.7f;
+
+	/// <summary>The same, with the hunt's own numbers taken out of it - see <see cref="Stage" />.</summary>
+	private const float _minimalRows = 1.9f;
+
+	/// <summary>
+	///     How long the full bar stays up once the zeepkists are released. A restart is two seconds
+	///     of somebody's life and there are a lot of them in a hunt; a bar that folded on every one
+	///     of them would be the most animated thing on the screen.
+	/// </summary>
+	private const float _settleSeconds = 3f;
+
+	/// <summary>
+	///     How far through the slide the band's contents change over. Halfway, where the height is
+	///     moving fastest and the swap is least likely to be the thing the eye catches.
+	/// </summary>
+	private const float _swapAt = 0.5f;
 
 	private const float _ruleFraction = 0.16f;
 
@@ -73,10 +96,14 @@ public class RunOverlay : IZeepGUIDrawer
 
 	private const float _medalColumns = 7.4f;
 
+	private const float _skipColumns = 9.4f;
+
 	private const float _levelTimeColumns = 11.4f;
 
-	private const float _nameShare = 0.37f;
-	private const float _authorShare = 0.4f;
+	/// <summary>How much of the wing the title line takes, the two medal times getting the rest.</summary>
+	private const float _titleShare = 0.5f;
+
+	private const string _by = " by ";
 
 	/// <summary>Open or shut in a fifth of a second: too fast to wait for, too slow to be a jump cut.</summary>
 	private const float _slideSeconds = 0.2f;
@@ -106,7 +133,10 @@ public class RunOverlay : IZeepGUIDrawer
 
 	private readonly MedalArt _medals;
 
-	private readonly AthThumbnail _thumbnail;
+	private readonly AthImage _thumbnail;
+
+	/// <summary>How much of the bar is showing, 0 minimal and 1 full. Its height and its contents follow.</summary>
+	private float _full = 1f;
 
 	private bool _mouseOverWindow;
 
@@ -115,9 +145,14 @@ public class RunOverlay : IZeepGUIDrawer
 
 	private Vector3 _pointer;
 
+	/// <summary>The earliest the bar may start folding away, which is what the settle is made of.</summary>
+	private float _shrinkAt;
+
 	private float _stirred;
 
-	public RunOverlay(ControlPanel controls, AthThumbnail thumbnail, MedalArt medals)
+	private bool _wasDriving;
+
+	public RunOverlay(ControlPanel controls, AthImage thumbnail, MedalArt medals)
 	{
 		_controls = controls;
 		_thumbnail = thumbnail;
@@ -129,7 +164,7 @@ public class RunOverlay : IZeepGUIDrawer
 	///     bar has to say comes off the level being driven, so between the two there is nothing to
 	///     draw, and a band of empty dashes over the setup screen is worse than no band.
 	/// </summary>
-	public AthStateMachine ActiveRun
+	public AthController ActiveRun
 	{
 		get;
 		set
@@ -172,7 +207,7 @@ public class RunOverlay : IZeepGUIDrawer
 	/// </summary>
 	private void Draw(ImGui gui)
 	{
-		AthStateMachine run = ActiveRun;
+		AthController run = ActiveRun;
 		RunHudView view = RunHudView.ForFrame(run);
 
 		if (view == null)
@@ -180,13 +215,15 @@ public class RunOverlay : IZeepGUIDrawer
 			return;
 		}
 
+		bool stirred = PointerActive();
+		float stage = Stage(run, stirred);
 		float row = gui.GetRowHeight();
 		float pad = UiMetrics.Margin(gui) * 0.5f;
-		float rule = Mathf.Max(3f, row * _ruleFraction);
-		float band = row * _contentRows + pad * 2f + rule;
+		float rule = Mathf.Max(3f, row * _ruleFraction) * stage;
+		float band = row * Mathf.Lerp(_minimalRows, _contentRows, stage) + pad * 2f + rule;
 
 		float full = _controls.Height(gui);
-		float drawer = full * Advance();
+		float drawer = full * Advance(stirred);
 		float below = Mathf.Max(row * _pennantRows, drawer);
 
 		ImRect screen = gui.Canvas.SafeScreenRect;
@@ -199,7 +236,7 @@ public class RunOverlay : IZeepGUIDrawer
 
 		try
 		{
-			DrawWindow(gui, rect, band, drawer, run, view);
+			DrawWindow(gui, rect, band, drawer, run, view, stage);
 		}
 		finally
 		{
@@ -225,7 +262,8 @@ public class RunOverlay : IZeepGUIDrawer
 	///     comes out from behind the band, then the band, then the crest over the seam between
 	///     them, then everything that is words.
 	/// </summary>
-	private void DrawWindow(ImGui gui, ImRect rect, float band, float drawer, AthStateMachine run, RunHudView view)
+	private void DrawWindow(ImGui gui, ImRect rect, float band, float drawer, AthController run, RunHudView view,
+		float stage)
 	{
 		bool open = true;
 
@@ -242,7 +280,7 @@ public class RunOverlay : IZeepGUIDrawer
 
 			DrawDrawer(gui, new ImRect(area.X, strip.Y - drawer, area.W, drawer), cut, run, view);
 			Chamfered(gui, strip, cut, Color.Style.Surface.Panel);
-			DrawContent(gui, strip, cut, view);
+			DrawContent(gui, strip, cut, view, stage);
 		}
 		finally
 		{
@@ -274,10 +312,11 @@ public class RunOverlay : IZeepGUIDrawer
 		return Mathf.Min(rect.H * _chamferFraction, rect.W * 0.03f);
 	}
 
-	private void DrawContent(ImGui gui, ImRect strip, float cut, RunHudView view)
+	private void DrawContent(ImGui gui, ImRect strip, float cut, RunHudView view, float stage)
 	{
 		float pad = UiMetrics.Margin(gui) * 0.5f;
-		float rule = Mathf.Max(3f, gui.GetRowHeight() * _ruleFraction);
+		float rule = Mathf.Max(3f, gui.GetRowHeight() * _ruleFraction) * stage;
+		bool full = stage >= _swapAt;
 
 		ImRect inner = strip.WithPadding(pad + cut, pad + cut, pad, rule + pad);
 		float badgeWidth = inner.H * _badgeAspect;
@@ -286,8 +325,13 @@ public class RunOverlay : IZeepGUIDrawer
 
 		DrawPennant(gui, strip, badgeWidth * _pennantWidthFraction, gui.GetRowHeight() * _pennantRows);
 		DrawBadge(gui, badge);
-		DrawHunt(gui, new ImRect(inner.X, inner.Y, wing, inner.H), view);
+		DrawHunt(gui, new ImRect(inner.X, inner.Y, wing, inner.H), view, full);
 		DrawLevel(gui, new ImRect(inner.Right - wing, inner.Y, wing, inner.H), view);
+
+		if (!full)
+		{
+			return;
+		}
 
 		UiWidgets.Timeline(gui, new ImRect(strip.X + cut, strip.Y + pad * 0.4f, strip.W - cut * 2f, rule),
 			view.Timeline);
@@ -331,14 +375,37 @@ public class RunOverlay : IZeepGUIDrawer
 		gui.Image(logo, rect.WithPadding(Mathf.Max(2f, rect.H * 0.09f)), true);
 	}
 
-	/// <summary>The left wing: the hour, whether it is being spent, and what has been bought with it.</summary>
-	private void DrawHunt(ImGui gui, ImRect rect, RunHudView view)
+	/// <summary>
+	///     The left wing: the hour, whether it is being spent, and under it the one line that
+	///     changes with the stage. What has been bought with the hour is the hunt's score, which is
+	///     read between attempts; what leaving the level would cost is read while driving, because
+	///     that is when it is being decided.
+	/// </summary>
+	private void DrawHunt(ImGui gui, ImRect rect, RunHudView view, bool full)
 	{
 		float row = gui.GetRowHeight();
-		ImRect clock = rect.TakeTop(rect.H * _clockShare, out ImRect medals);
+		ImRect clock = rect.TakeTop(rect.H * _clockShare, out ImRect below);
 
 		DrawClock(gui, clock.TakeLeft(Mathf.Min(clock.W, row * _clockColumns)), view);
-		DrawMedals(gui, medals.TakeLeft(Mathf.Min(medals.W, row * _medalColumns)), view);
+
+		if (!full)
+		{
+			DrawSkip(gui, below.TakeLeft(Mathf.Min(below.W, row * _skipColumns)), view);
+
+			return;
+		}
+
+		DrawMedals(gui, below.TakeLeft(Mathf.Min(below.W, row * _medalColumns)), view);
+	}
+
+	/// <summary>What leaving this level right now would cost, in the colour of what it would cost.</summary>
+	private static void DrawSkip(ImGui gui, ImRect rect, RunHudView view)
+	{
+		float icon = rect.H * 0.7f;
+		ImRect glyph = rect.TakeLeft(icon, gui.Style.Layout.InnerSpacing, out ImRect label);
+
+		UiIcons.Draw(gui, glyph, UiIcon.Skip, view.SkipColour);
+		UiText.Draw(gui, view.SkipType, view.SkipColour, label, gui.Style.Layout.TextSize * 0.9f, 0f);
 	}
 
 	private static void DrawClock(ImGui gui, ImRect rect, RunHudView view)
@@ -396,15 +463,42 @@ public class RunOverlay : IZeepGUIDrawer
 	/// </summary>
 	private void DrawLevel(ImGui gui, ImRect rect, RunHudView view)
 	{
-		float text = gui.Style.Layout.TextSize;
+		ImRect title = rect.TakeTop(rect.H * _titleShare, out ImRect times);
 
-		ImRect name = rect.TakeTop(rect.H * _nameShare, out ImRect rest);
-		ImRect author = rest.TakeTop(rest.H * _authorShare, out ImRect times);
+		DrawTitle(gui, title, view, gui.Style.Layout.TextSize * 1.05f);
+		DrawTimes(gui, Times(gui, times), view);
+	}
 
-		UiText.Right(gui, view.LevelName, Color.Style.Text.LevelName, name, text * 1.05f);
-		UiText.Right(gui, view.ByAuthor, Color.Style.Text.AuthorName, author, text * 0.8f);
+	/// <summary>
+	///     The level and whose it is on one line: both names in plain white, and only the "by"
+	///     between them carrying a colour.
+	///     It was two lines, the level in blue over the author in gold, which gave the wing two
+	///     coloured labels and no plain text - so neither name was the one being read. One line in
+	///     one colour makes them a title, and the joining word is the only thing that has to be
+	///     told apart from a name.
+	///     Imui draws one colour per call, so the line is measured from the right and each run gets
+	///     the rect it ends in. A level with a long name loses its tail rather than the author's -
+	///     the name is the half you can already see out of the windscreen.
+	/// </summary>
+	private static void DrawTitle(ImGui gui, ImRect rect, RunHudView view, float size)
+	{
+		float author = UiText.Width(gui, view.Author, size);
+		float by = UiText.Width(gui, _by, size);
 
-		DrawTimes(gui, times.TakeRight(Mathf.Min(times.W, gui.GetRowHeight() * _levelTimeColumns)), view);
+		UiText.Right(gui, view.Author, Color.Style.Surface.White, rect, size);
+		UiText.Right(gui, _by, Color.Style.Text.Joiner, Ending(rect, author), size);
+		UiText.Right(gui, view.LevelName, Color.Style.Surface.White, Ending(rect, author + by), size);
+	}
+
+	/// <summary>The same rect with its right edge pulled in, so the run before it ends where this one starts.</summary>
+	private static ImRect Ending(ImRect rect, float taken)
+	{
+		return new ImRect(rect.X, rect.Y, Mathf.Max(0f, rect.W - taken), rect.H);
+	}
+
+	private static ImRect Times(ImGui gui, ImRect rect)
+	{
+		return rect.TakeRight(Mathf.Min(rect.W, gui.GetRowHeight() * _levelTimeColumns));
 	}
 
 	private void DrawTimes(ImGui gui, ImRect rect, RunHudView view)
@@ -431,7 +525,7 @@ public class RunOverlay : IZeepGUIDrawer
 	///     The clip does the input too. Imui throws away a hover that falls outside the active clip
 	///     rect, so a button half out of the slot is live on exactly the half that can be seen.
 	/// </summary>
-	private void DrawDrawer(ImGui gui, ImRect rect, float cut, AthStateMachine run, RunHudView view)
+	private void DrawDrawer(ImGui gui, ImRect rect, float cut, AthController run, RunHudView view)
 	{
 		if (rect.H <= 0f)
 		{
@@ -454,11 +548,51 @@ public class RunOverlay : IZeepGUIDrawer
 		}
 	}
 
-	private float Advance()
+	/// <summary>
+	///     How much of the bar is showing, and the whole of the rule that decides it: the bar folds
+	///     away while the level is being driven and comes back the instant the driving stops.
+	///     The two directions are deliberately not symmetric. Coming back is immediate, because the
+	///     moment a run ends is the moment its result is worth reading. Folding away waits
+	///     <see cref="_settleSeconds" />, because a hunt is mostly restarts - and a bar that folded
+	///     on every one of them would spend the level animating rather than saying anything.
+	///     A hand on the mouse counts as not driving, whatever the run says. It is the same signal
+	///     the drawer opens on and it means the same thing here: somebody has stopped steering and
+	///     gone looking for the mod, and what they are looking for is the part that folded away.
+	/// </summary>
+	private float Stage(AthController run, bool stirred)
+	{
+		bool driving = !stirred && run?.CurrentState is StateAthWaitingForFinish;
+
+		if (driving != _wasDriving)
+		{
+			_wasDriving = driving;
+			_shrinkAt = Time.unscaledTime + _settleSeconds;
+		}
+
+		float step = Time.unscaledDeltaTime / _slideSeconds;
+
+		if (!driving)
+		{
+			_full = Mathf.Clamp01(_full + step);
+
+			return _full;
+		}
+
+		if (Time.unscaledTime < _shrinkAt)
+		{
+			return _full;
+		}
+
+		_full = Mathf.Clamp01(_full - step);
+
+		return _full;
+	}
+
+	private float Advance(bool stirred)
 	{
 		float step = Time.unscaledDeltaTime / _slideSeconds;
 
-		_open = Mathf.Clamp01(_open + (PointerActive() ? step : -step));
+		_open = Mathf.Clamp01(_open + (stirred ? step : -step));
 
 		return _open;
 	}

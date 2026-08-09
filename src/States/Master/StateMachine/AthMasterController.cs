@@ -7,9 +7,9 @@ namespace AuthorTimeHunting.States.Master.StateMachine;
 ///     The mod's own lifecycle: off until a start is asked for, on until a stop is. The
 ///     running state carries the run's machine as a sub-state machine.
 /// </summary>
-public class MasterStateMachine : StateMachineBase
+public class AthMasterController : StateMachineBase
 {
-	public MasterStateMachine(ModServices services)
+	public AthMasterController(ModServices services)
 	{
 		Services = services;
 		InitialState = new StateMasterOff(this);

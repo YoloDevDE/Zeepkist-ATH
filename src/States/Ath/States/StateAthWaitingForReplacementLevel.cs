@@ -7,7 +7,7 @@ using Logger = AuthorTimeHunting.Util.Logger;
 
 namespace AuthorTimeHunting.States.Ath.States;
 
-public class StateAthWaitingForReplacementLevel(AthStateMachine stateMachine) : AthState(stateMachine)
+public class StateAthWaitingForReplacementLevel(AthController controller) : AthState(controller)
 {
 	public override async void Enter()
 	{
@@ -22,17 +22,8 @@ public class StateAthWaitingForReplacementLevel(AthStateMachine stateMachine) : 
 		{
 			Logger.LogError(
 				$"StateAthWaitingForReplacementLevel: Could not read the broken playlist entry: {ex.Message}");
-			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
+			Controller.TransitionTo(new StateAthStopping(AthController));
 			return;
-		}
-
-		try
-		{
-		}
-		catch (Exception ex)
-		{
-			Logger.LogWarning(
-				$"StateAthWaitingForReplacementLevel: Could not send broken level message: {ex.Message}");
 		}
 
 		try
@@ -40,9 +31,9 @@ public class StateAthWaitingForReplacementLevel(AthStateMachine stateMachine) : 
 			OnlineZeeplevel newLevel = await RandomLevels.DrawRandomLevelAsync();
 			PlaylistService.ReplaceLevelInCurrentPlaylist(brokenLevel, newLevel);
 
-			await AthStateMachine.Services.WorkshopDownloads.WaitUntilReadyAsync(newLevel);
+			await AthController.Services.WorkshopDownloads.WaitUntilReadyAsync(newLevel);
 
-			if (StateMachine.CurrentState != this)
+			if (Controller.CurrentState != this)
 			{
 				return;
 			}
@@ -53,12 +44,12 @@ public class StateAthWaitingForReplacementLevel(AthStateMachine stateMachine) : 
 		{
 			Logger.LogError($"StateAthWaitingForReplacementLevel: Could not draw a replacement level: {ex.Message}");
 			FrogNotification.Error("Could not find a replacement for the broken level");
-			StateMachine.TransitionTo(new StateAthStopping(AthStateMachine));
+			Controller.TransitionTo(new StateAthStopping(AthController));
 		}
 	}
 
 	public override void OnLevelLoaded()
 	{
-		StateMachine.TransitionTo(new StateAthWaitingForLevelData(AthStateMachine));
+		Controller.TransitionTo(new StateAthWaitingForLevelData(AthController));
 	}
 }

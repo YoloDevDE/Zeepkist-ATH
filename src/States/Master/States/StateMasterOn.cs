@@ -18,21 +18,21 @@ public class StateMasterOn : StateBase
 	private CommandAthBroken _brokenCommand;
 	private bool _shuttingDown;
 
-	public StateMasterOn(MasterStateMachine stateMachine, IGamemode gamemode) : base(stateMachine)
+	public StateMasterOn(AthMasterController controller, IGamemode gamemode) : base(controller)
 	{
 		Gamemode = gamemode;
-		AthStateMachine = new AthStateMachine(stateMachine.Services, gamemode);
+		AthController = new AthController(controller.Services, gamemode);
 	}
 
 	public static bool IsActive { get; private set; }
 
 	public IGamemode Gamemode { get; }
 
-	public AthStateMachine AthStateMachine { get; }
+	public AthController AthController { get; }
 
-	public override StateMachineBase SubStateMachine => AthStateMachine;
+	public override StateMachineBase SubStateMachine => AthController;
 
-	private MasterStateMachine Master => (MasterStateMachine)StateMachine;
+	private AthMasterController AthMaster => (AthMasterController)Controller;
 
 	public override void Enter()
 	{
@@ -45,8 +45,8 @@ public class StateMasterOn : StateBase
 		AthRequests.SkipBrokenRequested += SkipBrokenLevel;
 		SubStateMachine.StateMachineFinished += Stop;
 		ChatCommandApi.RegisterLocalChatCommand(_stopCommand);
-		Master.Services.GameState.BecameRacing += RegisterBrokenCommand;
-		Master.Services.GameState.StoppedRacing += UnregisterBrokenCommand;
+		AthMaster.Services.GameState.BecameRacing += RegisterBrokenCommand;
+		AthMaster.Services.GameState.StoppedRacing += UnregisterBrokenCommand;
 
 		if (GameStateObserver.IsRacing)
 		{
@@ -54,8 +54,8 @@ public class StateMasterOn : StateBase
 		}
 
 		PlayerManager.Instance.currentMaster.OnlineGameplayUI.TimeLeftText.enabled = false;
-		Master.Services.PublishRun(AthStateMachine);
-		AthStateMachine.StartTimer();
+		AthMaster.Services.PublishRun(AthController);
+		AthController.StartTimer();
 		FrogNotification.Success($"{Gamemode.DisplayName} started");
 	}
 
@@ -63,9 +63,9 @@ public class StateMasterOn : StateBase
 	{
 		IsActive = false;
 		FrogNotification.Info("Hunt stopped");
-		Master.Services.PublishRun(null);
-		AthStateMachine.StopTimer();
-		AthStateMachine.Dispose();
+		AthMaster.Services.PublishRun(null);
+		AthController.StopTimer();
+		AthController.Dispose();
 		AthRequests.StopRequested -= Stop;
 		MultiplayerApi.DisconnectedFromGame -= Stop;
 		AthRequests.StartRequested -= Start;
@@ -73,8 +73,8 @@ public class StateMasterOn : StateBase
 		RacingApi.RoundStarted -= OnRoundStarted;
 		AthRequests.SkipBrokenRequested -= SkipBrokenLevel;
 		SubStateMachine.StateMachineFinished -= Stop;
-		Master.Services.GameState.BecameRacing -= RegisterBrokenCommand;
-		Master.Services.GameState.StoppedRacing -= UnregisterBrokenCommand;
+		AthMaster.Services.GameState.BecameRacing -= RegisterBrokenCommand;
+		AthMaster.Services.GameState.StoppedRacing -= UnregisterBrokenCommand;
 		UnregisterBrokenCommand();
 		ChatCommandApi.UnregisterLocalChatCommand(_stopCommand);
 	}
@@ -120,14 +120,14 @@ public class StateMasterOn : StateBase
 	{
 		_shuttingDown = true;
 		RestoreGameHud();
-		StateMachine.TransitionTo(new StateMasterConnectingToServer(Master, Gamemode));
+		Controller.TransitionTo(new StateMasterConnectingToServer(AthMaster, Gamemode));
 	}
 
 	private void SkipBrokenLevel()
 	{
-		if (AthStateMachine.Ctx.CurrentLevel != null)
+		if (AthController.Ctx.CurrentLevel != null)
 		{
-			AthStateMachine.Ctx.CurrentLevel.LevelBroken = true;
+			AthController.Ctx.CurrentLevel.LevelBroken = true;
 			ChatApi.SendMessage("/fs");
 		}
 	}
@@ -146,7 +146,7 @@ public class StateMasterOn : StateBase
 
 		_shuttingDown = true;
 		RestoreGameHud();
-		StateMachine.TransitionTo(new StateMasterOff(Master));
+		Controller.TransitionTo(new StateMasterOff(AthMaster));
 	}
 
 	private static void RestoreGameHud()
